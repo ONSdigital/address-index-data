@@ -76,10 +76,21 @@ def _getPostcode(row, column='address'):
     return getPostcode(row[column])
 
 
+def _removePostcode(row, column='address', postcode='postcode'):
+    """
+
+    :param row:
+    :param column:
+    :param postcode:
+    :return:
+    """
+    return row[column].rstrip(row[postcode])
+
+
 def testParsing():
     testQuery = 'SELECT address FROM addresses limit 10'
     df = queryDB(testQuery)
-    df['Postcode'] = df.apply(_getPostcode, axis=1)
+    df['postcode'] = df.apply(_getPostcode, axis=1)
     print(df)
 
 
