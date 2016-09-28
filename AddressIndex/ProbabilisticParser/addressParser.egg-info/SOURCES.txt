@@ -1,0 +1,7 @@
+setup.py
+addressParser/__init__.py
+addressParser.egg-info/PKG-INFO
+addressParser.egg-info/SOURCES.txt
+addressParser.egg-info/dependency_links.txt
+addressParser.egg-info/requires.txt
+addressParser.egg-info/top_level.txt

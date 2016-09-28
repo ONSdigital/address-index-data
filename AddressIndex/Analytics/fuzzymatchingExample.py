@@ -78,7 +78,6 @@ def runSimpleTest1(find_address='6 PROSPECT GARDENS EXTER EX4 6BA'):
 
     test_against_original = df['address'][0]
 
-    start = datetime.datetime.now()
     print('\nSimple Test:')
     print(test_against_original, 'vs')
     print(find_address)
@@ -86,7 +85,10 @@ def runSimpleTest1(find_address='6 PROSPECT GARDENS EXTER EX4 6BA'):
     print('Partial Ratio:', fuzz.partial_ratio(test_against_original, find_address))
 
     print('\nFinding three best matches for', find_address, '...')
+    start = datetime.datetime.now()
+
     matches = process.extract(find_address, df['address'], limit=3)
+
     print(matches)
     print('First is correct?', test_against_original == matches[0][0])
 
