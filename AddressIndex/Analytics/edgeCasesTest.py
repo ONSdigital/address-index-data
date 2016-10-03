@@ -27,22 +27,34 @@ Version
 """
 import pandas as pd
 import recordlinkage
-# import chardet
 from postal.parser import parse_address
 import datetime
 import pprint
 import re
+from AddressIndex.Analytics import data
 
 
-def loadEdgeCaseTestingData(filename='/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K.csv'):
-    # with open(filename, 'rb') as f:
-    #     result = chardet.detect(f.read())  # or readline if the file is large
-    # print(result)
-    #
-    # df = pd.read_csv(filename, encoding=result['encoding'])
+def loadEdgeCaseTestingData(filename='/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K.csv',
+                            verbose=False):
+    """
+    Read in the edge case testing data.
 
+    :param filename: name of the CSV file holding the edge case data
+    :param verbose: whether or not output information
+
+    :return: pandas dataframe, which includes the edge cases data
+    :rtype: pandas.DataFrame
+    """
     df = pd.read_csv(filename)
-    print(df.info())
+
+    if verbose:
+        print(df.info())
+
+    # change column names
+    df.rename(columns={'UPRN': 'uprn_edge'}, inplace=True)
+
+    nec = len(df.index)
+    print('Found', nec, 'Edge Cases...')
 
     return df
 
@@ -79,7 +91,7 @@ def getIllformattedPostcode(row):
     :return: reconstructured postcode
     :rtype: str
     """
-    tmp = re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA', row['ADDRESS'])[0]
+    tmp = re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA', row['ADDRESS2'])[0]
     inc = tmp[-3:]
     out = tmp.replace(inc, '')
     constructedPostcode = (out + ' ' + inc).lower()
@@ -88,7 +100,45 @@ def getIllformattedPostcode(row):
 
 
 def loadAddressBaseData():
-    pass
+    """
+
+    :return:
+    """
+    df = data.queryDB('''SELECT UPRN, address, POSTCODE_LOCATOR as postcode, STREET_DESCRIPTION,
+                      concat_ws('', sao_start_number, sao_start_suffix, pao_start_number, pao_start_suffix) as number,
+                      pao_text, LOCALITY, TOWN_NAME FROM addresses''')
+    print('\nFound', len(df.index), 'addresses from AddressBase...')
+
+    # convert everything to lower case
+    for tmp in df.columns:
+        try:
+            df[tmp] = df[tmp].str.lower()
+        except:
+            pass
+
+    return df
+
+
+def loadMiniAddressBaseData():
+    """
+
+    :return:
+    """
+    path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/'
+    df = pd.read_csv(path + 'combined.csv')
+
+    # convert everything to lower case
+    for tmp in df.columns:
+        try:
+            df[tmp] = df[tmp].str.lower()
+        except:
+            pass
+
+    # change column names
+    df.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
+                       'TOWN_NAME': 'town_name', 'BUILDING_NUMBER': 'number', 'PAO_TEXT': 'pao_text'}, inplace=True)
+
+    return df
 
 
 def parseEdgeCaseData(df):
@@ -110,7 +160,57 @@ def parseEdgeCaseData(df):
     :return: pandas dataframe where the parsed information has been inclsuded
     :rtype: pandas.DataFrame
     """
-    addresses = df['ADDRESS'].values
+    df['ADDRESS2'] = df['ADDRESS'].copy()
+    # parsing gets really confused if region or county is in the line
+    # for a quick hack I remove these, but regions should probably be part of the training
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST MIDLANDS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST YORKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('S YORKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('N YORKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('W YORKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LANCS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LINCS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LEICS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HERTS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WARKS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BUCKS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BERKS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HANTS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WILTS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WORCS', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('MIDDX', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('W SUSSEX', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('E SUSSEX', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('KENT', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOUTH GLAMORGAN', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('MID GLAMORGAN', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST GLAMORGAN', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('ESSEX', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SURREY', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SUFFOLK', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CHESHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DERBYSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BERKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('YORKSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HEREFORDSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LINCOLNSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NOTTINGHAMSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('OXFORDSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BUCKINGHAMSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SHROPSHIRE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DORSET', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DEVON', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOMERSET', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CORNWALL', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('ISLE OF WIGHT', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CLEVELAND', ''), axis=1)
+    # postal counties
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NORTH HUMBERSIDE', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOUTH HUMBERSIDE', ''), axis=1)
+
+
+    # get addresses - the only ones needed
+    addresses = df['ADDRESS2'].values
     print('Parsing', len(addresses), 'addresses...')
 
     # temp data storage
@@ -174,59 +274,120 @@ def parseEdgeCaseData(df):
 
     # todo: remove anything that looks like a postcode in the other fields
 
-    print(df.info())
+    # print(df.info())
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
 
+    # drop the temp info
+    df.drop(['ADDRESS2'], axis=1, inplace=True)
+
     return df
 
 
-def matchData(df, find_address):
-    print('Matching')
+def matchData(AddressBase, toMatch, limit=0.7):
+    """
 
-    # get data from the database against which we are linking
+    :param AddressBase:
+    :param toMatch:
+    :return:
+    """
+    print('Start matching with postcode blocking...')
 
-    # data frame of the one being linked
-    find = pd.DataFrame(find_address)
+    # set index names - needed later for merging
+    AddressBase.index.name = 'AB_Index'
+    # AddressBase.index.key = 'AB'
+    toMatch.index.name = 'EC_Index'
+    # toMatch.index.key = 'EC'
 
-    print('Start parsed matching with postcode blocking...')
-    start = datetime.datetime.now()
-
-    # set blocking
-    pcl = recordlinkage.Pairs(df, find)
+    # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
+    pcl = recordlinkage.Pairs(toMatch, AddressBase)
     pairs = pcl.block('postcode')
-    print('\nAfter blocking, need to test', len(pairs))
+    print('\nAfter blocking, need to test', len(pairs), 'pairs')
 
     # compare the two data sets - use different metrics for the comparison
-    compare = recordlinkage.Compare(pairs, df, find, batch=True)
-    compare.string('street', 'street', method='damerau_levenshtein', name='street_dl')
+    compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
+    compare.string('street_descriptor', 'road', method='damerau_levenshtein', name='street_dl')
+    compare.string('number', 'house_number', method='damerau_levenshtein', name='number_dl') # todo: something better?
+    compare.string('town_name', 'city', method='damerau_levenshtein', name='town_dl')
+    compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl')
     compare.run()
 
+    # arbitrarily scale up some of the comparisons
+    # compare.vectors['number_dl'] *= 3.
+    # compare.vectors['town_dl'] *= 2.
+    # compare.vectors['street_dl'] *= 1.5
+
     # The comparison vectors
-    print('\nComparison vectors:')
-    print(compare.vectors)
+    # print('\nComparison vectors:')
+    # print(compare.vectors)
 
-    # find the matches and the best match
-    matchmetrics = compare.vectors.sum(axis=1)
-    potentialMatches = matchmetrics.index.levels[0].tolist()
-    print('\nPotential Matches:')
-    print(df.loc[potentialMatches])
-    print('\nBest Match:')
-    print(df.loc[matchmetrics.argmax()[0]])
+    # find all matches where the metrics is above the chosen limit
+    matches = compare.vectors.loc[compare.vectors.sum(axis=1) > limit]
+    # todo: need to resolve those that match to multiple - pick the best!
 
-    stop = datetime.datetime.now()
-    print('\nRun in', round((stop - start).microseconds/1.e6, 2), 'seconds...')
+    print('Found ', len(matches), 'matches...')
+
+    # merge the original data to the multi-index dataframe
+    data = matches.merge(toMatch, left_index=True, right_index=True, how='inner')
+    data = data.merge(AddressBase, left_index=True, right_index=True, how='inner')
+
+    # save to a file
+    data.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/merged.csv', index=True)
+
+    return data
 
 
+def checkPerformance(df, edgeCases):
+    nmatched = len(df.index)
+    all = len(edgeCases.index)
 
-def checkPerformance():
-    pass
+    print('Matched', nmatched, 'entries')
+    print('Match Fraction', round(nmatched / all * 100., 1),)
+
+    msk = df['UPRN'] == df['uprn_edge']
+    correct = df.loc[msk]
+    print('Correctly Matched', len(correct.index))
+
+    for mnemonic in set(df['MNEMONIC'].values):
+        msk = (df['UPRN'] == df['uprn_edge']) & (df['MNEMONIC'] == mnemonic)
+        correct = df.loc[msk]
+        nmatched = len(correct.index)
+        outof = len(edgeCases.loc[edgeCases['MNEMONIC'] == mnemonic].index)
+
+        print('Correctly Matched', nmatched, mnemonic)
+        print('Match Fraction', round(nmatched / outof *100., 2))
+
+    # confusion matrix
+    # recordlinkage.confusion_matrix()
+    # precision
+    # recall
+    # f-score
+    # number of false positives and fp rate
 
 
 def runAll():
+    print('\nReading in Address Base Data...')
+    # ab = loadAddressBaseData()
+    ab = loadMiniAddressBaseData()
+
+    print('Reading in Edge Case data...')
     edgeCases = loadEdgeCaseTestingData()
+
+    print('Parsing Edge Case data...')
+    start = datetime.datetime.now()
     parsedEdgeCases = parseEdgeCaseData(edgeCases)
+    stop = datetime.datetime.now()
+    print('\nFinished in', round((stop - start).microseconds / 1.e3, 2), 'milliseconds...')
+
+    print('Matching Edge Cases to Address Base data...')
+    start = datetime.datetime.now()
+    matched = matchData(ab, parsedEdgeCases)
+    stop = datetime.datetime.now()
+    print('\nFinished in', round((stop - start).microseconds / 1.e3, 2), 'milliseconds...')
+
+    print('Checking Performance...')
+    checkPerformance(matched, edgeCases)
 
 
 if __name__ == "__main__":

@@ -21,12 +21,13 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 27-Sep-2016
+:version: 0.2
+:date: 3-Oct-2016
 """
 import pandas as pd
 from sqlalchemy import create_engine
 import re
+import glob
 
 
 def queryDB(sql, connection='postgresql://postgres@localhost/ONSAI'):
@@ -108,6 +109,38 @@ def _simpleTest():
     print(df)
 
 
+def combineMiniABtestingData():
+    path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/'
+    files = glob.glob(path + '*.csv')
+
+    for file in files:
+        if 'CLASSIFICATION' in file or 'SREET.csv' in file:
+            pass
+
+        tmp = pd.read_csv(file)
+
+        if 'BLPU' in file:
+            BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
+        if 'DELIVERY_POINT' in file:
+            DP = tmp[['UPRN', 'BUILDING_NUMBER', 'POSTCODE', 'POST_TOWN', 'DELIVERY_POINT_SUFFIX']]
+        if 'LPI' in file:
+            LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
+        if 'STREET_DESC' in file:
+            ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE']]
+
+    # join the various dataframes
+    data = pd.merge(LPI, DP, how='left', on='UPRN')
+    data = pd.merge(data, BLPU, how='left', on='UPRN')
+    data = pd.merge(data, ST, how='left', on=['USRN', 'LANGUAGE'])
+
+    # drop some that are not neede
+    data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
+    print(len(data.index), 'addresses')
+
+    data.to_csv(path + 'combined.csv', index=0)
+
+
 if __name__ == "__main__":
     # _simpleTest()
-    testParsing()
+    # testParsing()
+    combineMiniABtestingData()
