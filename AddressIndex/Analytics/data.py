@@ -138,6 +138,9 @@ def combineMiniABtestingData():
     data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
     print(len(data.index), 'addresses')
 
+    # drop if all null
+    data.dropna(inplace=True, how='all')
+
     #if BUILDING_NUMBER missing then PAO?
 
     data.to_csv(path + 'combined.csv', index=0)

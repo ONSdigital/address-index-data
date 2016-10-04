@@ -23,7 +23,7 @@ Author
 Version
 -------
 
-:version: 0.3
+:version: 0.4
 :date: 4-Oct-2016
 """
 import pandas as pd
@@ -99,6 +99,24 @@ def getIllformattedPostcode(row):
     return constructedPostcode
 
 
+def testIfIllformattedPostcode(row):
+    """
+
+    :param row:
+    :return:
+    """
+    try:
+        tmp = \
+        re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
+                   row['building_name'])[0]
+        print(tmp)
+        tmp = None
+    except:
+        tmp = row['building_name']
+
+    return tmp
+
+
 def loadAddressBaseData():
     """
     Load AddressBase data from a database.
@@ -121,6 +139,14 @@ def loadAddressBaseData():
     return df
 
 
+def _getPostIncode(row):
+    return row['postcode'].split(' ')[0]
+
+def _getPostOutcode(row):
+    return row['postcode'].split(' ')[1]
+
+
+
 def loadMiniAddressBaseData():
     """
     Load a subset of AddressBase data provided by ONS on the 3rd of October to enable protyping.
@@ -140,12 +166,19 @@ def loadMiniAddressBaseData():
 
     # if SAO_TEXT is None and a value exists in SUB_BUILDING_NAME then use this
     msk = df['SAO_TEXT'].isnull()
-    df.loc[msk]['SAO_TEXT'] = df.loc[msk]['SUB_BUILDING_NAME'].copy()
+    df.loc[msk, 'SAO_TEXT'] = df.loc[msk, 'SUB_BUILDING_NAME'].copy()
 
     # change column names
     df.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
                        'TOWN_NAME': 'town_name', 'BUILDING_NUMBER': 'building_number', 'PAO_TEXT': 'pao_text',
                        'SAO_TEXT': 'sao_text', 'BUILDING_NAME': 'building_name'}, inplace=True)
+
+    # print(df.info())
+    # print(df.head(3))
+    # split the postcode to in and out
+    df['postcode_in'] = df.apply(_getPostIncode, axis=1)
+    df['postcode_out'] = df.apply(_getPostOutcode, axis=1)
+
 
     return df
 
@@ -344,6 +377,11 @@ def parseEdgeCaseData(df):
             except:
                 store['house_number'] = None
 
+        # if building_name is None and the string starts with FLAT then use that...
+        # if store.get('building_name', None) is None and address.lower().startswith('flat'):
+        #     tmp = address.strip().split()
+        #     store['building_name'] = tmp[0] + ' ' + tmp[1]
+
         city.append(store.get('city', None))
         house_number.append(store.get('house_number', None))
         house.append(store.get('house', None))
@@ -365,7 +403,12 @@ def parseEdgeCaseData(df):
     noPostcode = pd.isnull(df['postcode'])
     df['postcode'].loc[noPostcode] = df.loc[noPostcode].apply(getIllformattedPostcode, axis=1)
 
+    # split the postcode to in and out - poor solution, works only if all postcodes are present
+    df['postcode_in'] = df.apply(_getPostIncode, axis=1)
+    df['postcode_out'] = df.apply(_getPostOutcode, axis=1)
+
     # todo: remove anything that looks like a postcode in the other fields
+    # df['building_name'] = df.apply(testIfIllformattedPostcode, axis=1)
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
@@ -376,11 +419,15 @@ def parseEdgeCaseData(df):
     return df
 
 
-def matchData(AddressBase, toMatch, limit=0.55):
+def matchData(AddressBase, toMatch, limit=0.8):
     """
     Match toMatch data against the AddressBase source information.
-    Uses postcode blocking to speed up the matching. This is dangerous for postcodes that
-    have been misspelled.
+
+    Uses blocking to speed up the matching. This is dangerous for postcodes that
+    have been misspelled. For example, if using the full postcode then will miss some addresses.
+    Currently uses the incode (the beginning) of the postcode. More appropriate would probably
+    be to do an interative approach - first block on full postcode and then for those that no
+    matches were found, only block using the incode.
 
     :param AddressBase: address based dataframe which functions as the source
     :type AddressBase: pandas.DataFrame
@@ -401,8 +448,9 @@ def matchData(AddressBase, toMatch, limit=0.55):
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
-    pairs = pcl.block('postcode')
-    print('\nAfter blocking, need to test', len(pairs), 'pairs')
+    # pairs = pcl.block('postcode')
+    pairs = pcl.block('postcode_in')
+    print('\nAfter blocking using incode (first part of postcode), need to test', len(pairs), 'pairs')
 
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
@@ -412,12 +460,17 @@ def matchData(AddressBase, toMatch, limit=0.55):
     compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl')
     compare.string('sao_text', 'house', method='damerau_levenshtein', name='sao_dl')
     compare.string('building_name', 'building_name', method='damerau_levenshtein', name='building_name_dl')
+    compare.string('SUB_BUILDING_NAME', 'building_name', method='damerau_levenshtein', name='sub_building_name_dl')
+    compare.string('postcode', 'postcode', method='damerau_levenshtein', name='postcode_dl')
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
+    compare.vectors['sub_building_name_dl'] *= 6.
+    compare.vectors['postcode_dl'] *= 6.
+    compare.vectors['building_name_dl'] *= 5.
+    compare.vectors['sao_dl'] *= 5.
     compare.vectors['town_dl'] *= 2.
     compare.vectors['street_dl'] *= 1.5
-    compare.vectors['building_name_dl'] *= 5.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -426,7 +479,7 @@ def matchData(AddressBase, toMatch, limit=0.55):
     # print('\nComparison vectors:')
     # print(compare.vectors)
 
-    # find all matches where the metrics is above the chosen limit
+    # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
     matches = compare.vectors.loc[compare.vectors['similarity_sum'] > limit]
 
     # to pick the most likely match we sort by the sum of the similarity and pick the top
@@ -443,16 +496,13 @@ def matchData(AddressBase, toMatch, limit=0.55):
 
     print('Found ', len(matches.index), 'matches...')
 
-    # merge the original data to the multi-index dataframe
-    # data = matches.merge(toMatch, left_index=True, right_index=True, how='inner')
-    # data = data.merge(AddressBase, left_index=True, right_index=True, how='inner')
     # merge to original information to the matched data
     toMatch = toMatch.reset_index()
     AddressBase = AddressBase.reset_index()
     data = pd.merge(matches, toMatch, how='left', on='EC_Index')
     data = pd.merge(data, AddressBase, how='left', on='AB_Index')
 
-    # drop some not needed columns
+    # drop some unnecessary columns
     data.drop(['EC_Index', 'AB_Index'], axis=1, inplace=True)
 
     # save to a file
@@ -491,8 +541,16 @@ def checkPerformance(df, edgeCases):
     print('False Positive Rate', round(fp/all*100., 1))
 
     # save false positives
-    df.loc[~msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_false_positives.csv', index=False)
+    df.loc[~msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_false_positives.csv',
+                        index=False)
 
+    # find those that were not masked
+    uprns = df['uprn_edge'].values
+    missing_msk = ~edgeCases['uprn_edge'].isin(uprns)
+    missing = edgeCases.loc[missing_msk]
+    missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_missing.csv', index=False)
+
+    # print out results for each class separtely
     for mnemonic in set(df['MNEMONIC'].values):
         msk = (df['UPRN'] == df['uprn_edge']) & (df['MNEMONIC'] == mnemonic)
         correct = df.loc[msk]
@@ -547,30 +605,30 @@ if __name__ == "__main__":
 
     """
     This version:
-    Matched 4002 entries
-    Total Match Fraction 80.0
-    Correctly Matched 3810
-    Correctly Matched Fraction 76.2
-    False Positives 192
-    False Positive Rate 3.8
-    Correctly Matched 472 ORDER_MATTERS
-    Match Fraction 47.2
-    False Positives 122
-    False Positive Rate 12.2
-    Correctly Matched 939 PAF_MISMATCH
-    Match Fraction 93.9
-    False Positives 34
-    False Positive Rate 3.4
+    Matched 4957 entries
+    Total Match Fraction 99.1
+    Correctly Matched 4557
+    Correctly Matched Fraction 91.1
+    False Positives 400
+    False Positive Rate 8.0
     Correctly Matched 1000 DEAD_SIMPLE
     Match Fraction 100.0
     False Positives 0
     False Positive Rate 0.0
-    Correctly Matched 934 CARE_HOMES
-    Match Fraction 93.4
-    False Positives 6
-    False Positive Rate 0.6
-    Correctly Matched 465 PARTS_MISSING
-    Match Fraction 46.5
-    False Positives 30
-    False Positive Rate 3.0
+    Correctly Matched 969 PAF_MISMATCH
+    Match Fraction 96.9
+    False Positives 31
+    False Positive Rate 3.1
+    Correctly Matched 869 PARTS_MISSING
+    Match Fraction 86.9
+    False Positives 121
+    False Positive Rate 12.1
+    Correctly Matched 979 CARE_HOMES
+    Match Fraction 97.9
+    False Positives 20
+    False Positive Rate 2.0
+    Correctly Matched 740 ORDER_MATTERS
+    Match Fraction 74.0
+    False Positives 228
+    False Positive Rate 22.8
     """
