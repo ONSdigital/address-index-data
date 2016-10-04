@@ -122,7 +122,8 @@ def combineMiniABtestingData():
         if 'BLPU' in file:
             BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
         if 'DELIVERY_POINT' in file:
-            DP = tmp[['UPRN', 'BUILDING_NUMBER', 'POSTCODE', 'POST_TOWN', 'DELIVERY_POINT_SUFFIX']]
+            DP = tmp[['UPRN', 'BUILDING_NUMBER', 'BUILDING_NAME', 'SUB_BUILDING_NAME',
+                      'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN']]
         if 'LPI' in file:
             LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
         if 'STREET_DESC' in file:
@@ -133,9 +134,11 @@ def combineMiniABtestingData():
     data = pd.merge(data, BLPU, how='left', on='UPRN')
     data = pd.merge(data, ST, how='left', on=['USRN', 'LANGUAGE'])
 
-    # drop some that are not neede
+    # drop some that are not needed
     data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
     print(len(data.index), 'addresses')
+
+    #if BUILDING_NUMBER missing then PAO?
 
     data.to_csv(path + 'combined.csv', index=0)
 
