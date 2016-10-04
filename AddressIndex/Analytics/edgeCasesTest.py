@@ -23,7 +23,7 @@ Author
 Version
 -------
 
-:version: 0.2
+:version: 0.3
 :date: 4-Oct-2016
 """
 import pandas as pd
@@ -137,6 +137,10 @@ def loadMiniAddressBaseData():
             df[tmp] = df[tmp].str.lower()
         except:
             pass
+
+    # if SAO_TEXT is None and a value exists in SUB_BUILDING_NAME then use this
+    msk = df['SAO_TEXT'].isnull()
+    df.loc[msk]['SAO_TEXT'] = df.loc[msk]['SUB_BUILDING_NAME'].copy()
 
     # change column names
     df.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
@@ -256,7 +260,7 @@ def parseEdgeCaseData(df):
     road = []
     city = []
     building_name = []
-    # todo: flat should be its own block and matched against SAO_TEXT?
+    # flats = []
 
     # loop over addresses - todo: quite in efficient, should avoid a loop
     for address in addresses:
@@ -306,17 +310,17 @@ def parseEdgeCaseData(df):
 
                 if tmp[1] == 'flat' and len(tmp) == 3:
                     store['house_number'] = tmp[0]
-                    store['house'] = tmp[1] + tmp[2]
+                    store['house'] = tmp[1] + ' ' + tmp[2]
                 elif tmp[0] == 'flat' and len(tmp) == 3:
                     store['house_number'] = tmp[2]
-                    store['house'] = tmp[0] + tmp[1]
+                    store['house'] = tmp[0] + ' ' + tmp[1]
 
             # sometimes care home names end up in house_number and house name is empty
             elif len(store['house_number']) > 8 or 'house' in store['house_number']:
                 if 'flat' in store['house_number']:
                     tmp = house['house_number'].strip().split()
                     if 'flat' in tmp[0]:
-                        house['house_number'] = tmp[0] + tmp[1]
+                        house['house'] = tmp[0] + tmp[1]
                         house['house'] = house['house_number'].strip().replace(tmp[0], '').replace(tmp[1], '')
                 else:
                     store['house'] = store['house_number']
@@ -346,6 +350,7 @@ def parseEdgeCaseData(df):
         road.append(store.get('road', None))
         postcodes.append(store.get('postcode', None))
         building_name.append(store.get('building_name', None))
+        # flats.append(store.get('flat', None))
 
     # add the parsed information to the dataframe
     df['postcode'] = postcodes
@@ -354,6 +359,7 @@ def parseEdgeCaseData(df):
     df['road'] = road
     df['city'] = city
     df['building_name'] = building_name
+    # df['flat'] = flats
 
     # for those without postcode, we need to make another pass as it might be in the address but in wrong format
     noPostcode = pd.isnull(df['postcode'])
@@ -370,7 +376,7 @@ def parseEdgeCaseData(df):
     return df
 
 
-def matchData(AddressBase, toMatch, limit=0.9):
+def matchData(AddressBase, toMatch, limit=0.55):
     """
     Match toMatch data against the AddressBase source information.
     Uses postcode blocking to speed up the matching. This is dangerous for postcodes that
@@ -380,7 +386,8 @@ def matchData(AddressBase, toMatch, limit=0.9):
     :type AddressBase: pandas.DataFrame
     :param toMatch: dataframe holding the address information that is to be matched against a source
     :type toMatch: pandas.DataFrame
-    :param limit: the sum of the matching metrics need to be above this limit to count as a potential match
+    :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
+                  Affects for example the false positive rate.
     :type limit: float
 
     :return: dataframe with orignal and matched information
@@ -407,10 +414,10 @@ def matchData(AddressBase, toMatch, limit=0.9):
     compare.string('building_name', 'building_name', method='damerau_levenshtein', name='building_name_dl')
     compare.run()
 
-    # arbitrarily scale up some of the comparisons
-    # compare.vectors['number_dl'] *= 3.
-    # compare.vectors['town_dl'] *= 2.
-    # compare.vectors['street_dl'] *= 1.5
+    # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
+    compare.vectors['town_dl'] *= 2.
+    compare.vectors['street_dl'] *= 1.5
+    compare.vectors['building_name_dl'] *= 5.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -540,30 +547,30 @@ if __name__ == "__main__":
 
     """
     This version:
-    Matched 3857 entries
-    Total Match Fraction 77.1
-    Correctly Matched 3676
-    Correctly Matched Fraction 73.5
-    False Positives 181
-    False Positive Rate 3.6
-    Correctly Matched 900 CARE_HOMES
-    Match Fraction 90.0
-    False Positives 5
-    False Positive Rate 0.5
-    Correctly Matched 842 PAF_MISMATCH
-    Match Fraction 84.2
-    False Positives 30
-    False Positive Rate 3.0
+    Matched 4002 entries
+    Total Match Fraction 80.0
+    Correctly Matched 3810
+    Correctly Matched Fraction 76.2
+    False Positives 192
+    False Positive Rate 3.8
+    Correctly Matched 472 ORDER_MATTERS
+    Match Fraction 47.2
+    False Positives 122
+    False Positive Rate 12.2
+    Correctly Matched 939 PAF_MISMATCH
+    Match Fraction 93.9
+    False Positives 34
+    False Positive Rate 3.4
     Correctly Matched 1000 DEAD_SIMPLE
     Match Fraction 100.0
     False Positives 0
     False Positive Rate 0.0
-    Correctly Matched 476 ORDER_MATTERS
-    Match Fraction 47.6
-    False Positives 116
-    False Positive Rate 11.6
-    Correctly Matched 458 PARTS_MISSING
-    Match Fraction 45.8
+    Correctly Matched 934 CARE_HOMES
+    Match Fraction 93.4
+    False Positives 6
+    False Positive Rate 0.6
+    Correctly Matched 465 PARTS_MISSING
+    Match Fraction 46.5
     False Positives 30
     False Positive Rate 3.0
     """
