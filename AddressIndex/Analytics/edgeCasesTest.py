@@ -10,6 +10,8 @@ Requirements
 ------------
 
 :requires: pandas
+:requires: numpy
+:requires: matplotlib
 :requires: libpostal (https://github.com/openvenues/libpostal)
 :requires: recordlinkage (https://pypi.python.org/pypi/recordlinkage/)
 
@@ -23,12 +25,14 @@ Author
 Version
 -------
 
-:version: 0.5
-:date: 4-Oct-2016
+:version: 0.6
+:date: 5-Oct-2016
 """
 import pandas as pd
+import numpy as np
 import recordlinkage
 from postal.parser import parse_address
+import matplotlib.pyplot as plt
 import datetime
 import re
 from AddressIndex.Analytics import data
@@ -99,22 +103,20 @@ def getIllformattedPostcode(row):
     return constructedPostcode
 
 
-def testIfIllformattedPostcode(row):
+def testIfIllformattedPostcode(string):
     """
 
-    :param row:
+    :param string:
     :return:
     """
     try:
         tmp = \
         re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
-                   row['building_name'])[0]
-        print(tmp)
-        tmp = None
+                   string)[0]
+        # print(tmp)
+        return True
     except:
-        tmp = row['building_name']
-
-    return tmp
+        return False
 
 
 def loadAddressBaseData():
@@ -146,7 +148,6 @@ def _getPostOutcode(row):
     return row['postcode'].split(' ')[1]
 
 
-
 def loadMiniAddressBaseData():
     """
     Load a subset of AddressBase data provided by ONS on the 3rd of October to enable protyping.
@@ -168,9 +169,18 @@ def loadMiniAddressBaseData():
     msk = df['SAO_TEXT'].isnull()
     df.loc[msk, 'SAO_TEXT'] = df.loc[msk, 'SUB_BUILDING_NAME'].copy()
 
+    # try splitting flat or apartment numbers
+
     # if BUILDING NUMBER is None then use PAO_START_NUMBER
     # msk = df['BUILDING_NUMBER'].isnull()
     # df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER'].copy()
+
+    # split flat or apartment number as separate for numerical comparison
+    df['flat_number'] = None
+    msk = df['SAO_TEXT'].str.contains('flat|apartment', na=False)
+    df.loc[msk, 'flat_number'] = df.loc[msk, 'SAO_TEXT']
+    df['flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
+    df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
 
     # change column names
     df.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
@@ -266,6 +276,7 @@ def parseEdgeCaseData(df):
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(',', ' '), axis=1)
     # remove blackslash if present
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
+    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('THE', ' '), axis=1)
 
     # expand common synonyms
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' avenue '), axis=1)
@@ -339,7 +350,7 @@ def parseEdgeCaseData(df):
             store['house_number'] = store['house']
             store['house'] = None
 
-        # sometimes flats end up on the house_number column, but they are tested in house name
+        # sometimes flats end up on the house_number column
         if store.get('house', None) is None and store.get('house_number', None) is not None:
             if 'flat' in store['house_number']:
                 # sometimes both the house number and flat is combined
@@ -347,18 +358,18 @@ def parseEdgeCaseData(df):
 
                 if tmp[1] == 'flat' and len(tmp) == 3:
                     store['house_number'] = tmp[0]
-                    store['house'] = tmp[1] + ' ' + tmp[2]
+                    store['flat'] = tmp[1] + ' ' + tmp[2]
                 elif tmp[0] == 'flat' and len(tmp) == 3:
                     store['house_number'] = tmp[2]
-                    store['house'] = tmp[0] + ' ' + tmp[1]
+                    store['flat'] = tmp[0] + ' ' + tmp[1]
 
             # sometimes care home names end up in house_number and house name is empty
             elif len(store['house_number']) > 8 or 'house' in store['house_number']:
                 if 'flat' in store['house_number']:
                     tmp = house['house_number'].strip().split()
                     if 'flat' in tmp[0]:
-                        house['house'] = tmp[0] + ' ' + tmp[1]
-                        house['house'] = house['house_number'].strip().replace(tmp[0], '').replace(tmp[1], '')
+                        house['flat'] = tmp[0] + ' ' + tmp[1]
+                        house['house'] = house['house_number'].strip().replace(tmp[0], '').replace(tmp[1], '').strip()
                 else:
                     store['house'] = store['house_number']
                     store['house_number'] = None
@@ -381,10 +392,23 @@ def parseEdgeCaseData(df):
             except:
                 store['house_number'] = None
 
-        # if the string starts with FLAT then capture that
-        # if address.lower().startswith('flat'):
-        #     tmp = address.strip().split()
-        #     store['flat'] = tmp[0] + ' ' + tmp[1]
+        if store.get('house', None) is not None and store.get('flat', None) is None:
+            if 'flat' in store.get('house', None):
+                store['flat'] = store['house']
+                store['house'] = None
+
+        # if the string starts with FLAT or APARTMENT then capture that
+        if address.lower().strip().startswith('flat'):
+            tmp = address.lower().strip().split()
+            store['flat'] = tmp[0] + ' ' + tmp[1]
+
+        if address.lower().strip().startswith('apartment'):
+            tmp = address.lower().strip().split()
+            store['flat'] = tmp[0] + ' ' + tmp[1]
+
+        # if flat contains incorrectly formatted postcode, then remove
+        if testIfIllformattedPostcode(store.get('flat', None)):
+            store['flat'] = None
 
         city.append(store.get('city', None))
         house_number.append(store.get('house_number', None))
@@ -392,14 +416,7 @@ def parseEdgeCaseData(df):
         road.append(store.get('road', None))
         postcodes.append(store.get('postcode', None))
         building_name.append(store.get('building_name', None))
-
-        if store.get('house', None) is not None and store.get('flat', None) is None:
-            if 'flat' in store.get('house', None):
-               flats.append(store.get('house', None))
-            else:
-                flats.append(None)
-        else:
-            flats.append(None)
+        flats.append(store.get('flat', None))
 
     # add the parsed information to the dataframe
     df['postcode'] = postcodes
@@ -410,16 +427,39 @@ def parseEdgeCaseData(df):
     df['building_name'] = building_name
     df['flat'] = flats
 
+    # move flat from house or building_name to flat column
+    msk = df['house'].str.contains('flat|apartment', na=False)
+    msk2 = df['flat'].isnull()
+    df.loc[msk & msk2, 'flat'] = df.loc[msk & msk2, 'house']
+    df.loc[msk, 'house'] = None
+    msk = df['building_name'].str.contains('flat|apartment', na=False)
+    msk2 = df['flat'].isnull()
+    df.loc[msk & msk2, 'flat'] = df.loc[msk & msk2, 'building_name']
+    df.loc[msk, 'building_name'] = None
+
     # for those without postcode, we need to make another pass as it might be in the address but in wrong format
     noPostcode = pd.isnull(df['postcode'])
     df['postcode'].loc[noPostcode] = df.loc[noPostcode].apply(getIllformattedPostcode, axis=1)
+
+    # sometimes building name has ilformatted postcode, remove these
+    df['tmp'] = df.apply(lambda x: x['postcode'].strip().replace(' ', ''), axis=1)
+    msk = df['building_name'] == df['tmp']
+    df.loc[msk, 'building_name'] = None
+    df.drop('tmp', axis=1, inplace=True)
 
     # split the postcode to in and out - poor solution, works only if all postcodes are present
     df['postcode_in'] = df.apply(_getPostIncode, axis=1)
     df['postcode_out'] = df.apply(_getPostOutcode, axis=1)
 
-    # todo: remove anything that looks like a postcode in the other fields
-    # df['building_name'] = df.apply(testIfIllformattedPostcode, axis=1)
+    # split flat or apartment number as separate for numerical comparison
+    df['flat_number'] = None
+    msk = df['flat'].str.contains('flat|apartment', na=False)
+    df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
+    df['flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
+    df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
+    # remove those with numbers from flat
+    msk = ~df['flat_number'].isnull()
+    df.loc[msk, 'flat'] = None
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
@@ -468,31 +508,30 @@ def matchData(AddressBase, toMatch, limit=0.7):
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
     compare.string('street_descriptor', 'road', method='damerau_levenshtein', name='street_dl')
-    compare.numeric('building_number', 'house_number', threshold=0.1, name='number_dl')
+    compare.numeric('building_number', 'house_number', threshold=0.1, missing_value=-123, name='number_dl')
     compare.string('town_name', 'city', method='damerau_levenshtein', name='town_dl')
-    compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl')
+    compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl') #good for care homes
     # compare.string('sao_text', 'house', method='damerau_levenshtein', name='sao_dl')
     compare.string('building_name', 'building_name', method='damerau_levenshtein', name='building_name_dl')
-    compare.string('SUB_BUILDING_NAME', 'building_name', method='damerau_levenshtein', name='sub_building_name_dl')
     compare.string('postcode', 'postcode', method='damerau_levenshtein', name='postcode_dl')
     compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
+    compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
+    # compare.string('SUB_BUILDING_NAME', 'flat', method='damerau_levenshtein', name='flat_sub_building_dl')
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    compare.vectors['sub_building_name_dl'] *= 6.
     compare.vectors['postcode_dl'] *= 6.
     compare.vectors['building_name_dl'] *= 5.
-    # compare.vectors['sao_dl'] *= 5.
-    compare.vectors['flat_dl'] *= 5.
+    compare.vectors['pao_dl'] *= 4.
+    compare.vectors['flat_number_dl'] *= 2.
     compare.vectors['town_dl'] *= 2.
     compare.vectors['street_dl'] *= 1.5
-    compare.vectors['number_dl'] *= 1.5
+    compare.vectors['number_dl'] *= 3.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
 
     # The comparison vectors
-    # print('\nComparison vectors:')
     # print(compare.vectors)
 
     # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
@@ -567,7 +606,10 @@ def checkPerformance(df, edgeCases):
     missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_missing.csv', index=False)
 
     # print out results for each class separtely
-    for mnemonic in set(df['MNEMONIC'].values):
+    mne = []
+    matchf = []
+    fpf = []
+    for mnemonic in sorted(set(df['MNEMONIC'].values)):
         msk = (df['UPRN'] == df['uprn_edge']) & (df['MNEMONIC'] == mnemonic)
         correct = df.loc[msk]
         nmatched = len(correct.index)
@@ -578,6 +620,25 @@ def checkPerformance(df, edgeCases):
         print('Match Fraction', round(nmatched / outof *100., 1))
         print('False Positives', fp)
         print('False Positive Rate', round(fp / outof * 100., 1))
+
+        mne.append(mnemonic)
+        matchf.append((nmatched / outof * 100.))
+        fpf.append(fp / outof * 100.)
+
+    # make a simple visualisation
+    x = np.arange(len(mne))
+    plt.figure(figsize=(12, 10))
+
+    width = 0.35
+    p1 = plt.bar(x, matchf, width, color='g')
+    p2 = plt.bar(x + width, fpf, width, color='r')
+    plt.ylabel('Fraction of the Sample')
+    plt.title('Edge Case - Prototype Matching')
+    plt.xticks(x + width, mne, rotation=45)
+    plt.tight_layout()
+    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/EdgeCases.png')
+    plt.close()
+
 
     # confusion matrix
     # recordlinkage.confusion_matrix()
@@ -623,26 +684,26 @@ if __name__ == "__main__":
     This version:
     Matched 4993 entries
     Total Match Fraction 99.9
-    Correctly Matched 4578
+    Correctly Matched 4580
     Correctly Matched Fraction 91.6
-    False Positives 415
+    False Positives 413
     False Positive Rate 8.3
+    Correctly Matched 986 CARE_HOMES
+    Match Fraction 98.6
+    False Positives 14
+    False Positive Rate 1.4
     Correctly Matched 1000 DEAD_SIMPLE
     Match Fraction 100.0
     False Positives 0
     False Positive Rate 0.0
-    Correctly Matched 749 ORDER_MATTERS
-    Match Fraction 74.9
-    False Positives 244
-    False Positive Rate 24.4
-    Correctly Matched 983 CARE_HOMES
-    Match Fraction 98.3
-    False Positives 17
-    False Positive Rate 1.7
-    Correctly Matched 974 PAF_MISMATCH
-    Match Fraction 97.4
-    False Positives 26
-    False Positive Rate 2.6
+    Correctly Matched 751 ORDER_MATTERS
+    Match Fraction 75.1
+    False Positives 242
+    False Positive Rate 24.2
+    Correctly Matched 971 PAF_MISMATCH
+    Match Fraction 97.1
+    False Positives 29
+    False Positive Rate 2.9
     Correctly Matched 872 PARTS_MISSING
     Match Fraction 87.2
     False Positives 128
