@@ -25,7 +25,7 @@ Author
 Version
 -------
 
-:version: 0.6
+:version: 0.7
 :date: 5-Oct-2016
 """
 import pandas as pd
@@ -144,8 +144,19 @@ def loadAddressBaseData():
 def _getPostIncode(row):
     return row['postcode'].split(' ')[0]
 
+
 def _getPostOutcode(row):
     return row['postcode'].split(' ')[1]
+
+
+def _splitRoadHouse(row, part):
+    try:
+        tmp = row['road'].split('house')[part]
+        if part == 0:
+            tmp += 'house'
+    except:
+        tmp = row['road']
+    return tmp.strip()
 
 
 def loadMiniAddressBaseData():
@@ -455,11 +466,17 @@ def parseEdgeCaseData(df):
     df['flat_number'] = None
     msk = df['flat'].str.contains('flat|apartment', na=False)
     df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
-    df['flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
+    df.loc[msk, 'flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
     df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
-    # remove those with numbers from flat
+    # remove those with numbers from flat column - no need to double check
     msk = ~df['flat_number'].isnull()
     df.loc[msk, 'flat'] = None
+    df.loc[df['flat'].isnull(), 'flat'] = ' '
+
+    # sometimes road and house has been mushed together - try to split
+    msk = df['road'].str.contains(' house ', na=False)
+    df.loc[msk, 'house'] = df.loc[msk].apply(_splitRoadHouse, args=(0,), axis=1)
+    df.loc[msk, 'road'] = df.loc[msk].apply(_splitRoadHouse, args=(1,), axis=1)
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
@@ -508,24 +525,24 @@ def matchData(AddressBase, toMatch, limit=0.7):
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
     compare.string('street_descriptor', 'road', method='damerau_levenshtein', name='street_dl')
-    compare.numeric('building_number', 'house_number', threshold=0.1, missing_value=-123, name='number_dl')
+    compare.numeric('building_number', 'house_number', threshold=0.01, missing_value=-123, name='number_dl')
     compare.string('town_name', 'city', method='damerau_levenshtein', name='town_dl')
     compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl') #good for care homes
-    # compare.string('sao_text', 'house', method='damerau_levenshtein', name='sao_dl')
     compare.string('building_name', 'building_name', method='damerau_levenshtein', name='building_name_dl')
     compare.string('postcode', 'postcode', method='damerau_levenshtein', name='postcode_dl')
+    compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
     compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
-    compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
-    # compare.string('SUB_BUILDING_NAME', 'flat', method='damerau_levenshtein', name='flat_sub_building_dl')
+    compare.numeric('flat_number', 'flat_number', threshold=0.01, missing_value=-123, name='flat_number_dl')
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['postcode_dl'] *= 6.
+    compare.vectors['postcode_in_dl'] *= 2.
     compare.vectors['building_name_dl'] *= 5.
     compare.vectors['pao_dl'] *= 4.
     compare.vectors['flat_number_dl'] *= 2.
     compare.vectors['town_dl'] *= 2.
-    compare.vectors['street_dl'] *= 1.5
+    compare.vectors['street_dl'] *= 5.
     compare.vectors['number_dl'] *= 3.
 
     # add sum of the components to the comparison vectors dataframe
@@ -682,30 +699,30 @@ if __name__ == "__main__":
 
     """
     This version:
-    Matched 4993 entries
-    Total Match Fraction 99.9
-    Correctly Matched 4580
-    Correctly Matched Fraction 91.6
-    False Positives 413
-    False Positive Rate 8.3
-    Correctly Matched 986 CARE_HOMES
-    Match Fraction 98.6
-    False Positives 14
-    False Positive Rate 1.4
-    Correctly Matched 1000 DEAD_SIMPLE
-    Match Fraction 100.0
-    False Positives 0
-    False Positive Rate 0.0
-    Correctly Matched 751 ORDER_MATTERS
-    Match Fraction 75.1
-    False Positives 242
-    False Positive Rate 24.2
-    Correctly Matched 971 PAF_MISMATCH
-    Match Fraction 97.1
-    False Positives 29
-    False Positive Rate 2.9
-    Correctly Matched 872 PARTS_MISSING
-    Match Fraction 87.2
-    False Positives 128
-    False Positive Rate 12.8
+        Matched 4993 entries
+        Total Match Fraction 99.9
+        Correctly Matched 4597
+        Correctly Matched Fraction 91.9
+        False Positives 396
+        False Positive Rate 7.9
+        Correctly Matched 985 CARE_HOMES
+        Match Fraction 98.5
+        False Positives 15
+        False Positive Rate 1.5
+        Correctly Matched 1000 DEAD_SIMPLE
+        Match Fraction 100.0
+        False Positives 0
+        False Positive Rate 0.0
+        Correctly Matched 762 ORDER_MATTERS
+        Match Fraction 76.2
+        False Positives 231
+        False Positive Rate 23.1
+        Correctly Matched 968 PAF_MISMATCH
+        Match Fraction 96.8
+        False Positives 32
+        False Positive Rate 3.2
+        Correctly Matched 882 PARTS_MISSING
+        Match Fraction 88.2
+        False Positives 118
+        False Positive Rate 11.8
     """
