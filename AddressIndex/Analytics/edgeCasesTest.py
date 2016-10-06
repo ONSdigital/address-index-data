@@ -33,7 +33,7 @@ import numpy as np
 import recordlinkage
 from postal.parser import parse_address
 import matplotlib.pyplot as plt
-import datetime
+import time
 import re
 from AddressIndex.Analytics import data
 
@@ -68,7 +68,7 @@ def getPostcode(string):
     Extract a postcode from address information.
 
     Uses regular expression to extract the postcode:
-    http://regexlib.com/REDetails.aspx?regexp_id=260&AspxAutoDetectCookieSupport=1
+    http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
 
     :param string: string to be parsed
     :type string: str
@@ -76,13 +76,39 @@ def getPostcode(string):
     :return: postcode
     :rtype: str
     """
+    regx = r'(([gG][iI][rR] {0,}0[aA]{2})|((([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y]?[0-9][0-9]?)|(([a-pr-uwyzA-PR-UWYZ][0-9][a-hjkstuwA-HJKSTUW])|([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y][0-9][abehmnprv-yABEHMNPRV-Y]))) {0,}[0-9][abd-hjlnp-uw-zABD-HJLNP-UW-Z]{2}))'
     try:
-        tmp = re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA', string)[0]
-        tmp = tmp.lower()
+        tmp = re.findall(regx, string)[0][0]
+        tmp = tmp.lower().strip()
     except:
         tmp = None
 
+    # above regex gives also those without space between, add if needed
+    if tmp is not None:
+        if ' ' not in tmp:
+            inc = tmp[-3:]
+            out = tmp.replace(inc, '')
+            tmp = out + ' ' + inc
+
     return tmp
+
+
+def getIllformattedPostcodeString(string):
+    """
+    Extract a postcode from address information without a space between in the in and outcode.
+
+    :param string: text string
+    :type string: str
+
+    :return: reconstructured postcode
+    :rtype: str
+    """
+    tmp = re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA', string)[0]
+    inc = tmp[-3:]
+    out = tmp.replace(inc, '')
+    constructedPostcode = (out + ' ' + inc).lower()
+
+    return constructedPostcode
 
 
 def getIllformattedPostcode(row):
@@ -113,7 +139,6 @@ def testIfIllformattedPostcode(string):
         tmp = \
         re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
                    string)[0]
-        # print(tmp)
         return True
     except:
         return False
@@ -196,14 +221,11 @@ def loadMiniAddressBaseData():
     # change column names
     df.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
                        'TOWN_NAME': 'town_name', 'BUILDING_NUMBER': 'building_number', 'PAO_TEXT': 'pao_text',
-                       'SAO_TEXT': 'sao_text', 'BUILDING_NAME': 'building_name'}, inplace=True)
+                       'SAO_TEXT': 'sao_text', 'BUILDING_NAME': 'building_name', 'LOCALITY': 'locality'}, inplace=True)
 
-    # print(df.info())
-    # print(df.head(3))
     # split the postcode to in and out
     df['postcode_in'] = df.apply(_getPostIncode, axis=1)
     df['postcode_out'] = df.apply(_getPostOutcode, axis=1)
-
 
     return df
 
@@ -274,6 +296,7 @@ def parseEdgeCaseData(df):
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CORNWALL', ''), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('ISLE OF WIGHT', ''), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CLEVELAND', ''), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NORFOLK', ''), axis=1)
 
     # remove postal counties
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NORTH HUMBERSIDE', ''), axis=1)
@@ -320,13 +343,12 @@ def parseEdgeCaseData(df):
     city = []
     building_name = []
     flats = []
+    locality = []
 
     # loop over addresses - todo: quite in efficient, should avoid a loop
     for address in addresses:
         parsed = parse_address(address) # probabilistic
-        pcode = getPostcode(address) # regular expression
-
-        #print(parsed)
+        pcode = getPostcode(address) # regular expression extraction
 
         store = {}
 
@@ -344,6 +366,9 @@ def parseEdgeCaseData(df):
             if tmp[1] == 'road':
                 store['road'] = tmp[0]
 
+            if tmp[1] == 'suburb':
+                store['locality'] = tmp[0]
+
             if tmp[1] == 'postcode':
                 if tmp[0] == pcode:
                     store['postcode'] = pcode
@@ -355,6 +380,9 @@ def parseEdgeCaseData(df):
                             store['postcode'] = constructedPostcode
                     else:
                         store['postcode'] = pcode
+
+        if store.get('postcode', None) is None and pcode is not None:
+            store['postcode'] = pcode
 
         # sometimes house number ends up in the house field - switch these
         if store.get('house_number', None) is None and store.get('house', None) is not None:
@@ -428,12 +456,14 @@ def parseEdgeCaseData(df):
         postcodes.append(store.get('postcode', None))
         building_name.append(store.get('building_name', None))
         flats.append(store.get('flat', None))
+        locality.append(store.get('locality', None))
 
     # add the parsed information to the dataframe
     df['postcode'] = postcodes
     df['house_number'] = house_number
     df['house'] = house
     df['road'] = road
+    df['locality'] = locality
     df['city'] = city
     df['building_name'] = building_name
     df['flat'] = flats
@@ -447,10 +477,6 @@ def parseEdgeCaseData(df):
     msk2 = df['flat'].isnull()
     df.loc[msk & msk2, 'flat'] = df.loc[msk & msk2, 'building_name']
     df.loc[msk, 'building_name'] = None
-
-    # for those without postcode, we need to make another pass as it might be in the address but in wrong format
-    noPostcode = pd.isnull(df['postcode'])
-    df['postcode'].loc[noPostcode] = df.loc[noPostcode].apply(getIllformattedPostcode, axis=1)
 
     # sometimes building name has ilformatted postcode, remove these
     df['tmp'] = df.apply(lambda x: x['postcode'].strip().replace(' ', ''), axis=1)
@@ -477,6 +503,16 @@ def parseEdgeCaseData(df):
     msk = df['road'].str.contains(' house ', na=False)
     df.loc[msk, 'house'] = df.loc[msk].apply(_splitRoadHouse, args=(0,), axis=1)
     df.loc[msk, 'road'] = df.loc[msk].apply(_splitRoadHouse, args=(1,), axis=1)
+
+    # some funky postcodes, parser cannot get these because e.g. LZ1 is not valid...
+    msk = df['postcode_in'] == 'z1'
+    df.loc[msk, 'postcode_in'] = None
+    df.loc[msk, 'postcode'] = None
+    msk = df['postcode_out'] == '1zz'
+    df.loc[msk, 'postcode_out'] = None
+    # msk = df['postcode_in'] == 'z11'
+    # df.loc[msk, 'postcode_in'] = None
+    # df.loc[msk, 'postcode'] = None
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
@@ -519,7 +555,7 @@ def matchData(AddressBase, toMatch, limit=0.7):
     # pairs = pcl.block('postcode')
     # pairs = pcl.block('postcode_in')
     # print('\nAfter blocking using incode (first part of postcode), need to test', len(pairs), 'pairs')
-    pairs = pcl.sortedneighbourhood('postcode_in', window=3, block_on='postcode_in')
+    pairs = pcl.sortedneighbourhood('postcode_in', window=17, block_on='postcode_in')
     print('\nUsing sorted neighbourhood (windowing) and blocking, need to test', len(pairs), 'pairs')
 
     # compare the two data sets - use different metrics for the comparison
@@ -532,6 +568,7 @@ def matchData(AddressBase, toMatch, limit=0.7):
     compare.string('postcode', 'postcode', method='damerau_levenshtein', name='postcode_dl')
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
     compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
+    compare.string('locality', 'locality', method='damerau_levenshtein', name='locality_dl')
     compare.numeric('flat_number', 'flat_number', threshold=0.01, missing_value=-123, name='flat_number_dl')
     compare.run()
 
@@ -679,16 +716,16 @@ def runAll():
     edgeCases = loadEdgeCaseTestingData()
 
     print('Parsing Edge Case data...')
-    start = datetime.datetime.now()
+    start = time.clock()
     parsedEdgeCases = parseEdgeCaseData(edgeCases)
-    stop = datetime.datetime.now()
-    print('\nFinished in', round((stop - start).microseconds / 1.e3, 2), 'milliseconds...')
+    stop = time.clock()
+    print('\nParsing finished in', round((stop - start), 1), 'seconds...')
 
     print('Matching Edge Cases to Address Base data...')
-    start = datetime.datetime.now()
+    start = time.clock()
     matched = matchData(ab, parsedEdgeCases)
-    stop = datetime.datetime.now()
-    print('\nFinished in', round((stop - start).microseconds / 1.e3, 2), 'milliseconds...')
+    stop = time.clock()
+    print('\nMatching finished in', round((stop - start), 1), 'seconds...')
 
     print('Checking Performance...')
     checkPerformance(matched, edgeCases)
@@ -701,28 +738,28 @@ if __name__ == "__main__":
     This version:
         Matched 4993 entries
         Total Match Fraction 99.9
-        Correctly Matched 4597
-        Correctly Matched Fraction 91.9
-        False Positives 396
-        False Positive Rate 7.9
-        Correctly Matched 985 CARE_HOMES
-        Match Fraction 98.5
-        False Positives 15
-        False Positive Rate 1.5
+        Correctly Matched 4674
+        Correctly Matched Fraction 93.5
+        False Positives 319
+        False Positive Rate 6.4
+        Correctly Matched 986 CARE_HOMES
+        Match Fraction 98.6
+        False Positives 14
+        False Positive Rate 1.4
         Correctly Matched 1000 DEAD_SIMPLE
         Match Fraction 100.0
         False Positives 0
         False Positive Rate 0.0
-        Correctly Matched 762 ORDER_MATTERS
-        Match Fraction 76.2
-        False Positives 231
-        False Positive Rate 23.1
-        Correctly Matched 968 PAF_MISMATCH
-        Match Fraction 96.8
-        False Positives 32
-        False Positive Rate 3.2
-        Correctly Matched 882 PARTS_MISSING
-        Match Fraction 88.2
-        False Positives 118
-        False Positive Rate 11.8
+        Correctly Matched 822 ORDER_MATTERS
+        Match Fraction 82.2
+        False Positives 173
+        False Positive Rate 17.3
+        Correctly Matched 964 PAF_MISMATCH
+        Match Fraction 96.4
+        False Positives 36
+        False Positive Rate 3.6
+        Correctly Matched 902 PARTS_MISSING
+        Match Fraction 90.2
+        False Positives 96
+        False Positive Rate 9.6
     """

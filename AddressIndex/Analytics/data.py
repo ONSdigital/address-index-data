@@ -1,8 +1,8 @@
 """
-ONS Address Index - Data Access Test
-====================================
+ONS Address Index - Data
+========================
 
-A simple ...
+A simple script contaning methods to query or modify the ONS AddressBase data.
 
 
 Requirements
@@ -21,8 +21,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 3-Oct-2016
+:version: 0.3
+:date: 5-Oct-2016
 """
 import pandas as pd
 from sqlalchemy import create_engine
@@ -127,7 +127,7 @@ def combineMiniABtestingData():
         if 'LPI' in file:
             LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
         if 'STREET_DESC' in file:
-            ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE']]
+            ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']]
 
     # join the various dataframes
     data = pd.merge(LPI, DP, how='left', on='UPRN')
@@ -141,8 +141,7 @@ def combineMiniABtestingData():
     # drop if all null
     data.dropna(inplace=True, how='all')
 
-    #if BUILDING_NUMBER missing then PAO?
-
+    # save to a file
     data.to_csv(path + 'combined.csv', index=0)
 
 
