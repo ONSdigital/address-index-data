@@ -25,8 +25,8 @@ Author
 Version
 -------
 
-:version: 0.7
-:date: 5-Oct-2016
+:version: 0.8
+:date: 6-Oct-2016
 """
 import pandas as pd
 import numpy as np
@@ -39,6 +39,7 @@ from AddressIndex.Analytics import data
 
 
 def loadEdgeCaseTestingData(filename='/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K.csv',
+# def loadEdgeCaseTestingData(filename='/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsing_test.csv',
                             verbose=False):
     """
     Read in the edge case testing data.
@@ -59,6 +60,20 @@ def loadEdgeCaseTestingData(filename='/Users/saminiemi/Projects/ONS/AddressIndex
 
     nec = len(df.index)
     print('Found', nec, 'Edge Cases...')
+
+    return df
+
+
+def loadPostcodeInformation(file='/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv'):
+    """
+
+    :param file:
+    :return:
+    """
+    df = pd.read_csv(file)
+    df['town'] = df.apply(lambda x: x['town'].replace('. ', ' '), axis=1)
+    df['town'] = df.apply(lambda x: x['town'].lower(), axis=1)
+    df['postcode'] = df.apply(lambda x: x['postcode'].lower(), axis=1)
 
     return df
 
@@ -205,11 +220,10 @@ def loadMiniAddressBaseData():
     msk = df['SAO_TEXT'].isnull()
     df.loc[msk, 'SAO_TEXT'] = df.loc[msk, 'SUB_BUILDING_NAME'].copy()
 
-    # try splitting flat or apartment numbers
-
-    # if BUILDING NUMBER is None then use PAO_START_NUMBER
-    # msk = df['BUILDING_NUMBER'].isnull()
-    # df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER'].copy()
+    # if SAO_TEXT or ORGANISATION is none, force it to NO
+    msk = df['SAO_TEXT'].isnull()
+    df.loc[msk, 'SAO_TEXT'] = 'NO'
+    df.loc[df['ORGANISATION'].isnull(), 'ORGANISATION'] = 'NO'
 
     # split flat or apartment number as separate for numerical comparison
     df['flat_number'] = None
@@ -230,7 +244,7 @@ def loadMiniAddressBaseData():
     return df
 
 
-def parseEdgeCaseData(df):
+def parseEdgeCaseData(df, postcodeinfo):
     """
     Parses the address information from the edge case data. Examples:
 
@@ -242,6 +256,9 @@ def parseEdgeCaseData(df):
 
     No city (london borough of hillingdon):
     [('life opportunities trust', 'house'), ('13', 'house_number'), ('devon way', 'road'), ('hillingdon', 'suburb'), ('ub10 0js', 'postcode')]
+
+    Difficult
+    [('15', 'house_number'), ('dillstone court', 'road'), ('liverpool john', 'city'), ('moores university cathedral', 'house'), ('gate', 'road'), ('liverpool', 'city'), ('l1 7bt', 'postcode')]
 
     :param df: pandas dataframe containing ADDRESS column that is being parsed
     :type df: pandas.DataFrame
@@ -310,7 +327,7 @@ def parseEdgeCaseData(df):
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(',', ' '), axis=1)
     # remove blackslash if present
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('THE', ' '), axis=1)
+    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('&', 'AND'), axis=1)
 
     # expand common synonyms
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' avenue '), axis=1)
@@ -330,6 +347,11 @@ def parseEdgeCaseData(df):
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' number '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' number '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' house '), axis=1)
+
+    # modify some names
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '), axis=1)
 
     # get addresses and store separately as an vector
     addresses = df['ADDRESS2'].values
@@ -355,7 +377,12 @@ def parseEdgeCaseData(df):
         for tmp in parsed:
 
             if tmp[1] == 'city':
-                store['city'] = tmp[0]
+                if store.get('city', None) is not None:
+                    # city already identified
+                    # print(tmp[0], store['city'])
+                    store['city'] = tmp[0]
+                else:
+                    store['city'] = tmp[0]
 
             if tmp[1] == 'house_number':
                 store['house_number'] = tmp[0]
@@ -381,8 +408,82 @@ def parseEdgeCaseData(df):
                     else:
                         store['postcode'] = pcode
 
+        # if the probabilistic parser did not find postcode but regular expression did, then use that
         if store.get('postcode', None) is None and pcode is not None:
             store['postcode'] = pcode
+
+        # # test if the incode actually matches the city
+        # if store.get('postcode', None) is not None:
+        #     tmp = store['postcode'].split(' ')
+        #     msk = postcodeinfo['postcode'] == tmp[0]
+        #
+        #     if len(postcodeinfo.loc[msk].index) == 0:
+        #         print('incorrect postcode found', store['postcode']) #if city exists then pick the first one
+        #
+        #         if store.get('city', None) is not None:
+        #             msk3 = postcodeinfo['town'].str.contains(store['city'])
+        #             if msk3.sum() == 0:
+        #                 print('Cannot find anything with the city', store['city'], store['postcode'], address)
+        #             else:
+        #                 pass
+        #                 #store['postcode'] = postcodeinfo.loc[msk3, 'postcode'].values[0] + ' ' + store['postcode'][-3:]
+        #                 #print('Using city to infer postcode', address, store['postcode'])
+        #     else:
+        #         # found the postcode, need to test if it matches the city
+        #         potentialTowns = postcodeinfo.loc[msk]
+        #
+        #         if store.get('city', None) is not None:
+        #             #test if the city is a potential match for the postcode
+        #             msk2 = potentialTowns['town'].str.contains(store['city'])
+        #
+        #             if len(potentialTowns.loc[msk2].index) == 0:
+        #                 print('City and Postcode do not match, trying to resolve...', address)
+        #                 # city might contain more than the actual city
+        #                 parts = store['city'].split(' ')
+        #                 if len(parts) > 1:
+        #                     print('City contained multiple parts', store['city'])
+        #                     for part in parts:
+        #                         msk2 = potentialTowns['town'].str.contains(part)
+        #                         if len(potentialTowns.loc[msk2].index) > 0:
+        #                             #match change city to part, discard the other part
+        #                             print('changing city from', store['city'], 'to', part, address)
+        #                             store['city'] = part
+        #                             # todo: add the rest to store['locality']
+        #                             break
+        #                 else:
+        #                     # option one, typo in the postcode, search for other postcodes
+        #                     msk = postcodeinfo['postcode'].str.contains(tmp[0][:2])
+        #                     possiblities = postcodeinfo.loc[msk]
+        #
+        #                     # if city in the list of possible towns then change the postcode, otherwise change city
+        #                     msk2 = possiblities['town'] == store['city'].strip().lower()
+        #
+        #                     if len(possiblities.loc[msk2, 'postcode']) == 0:
+        #                         print('Incorrect city, using postcode to infer city...')
+        #                         old = store['city']
+        #                         store['city'] = possiblities['town'].values[0]
+        #
+        #                         if store.get('road', None) is not None:
+        #                             print('swapping city and road')
+        #                             store['road'] = old
+        #                         print(store)
+        #                     else:
+        #                         incode = possiblities.loc[msk2, 'postcode'].values[0]
+        #                         store['postcode'] = incode + ' ' + tmp[1]
+        #                         print('Likely typo in the postcode', store['postcode'], address)
+        #
+        #         else:
+        #             print(parsed)
+        #             print('Adding city', potentialTowns['town'].values[0], 'to', address)
+        #             store['city'] = potentialTowns['town'].values[0]
+        #
+        #             # sometimes the city is stored in a wrong field
+        #             for key, value in store.items():
+        #                 if 'city' in key:
+        #                     pass
+        #                 else:
+        #                     if store['city'] in value:
+        #                         store[key] = value.replace(store['city'], '')
 
         # sometimes house number ends up in the house field - switch these
         if store.get('house_number', None) is None and store.get('house', None) is not None:
@@ -394,7 +495,6 @@ def parseEdgeCaseData(df):
             if 'flat' in store['house_number']:
                 # sometimes both the house number and flat is combined
                 tmp = store.get('house_number', None).lower().strip().split()
-
                 if tmp[1] == 'flat' and len(tmp) == 3:
                     store['house_number'] = tmp[0]
                     store['flat'] = tmp[1] + ' ' + tmp[2]
@@ -494,10 +594,12 @@ def parseEdgeCaseData(df):
     df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
     df.loc[msk, 'flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
     df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
+
     # remove those with numbers from flat column - no need to double check
     msk = ~df['flat_number'].isnull()
     df.loc[msk, 'flat'] = None
-    df.loc[df['flat'].isnull(), 'flat'] = ' '
+    df.loc[df['flat'].isnull(), 'flat'] = 'NO'
+    df.loc[df['house'].isnull(), 'house'] = 'NO'
 
     # sometimes road and house has been mushed together - try to split
     msk = df['road'].str.contains(' house ', na=False)
@@ -510,9 +612,9 @@ def parseEdgeCaseData(df):
     df.loc[msk, 'postcode'] = None
     msk = df['postcode_out'] == '1zz'
     df.loc[msk, 'postcode_out'] = None
-    # msk = df['postcode_in'] == 'z11'
-    # df.loc[msk, 'postcode_in'] = None
-    # df.loc[msk, 'postcode'] = None
+    msk = df['postcode_in'] == 'z11'
+    df.loc[msk, 'postcode_in'] = None
+    df.loc[msk, 'postcode'] = None
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_parsed.csv', index=False)
@@ -523,7 +625,7 @@ def parseEdgeCaseData(df):
     return df
 
 
-def matchData(AddressBase, toMatch, limit=0.7):
+def matchData(AddressBase, toMatch, limit=0.1):
     """
     Match toMatch data against the AddressBase source information.
 
@@ -553,10 +655,10 @@ def matchData(AddressBase, toMatch, limit=0.7):
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
     # pairs = pcl.block('postcode')
-    # pairs = pcl.block('postcode_in')
-    # print('\nAfter blocking using incode (first part of postcode), need to test', len(pairs), 'pairs')
-    pairs = pcl.sortedneighbourhood('postcode_in', window=17, block_on='postcode_in')
-    print('\nUsing sorted neighbourhood (windowing) and blocking, need to test', len(pairs), 'pairs')
+    pairs = pcl.block('postcode_in')
+    print('\nAfter blocking using incode (first part of postcode), need to test', len(pairs), 'pairs')
+    # pairs = pcl.sortedneighbourhood('postcode_in', window=3, block_on='postcode_in')
+    # print('\nUsing sorted neighbourhood (windowing) and blocking, need to test', len(pairs), 'pairs')
 
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
@@ -566,30 +668,42 @@ def matchData(AddressBase, toMatch, limit=0.7):
     compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl') #good for care homes
     compare.string('building_name', 'building_name', method='damerau_levenshtein', name='building_name_dl')
     compare.string('postcode', 'postcode', method='damerau_levenshtein', name='postcode_dl')
-    compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
+    # compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
+    compare.exact('postcode_in', 'postcode_in', name='postcode_in_dl')
+    # compare.string('postcode_out', 'postcode_out', method='damerau_levenshtein', name='postcode_out_dl')
+    compare.exact('postcode_out', 'postcode_out', name='postcode_out_dl')
     compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
     compare.string('locality', 'locality', method='damerau_levenshtein', name='locality_dl')
+    compare.string('ORGANISATION', 'house', method='damerau_levenshtein', name='organisation_dl')
     compare.numeric('flat_number', 'flat_number', threshold=0.01, missing_value=-123, name='flat_number_dl')
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['postcode_dl'] *= 6.
     compare.vectors['postcode_in_dl'] *= 2.
+    compare.vectors['postcode_out_dl'] *= 10.
     compare.vectors['building_name_dl'] *= 5.
     compare.vectors['pao_dl'] *= 4.
     compare.vectors['flat_number_dl'] *= 2.
     compare.vectors['town_dl'] *= 2.
     compare.vectors['street_dl'] *= 5.
-    compare.vectors['number_dl'] *= 3.
+    compare.vectors['number_dl'] *= 1.
+    compare.vectors['organisation_dl'] *= 4.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
+    # todo: normalise the comparison vectors and the sum to be between zero and unity
+    # compare.vectors = compare.vectors.div(compare.vectors.max(axis=1), axis=0)
 
     # The comparison vectors
     # print(compare.vectors)
 
     # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
     matches = compare.vectors.loc[compare.vectors['similarity_sum'] > limit]
+
+    # # remove those matches that are likely to be false positives
+    # remove = matches['number_dl'] < 1.
+    # matches = matches.loc[~remove]
 
     # to pick the most likely match we sort by the sum of the similarity and pick the top
     # sort matches by the sum of the vectors and then keep the first
@@ -708,6 +822,9 @@ def runAll():
 
     :return: None
     """
+    print('\nReading in Postcode Data...')
+    postcodeinfo = loadPostcodeInformation()
+
     print('\nReading in Address Base Data...')
     # ab = loadAddressBaseData()
     ab = loadMiniAddressBaseData()
@@ -717,7 +834,7 @@ def runAll():
 
     print('Parsing Edge Case data...')
     start = time.clock()
-    parsedEdgeCases = parseEdgeCaseData(edgeCases)
+    parsedEdgeCases = parseEdgeCaseData(edgeCases, postcodeinfo)
     stop = time.clock()
     print('\nParsing finished in', round((stop - start), 1), 'seconds...')
 

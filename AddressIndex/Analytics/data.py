@@ -8,6 +8,7 @@ A simple script contaning methods to query or modify the ONS AddressBase data.
 Requirements
 ------------
 
+:requires: numpy
 :requires: pandas
 :requires: sqlalchemy
 
@@ -21,10 +22,11 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 5-Oct-2016
+:version: 0.4
+:date: 7-Oct-2016
 """
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 import re
 import glob
@@ -121,31 +123,63 @@ def combineMiniABtestingData():
 
         if 'BLPU' in file:
             BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
+
         if 'DELIVERY_POINT' in file:
             DP = tmp[['UPRN', 'BUILDING_NUMBER', 'BUILDING_NAME', 'SUB_BUILDING_NAME',
                       'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN']]
+
         if 'LPI' in file:
             LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
+
         if 'STREET_DESC' in file:
             ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']]
 
+        if 'ORGANISATION' in file:
+            ORG = tmp[['UPRN', 'ORGANISATION']]
+
+
     # join the various dataframes
-    data = pd.merge(LPI, DP, how='left', on='UPRN')
-    data = pd.merge(data, BLPU, how='left', on='UPRN')
+    data = pd.merge(BLPU, DP, how='left', on='UPRN')
+    data = pd.merge(data, LPI, how='left', on='UPRN')
+    data = pd.merge(data, ORG, how='left', on=['UPRN'])
     data = pd.merge(data, ST, how='left', on=['USRN', 'LANGUAGE'])
+
+    # drop if all null
+    data.dropna(inplace=True, how='all')
+
+    # drop if no UPRN
+    data = data[np.isfinite(data['UPRN'])]
+
+    # change uprn to int
+    data['UPRN'] = data['UPRN'].astype(int)
+
+    print(data.info())
 
     # drop some that are not needed
     data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
     print(len(data.index), 'addresses')
 
-    # drop if all null
-    data.dropna(inplace=True, how='all')
-
     # save to a file
     data.to_csv(path + 'combined.csv', index=0)
+
+
+def processPostcodeFile():
+    path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/old/'
+    df = pd.read_csv(path + 'postcodefile.csv')
+
+    b = pd.DataFrame(df.PostcodeDistricts.str.split(',').tolist(), index=df.PostTown).stack()
+    b = b.reset_index()[[0, 'PostTown']]  # var1 variable is currently labeled 0
+    b.columns = ['PostTown', 'PostcodeDistricts']  # renaming var1
+
+    #lower case and stripping
+    b['PostTown'] = b['PostTown'].apply(lambda x: x.strip().lower().replace('shared', ''))
+    b['PostcodeDistricts'] = b['PostcodeDistricts'].apply(lambda x: x.strip().lower())
+
+    b.to_csv(path + 'postcodefileProcessed.csv', index=False)
 
 
 if __name__ == "__main__":
     # _simpleTest()
     # testParsing()
+    # processPostcodeFile()
     combineMiniABtestingData()
