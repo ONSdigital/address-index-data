@@ -22,8 +22,8 @@ Author
 Version
 -------
 
-:version: 0.5
-:date: 10-Oct-2016
+:version: 0.6
+:date: 11-Oct-2016
 """
 import pandas as pd
 import numpy as np
@@ -34,15 +34,15 @@ import glob
 
 def queryDB(sql, connection='postgresql://postgres@localhost/ONSAI'):
     """
-    Query PostGres ONS AI database.
+    Query PostGre ONS AI database. The default connection is to a local copy.
 
     :param sql: query to be executed
     :type sql: str
-    :param connection: defition of the connection over which to qeury
+    :param connection: definition of the connection over which to query
     :type connection: str
 
     :return: results of the query in a pandas dataframe
-    :rtype: pandas dataframe
+    :rtype: pandas.DataFrame
 
     """
     disk_engine = create_engine(connection)
@@ -85,9 +85,10 @@ def _removePostcode(row, column='address', postcode='postcode'):
     :param row:
     :param column:
     :param postcode:
+
     :return:
     """
-    return row[column].rstrip(row[postcode])
+    return row[column].replace(row[postcode], '')
 
 
 def testParsing():
@@ -187,12 +188,12 @@ def combineAddressBaseData(filename='AB.h5'):
 
         if 'DELIVERY_POINT' in file:
             DP = pd.read_csv(file, usecols=['UPRN', 'BUILDING_NUMBER', 'BUILDING_NAME', 'SUB_BUILDING_NAME',
-                                            'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN'])
+                                            'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN', 'DEPARTMENT_NAME'])
             print(DP.info())
 
         if 'LPI' in file:
-            LPI = pd.read_csv(file, usecols=['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT',
-                                             'SAO_START_NUMBER', 'LANGUAGE'])
+            LPI = pd.read_csv(file, usecols=['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX',
+                                             'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE'])
             print(LPI.info())
 
         if 'STREET_DESC' in file:
@@ -286,9 +287,33 @@ def processPostcodeFile():
     b.to_csv(path + 'postcodefileProcessed.csv', index=False)
 
 
+def modifyEdgeCasesData():
+    """
+    Remove postcodes from the ORDER_MATTER Edge case examples.
+
+    The way Neil created these entries there are two ways of matching.
+    The original idea was that the town is correct but the postcode is incorrect.
+    However, one could take the opposite approach and get matches. Because of this
+    it was decided that it is easiest to remove the postcodes to remove the possibility
+    of misunderstanding.
+
+    :return: None
+    """
+    df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K.csv')
+    print(df.info())
+    # remove postcode
+    df['postcode'] = df.apply(_getPostcode, args=('ADDRESS',), axis=1)
+    msk = df['MNEMONIC'] == 'ORDER_MATTERS'
+    df['ADDRESS'].loc[msk] = df.loc[msk].apply(_removePostcode, args=('ADDRESS', 'postcode'), axis=1)
+    df.drop(['postcode', ], axis=1, inplace=True)
+    df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_NoPostcode.csv', index=False)
+    print(df.info())
+
+
 if __name__ == "__main__":
     # _simpleTest()
     # testParsing()
     # processPostcodeFile()
     # combineMiniABtestingData()
-    combineAddressBaseData()
+    # combineAddressBaseData()
+    modifyEdgeCasesData()
