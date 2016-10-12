@@ -246,6 +246,7 @@ def combineAddressBaseData(filename='AB.h5'):
     data.loc[data['SAO_TEXT'].isnull(), 'SAO_TEXT'] = 'NO'
     data.loc[data['ORGANISATION'].isnull(), 'ORGANISATION'] = 'NO'
     data.loc[data['BUILDING_NAME'].isnull(), 'BUILDING_NAME'] = 'NONAME'
+    data.loc[data['PAO_START_SUFFIX'].isnull(), 'PAO_START_SUFFIX'] = 'NOSUFFIX'
 
     # change column names
     data.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
@@ -262,14 +263,14 @@ def combineAddressBaseData(filename='AB.h5'):
     print('storing to a CSV file...')
     data.to_csv(path + filename.replace('.h5', '.csv'), index=False)
 
-    print('converting object types to string types - HDF5 does not like storing python objects...')
-    for col in data.columns:
-        if data[col].dtype == object:
-            data[col] = data[col].astype(str)
-    print(data.info())
+    # print('converting object types to string types - HDF5 does not like storing python objects...')
+    # for col in data.columns:
+    #     if data[col].dtype == object:
+    #         data[col] = data[col].astype(str)
+    # print(data.info())
 
-    print('storing to a HDF5 file...')
-    data.to_hdf(path + filename, 'data', format='table', mode='w', dropna=True)
+    # print('storing to a HDF5 file...')
+    # data.to_hdf(path + filename, 'data', format='table', mode='w', dropna=True)
 
 
 def processPostcodeFile():
@@ -315,5 +316,5 @@ if __name__ == "__main__":
     # testParsing()
     # processPostcodeFile()
     # combineMiniABtestingData()
-    # combineAddressBaseData()
-    modifyEdgeCasesData()
+    combineAddressBaseData()
+    # modifyEdgeCasesData()
