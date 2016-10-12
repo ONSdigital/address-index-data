@@ -67,19 +67,20 @@ def loadEdgeCaseTestingData(filename='EDGE_CASES_EC5K_NoPostcode.csv',
     return df
 
 
-def loadAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/'):
+def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/'):
     """
     Load a compressed version of the full AddressBase file. The information being used
     has been processed from a AB Epoch 39 files provided by ONS.
 
+    :param filename: name of the file containing modified AddressBase
+    :type filename: str
     :param path: location of the AddressBase combined data file
     :type path: str
 
     :return: pandas dataframe of the requested information
     :rtype: pandas.DataFrame
     """
-    # df = pd.read_hdf(path + 'AB.h5', 'data')
-    df = pd.read_csv(path + 'AB.csv', dtype={'UPRN': np.int64, 'postcode': str, 'ORGANISATION_NAME': str,
+    df = pd.read_csv(path + filename, dtype={'UPRN': np.int64, 'postcode': str, 'ORGANISATION_NAME': str,
                                              'SUB_BUILDING_NAME': str, 'building_name': str,
                                              'building_number': np.float32, 'SAO_START_NUMBER': np.float32,
                                              'sao_text': str, 'PAO_START_NUMBER': np.float32, 'pao_text': str,
@@ -172,14 +173,6 @@ def testIfIllformattedPostcode(string):
         return True
     except:
         return False
-
-
-def _getPostIncode(row):
-    return row['postcode'].split(' ')[0]
-
-
-def _getPostOutcode(row):
-    return row['postcode'].split(' ')[1]
 
 
 def _splitRoadHouse(row, part):
@@ -557,8 +550,10 @@ def parseEdgeCaseData(df, postcodeinfo):
     msk = df['postcode_in'] == 'z1'
     df.loc[msk, 'postcode_in'] = None
     df.loc[msk, 'postcode'] = None
-    msk = df['postcode_out'] == '1zz'
+    # msk = df['postcode_out'].str.contains('[0-9][^a]z', na=False)
+    msk = df['postcode_out'].str.contains('z', na=False)
     df.loc[msk, 'postcode_out'] = None
+    df.loc[msk, 'postcode'] = None
     msk = df['postcode_in'] == 'z11'
     df.loc[msk, 'postcode_in'] = None
     df.loc[msk, 'postcode'] = None
@@ -702,6 +697,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     compare.string('ORGANISATION_NAME', 'house', method='damerau_levenshtein', name='organisation2_dl')
     compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
     compare.string('town_name', 'city', method='damerau_levenshtein', name='city_dl')
+    compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
     # compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
     # compare.exact('flat_number', 'flat_number', missing_value='-1234', disagree_value=-0.1, name='flat_number_dl')
     compare.string('flat_number', 'flat_number',  method='damerau_levenshtein', name='flat_number_dl')
@@ -860,7 +856,8 @@ def runAll():
 
     print('\nReading in Address Base Data...')
     start = time.clock()
-    ab = loadAddressBaseData()
+    # ab = loadAddressBaseData()
+    ab = loadAddressBaseData(filename='ABmini.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
@@ -973,4 +970,31 @@ if __name__ == "__main__":
         Match Fraction 27.5
         False Positives 254
         False Positive Rate 25.4
+    On Mini:
+        Matched 3536 entries
+        Total Match Fraction 70.7
+        Correctly Matched 3498
+        Correctly Matched Fraction 70.0
+        False Positives 38
+        False Positive Rate 0.8
+        Correctly Matched 727 CARE_HOMES
+        Match Fraction 72.7
+        False Positives 3
+        False Positive Rate 0.3
+        Correctly Matched 997 DEAD_SIMPLE
+        Match Fraction 99.7
+        False Positives 1
+        False Positive Rate 0.1
+        Correctly Matched 862 ORDER_MATTERS
+        Match Fraction 86.2
+        False Positives 16
+        False Positive Rate 1.6
+        Correctly Matched 190 PAF_MISMATCH
+        Match Fraction 19.0
+        False Positives 3
+        False Positive Rate 0.3
+        Correctly Matched 722 PARTS_MISSING
+        Match Fraction 72.2
+        False Positives 15
+        False Positive Rate 1.5
     """
