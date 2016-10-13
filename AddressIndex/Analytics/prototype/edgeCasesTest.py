@@ -38,7 +38,7 @@ from postal.parser import parse_address
 import matplotlib.pyplot as plt
 import time
 import re
-from AddressIndex.Analytics import data
+from AddressIndex.Analytics.data import data
 
 
 def loadEdgeCaseTestingData(filename='EDGE_CASES_EC5K_NoPostcode.csv',

@@ -26,7 +26,7 @@ Version
 """
 import autocomplete
 from autocomplete import models
-from AddressIndex.Analytics import data
+from AddressIndex.Analytics.data import data
 
 
 def getData():

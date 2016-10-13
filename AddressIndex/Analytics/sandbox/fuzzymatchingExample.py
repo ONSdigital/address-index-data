@@ -31,7 +31,7 @@ Version
 :version: 0.2
 :date: 28-Sep-2016
 """
-from AddressIndex.Analytics import data
+from AddressIndex.Analytics.data import data
 import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
