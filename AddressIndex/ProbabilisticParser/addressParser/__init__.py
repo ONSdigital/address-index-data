@@ -1,6 +1,33 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""
+ONS Address Index - Probabilistic Parser
+========================================
 
+This file defines the Conditional Random Field parser settings including output file,
+structure of the XML expected to hold training data, tokens and features.
+
+
+Requirements
+------------
+
+:requires: parserator
+:requires: pycrfsuite
+:requires: pandas
+
+
+Author
+------
+
+:author: Sami Niemi (sami.niemi@valtech.co.uk)
+
+
+Version
+-------
+
+:version: 0.1
+:date: 14-Oct-2016
+"""
 import pycrfsuite
 import os
 import re
