@@ -1,0 +1,20 @@
+<AddressCollection>
+   <AddressString><BuildingNumber>35</BuildingNumber> <StreetName>PURBECK</StreetName> <StreetName>DRIVE</StreetName> <TownName>BURY</TownName> <Postcode>BL8</Postcode> <Postcode>1JG</Postcode></AddressString>
+   <AddressString><BuildingNumber>41</BuildingNumber> <StreetName>QUEEN</StreetName> <StreetName>STREET</StreetName> <TownName>RAMSBOTTOM</TownName> <Postcode>BL0</Postcode> <Postcode>9JJ</Postcode></AddressString>
+   <AddressString><BuildingNumber>15</BuildingNumber> <StreetName>QUEENS</StreetName> <StreetName>PLACE</StreetName> <Locality>SUMMERSEAT</Locality> <TownName>RAMSBOTTOM</TownName> <Postcode>BL9</Postcode> <Postcode>5PH</Postcode></AddressString>
+   <AddressString><BuildingNumber>31</BuildingNumber> <StreetName>QUEENS</StreetName> <StreetName>PLACE</StreetName> <Locality>SUMMERSEAT</Locality> <TownName>RAMSBOTTOM</TownName> <Postcode>BL9</Postcode> <Postcode>5PH</Postcode></AddressString>
+   <AddressString><BuildingNumber>49</BuildingNumber> <StreetName>QUEENS</StreetName> <StreetName>PLACE</StreetName> <Locality>SUMMERSEAT</Locality> <TownName>RAMSBOTTOM</TownName> <Postcode>BL9</Postcode> <Postcode>5PH</Postcode></AddressString>
+   <AddressString><BuildingNumber>93</BuildingNumber> <StreetName>RADCLIFFE</StreetName> <StreetName>ROAD</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>9LD</Postcode></AddressString>
+   <AddressString><BuildingNumber>99</BuildingNumber> <StreetName>RADCLIFFE</StreetName> <StreetName>ROAD</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>9LD</Postcode></AddressString>
+   <AddressString><BuildingNumber>143</BuildingNumber> <StreetName>RADCLIFFE</StreetName> <StreetName>ROAD</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>9LN</Postcode></AddressString>
+   <AddressString><BuildingNumber>157</BuildingNumber> <StreetName>RADCLIFFE</StreetName> <StreetName>ROAD</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>9LN</Postcode></AddressString>
+   <AddressString><BuildingNumber>223</BuildingNumber> <StreetName>RADCLIFFE</StreetName> <StreetName>ROAD</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>9LY</Postcode></AddressString>
+   <AddressString><BuildingNumber>7</BuildingNumber> <StreetName>RAKE</StreetName> <StreetName>STREET</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>5EH</Postcode></AddressString>
+   <AddressString><BuildingNumber>10</BuildingNumber> <StreetName>RAKE</StreetName> <StreetName>STREET</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>5EH</Postcode></AddressString>
+   <AddressString><BuildingNumber>71</BuildingNumber> <StreetName>RAMSBOTTOM</StreetName> <StreetName>LANE</StreetName> <TownName>RAMSBOTTOM</TownName> <Postcode>BL0</Postcode> <Postcode>9BU</Postcode></AddressString>
+   <AddressString><BuildingNumber>60</BuildingNumber> <StreetName>RAMSBOTTOM</StreetName> <StreetName>ROAD</StreetName> <TownName>TOTTINGTON</TownName> <Postcode>BL8</Postcode> <Postcode>4JS</Postcode></AddressString>
+   <AddressString><BuildingNumber>32</BuildingNumber> <StreetName>RAMSEY</StreetName> <StreetName>GROVE</StreetName> <TownName>BURY</TownName> <Postcode>BL8</Postcode> <Postcode>2RE</Postcode></AddressString>
+   <AddressString><BuildingNumber>40</BuildingNumber> <StreetName>RANDALE</StreetName> <StreetName>DRIVE</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>8NF</Postcode></AddressString>
+   <AddressString><BuildingNumber>26</BuildingNumber> <StreetName>RAVEN</StreetName> <StreetName>STREET</StreetName> <TownName>BURY</TownName> <Postcode>BL9</Postcode> <Postcode>5AU</Postcode></AddressString>
+   <AddressString><BuildingNumber>7</BuildingNumber> <StreetName>RAYLEES</StreetName> <TownName>RAMSBOTTOM</TownName> <Postcode>BL0</Postcode> <Postcode>9HW</Postcode></AddressString>
+</AddressCollection>   

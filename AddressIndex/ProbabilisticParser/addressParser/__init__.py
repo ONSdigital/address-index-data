@@ -10,40 +10,45 @@ from collections import OrderedDict
 import pandas as pd
 
 
+# filename for the crfsuite settings file
+MODEL_FILE = 'addresses.crfsuite'
+
 #  _____________________
 # |1. CONFIGURE LABELS! |
 # |_____________________|
 
 LABELS = ['SubBuildingPrefix',
           'SubBuildingNumber',
-          'BuildingNumber',
-          'BuildingNumberSuffix',
-          'BuildingName',
           'SubBuildingName',
           'OrganisationName',
           'DepartmentName',
+          'BuildingName',
+          'BuildingNumber',
+          'BuildingNumberSuffix',
           'StreetName',
-          'TownName',
           'Locality',
-          'Postcode',
-          'NotAddress']
+          'TownName',
+          'Postcode']
 
-PARENT_LABEL = 'AddressString'
-GROUP_LABEL = 'AddressCollection'
-# PARENT_LABEL = 'TokenSequence'               # the XML tag for each labeled string
-# GROUP_LABEL = 'Collection'                  # the XML tag for a group of strings
+# set the XML segment names
+PARENT_LABEL = 'AddressString'              # the XML tag for each labeled string
+GROUP_LABEL = 'AddressCollection'           # the XML tag for a group of strings
+NULL_LABEL = 'Null'                         # the null XML tag
 
-DIRECTIONS = {'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'north', 'south', 'east', 'west', 'northeast', 'northwest',
-              'southeast', 'southwest'}
-FLAT = {'FLAT', 'APARTMENT', 'ROOM', 'APPTS', 'APPT' 'APTS', 'APT'}
+# set some features that are being used to identify tokens
+DIRECTIONS = {'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'north', 'south', 'east', 'west',
+              'northeast', 'northwest', 'southeast', 'southwest'}
+FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT', 'ROOM', 'ANNEXE', 'UNIT', 'BLOCK'}
+COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
+ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU',
+        'LANE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT', 'CLOSE', 'CL', 'WALK'}
 
 # get some extra info - possible incodes and the linked post towns
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
-INCODES = set(df['postcode'].values)
+OUTCODES = set(df['postcode'].values)
 POSTTOWNS = set(df['town'].values)
+# county?
 
-NULL_LABEL = 'Null'  # the null XML tag
-MODEL_FILE = 'addresses.crfsuite'  # filename for the crfsuite settings file
 
 try:
     TAGGER = pycrfsuite.Tagger()
@@ -144,29 +149,33 @@ def tokens2features(tokens):
 
 def tokenFeatures(token):
     # this defines a dict of features for an individual token
-    if token in (u'&', u'#', u'½'):
-        token_clean = token
-    else:
-        token_clean = re.sub(r'(^[\W]*)|([^.\w]*$)', u'', token, flags=re.UNICODE)
+    # if token in (u'&', u'#', u'½'):
+    #     token_clean = token
+    # else:
+    #     token_clean = re.sub(r'(^[\W]*)|([^.\w]*$)', u'', token, flags=re.UNICODE)
 
+    token_clean = token
     token_abbrev = re.sub(r'[.]', u'', token_clean.lower())
 
-    features = {'abbrev': token_clean[-1] == u'.',
+    features = {#'abbrev': token_clean[-1] == u'.',
                 'digits': digits(token_clean),
                 'word': (token_abbrev if not token_abbrev.isdigit() else False),
-                'trailing.zeros': (trailingZeros(token_abbrev) if token_abbrev.isdigit() else False),
+                # 'trailing.zeros': (trailingZeros(token_abbrev) if token_abbrev.isdigit() else False),
                 'length': (u'd:' + str(len(token_abbrev)) if token_abbrev.isdigit() else u'w:' + str(len(token_abbrev))),
                 'endsinpunc': (token[-1] if bool(re.match('.+[^.\w]', token, flags=re.UNICODE)) else False),
                 'directional': token_abbrev.upper() in DIRECTIONS,
-                'incode': token_abbrev.upper() in INCODES,
-                'posttown': token_abbrev.upper() in POSTTOWNS,
+                'outcode': token_clean.upper() in OUTCODES,
+                # 'postcode': isPostcode(token_clean),
+                'posttown': token_clean.upper() in POSTTOWNS,
                 'has.vowels': bool(set(token_abbrev[1:]) & set('aeiou')),
-                'flat': token_abbrev.upper() in FLAT
+                'flat': token_clean.upper() in FLAT,
+                'company': token_clean.upper() in COMPANY,
+                'road': token_clean.upper() in ROAD
                 }
     return features
 
 
-# define any other methods for features. this is an example to get the casing of a token
+# get the casing of a token
 def casing(token):
     if token.isupper():
         return 'upper'
@@ -180,12 +189,33 @@ def casing(token):
         return False
 
 
+def isPostcode(string):
+    """
+    Extract a postcode from address information.
+
+    Uses regular expression to extract the postcode:
+    http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
+
+    :param string: string to be parsed
+    :type string: str
+
+    :return: postcode
+    :rtype: str
+    """
+    regx = r'(([gG][iI][rR] {0,}0[aA]{2})|((([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y]?[0-9][0-9]?)|(([a-pr-uwyzA-PR-UWYZ][0-9][a-hjkstuwA-HJKSTUW])|([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y][0-9][abehmnprv-yABEHMNPRV-Y]))) {0,}[0-9][abd-hjlnp-uw-zABD-HJLNP-UW-Z]{2}))'
+    try:
+        tmp = re.findall(regx, string)[0][0]
+        return True
+    except:
+        return False
+
+
 def digits(token):
-    if token.isdigit() :
+    if token.isdigit():
         return 'all_digits'
     elif set(token) & set(string.digits):
         return 'some_digits'
-    else :
+    else:
         return 'no_digits'
 
 

@@ -23,7 +23,7 @@ Author
 Version
 -------
 
-:version: 0.1
+:version: 0.2
 :date: 13-Oct-2016
 """
 import pandas as pd
@@ -101,7 +101,7 @@ def combineAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data
     # combine BUILDING_NUMBER and LPI.PAO_START_NUMBER
     msk = data['BUILDING_NUMBER'].isnull()
     data.loc[msk, 'BUILDING_NUMBER'] = data.loc[msk, 'PAO_START_NUMBER']
-    # combine BUILDING_NAME and PAO_TEXT
+    # combine BUILDING_NAME and PAO_TEXT - todo: not sure about this, maybe not?
     msk = data['BUILDING_NAME'].isnull()
     data.loc[msk, 'BUILDING_NAME'] = data.loc[msk, 'PAO_TEXT']
     # combine ORGANISATION_NAME and ORGANISATION
@@ -124,6 +124,11 @@ def combineAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data
                          'SAO_TEXT': 'SubBuildingPrefix',
                          'SAO_START_NUMBER': 'SubBuildingNumber',
                          'LOCALITY': 'Locality'}, inplace=True)
+
+    print('changing ampersands to AND...')
+    for col in data.columns.values.tolist():
+        # data[col] = data.apply(lambda x: str(x[col]).replace('\&', 'AND'), axis=1)
+        data[col] = data[col].str.replace('\&', 'AND', case=False)
 
     print(data.info())
     print(len(data.index), 'addresses in the combined file')
@@ -163,7 +168,13 @@ def _toXML(row):
                 print('ERROR:', row[field], type(row[field]))
 
             if tmp is not None:
-                xml.append('<{0}>{1}</{0}> '.format(field, tmp))
+                # test if it can be split by space, need multiple components
+                try:
+                    t = tmp.split(' ')
+                    for component in t:
+                        xml.append('<{0}>{1}</{0}> '.format(field, component))
+                except:
+                    xml.append('<{0}>{1}</{0}> '.format(field, tmp))
 
     xml[-1] = xml[-1][:-1]
     xml.append('</AddressString>')
@@ -171,7 +182,7 @@ def _toXML(row):
     return ''.join(xml)
 
 
-def createTrainingData(data, trainingsize=5,
+def createTrainingData(data, trainingsize=1000000, holdoutsize=100000,
                        outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
                        outfile='training.xml', holdoutfile='holdout.xml'):
     """
@@ -189,6 +200,8 @@ def createTrainingData(data, trainingsize=5,
     :type data: pandas.DataFrame
     :param trainingsize: number of training samples, if exceeds the number of examples then no holdout data
     :type trainingsize: int
+    :param holdoutsize: number of holdout samples, if exceeds the number of potential holdouts, then use all
+    :type holdoutsize: int
     :param outpath: location where to store the output files
     :type outpath: str
     :param outfile: name of the training data file
@@ -201,42 +214,51 @@ def createTrainingData(data, trainingsize=5,
     # drop UPRN
     data.drop(['UPRN'], axis=1, inplace=True)
 
-    # re-order the columns to match the order expected in an address
+    print('re-ordering the columns to match the order expected in an address...')
     neworder = ['SubBuildingPrefix',
                 'SubBuildingNumber',
-                'BuildingNumber',
-                'BuildingNumberSuffix',
-                'BuildingName',
                 'SubBuildingName',
                 'OrganisationName',
                 'DepartmentName',
+                'BuildingName',
+                'BuildingNumber',
+                'BuildingNumberSuffix',
                 'StreetName',
-                'TownName',
                 'Locality',
+                'TownName',
                 'Postcode']
     data = data[neworder]
     print(data.info())
 
-    # training data
+    print('Initial length', len(data.index))
+    print('remove those with STREET RECORD, PARKING SPACE, or POND in BuildingName...')
+    msk = data['BuildingName'].str.contains('STREET RECORD|PARKING SPACE|POND', na=False)
+    data = data.loc[~msk]
+    msk = data['SubBuildingPrefix'].str.contains('STREET RECORD|PARKING SPACE|POND', na=False)
+    data = data.loc[~msk]
+    print('After removing parking spaces etc.',len(data.index))
+
+    print('Deriving training and holdout data...')
     if len(data.index) > trainingsize:
-        #training = data.sample(n=trainingsize)
         rows = np.random.choice(data.index.values, trainingsize)
         msk = np.in1d(data.index.values, rows)
         training = data.loc[msk]
         holdout = data.loc[~msk]
+        if len(holdout.index) > holdoutsize:
+            holdout = holdout.sample(n=holdoutsize)
     else:
         print('Only', len(data.index), 'addresses, using all for training')
         training = data
         holdout = None
 
-    # write training data to an XML
+    print('writing training data to an XML file...')
     fh = open(outpath + outfile, mode='w')
     fh.write('<AddressCollection>')
     fh.write(''.join(training.apply(_toXML, axis=1)))
     fh.write('\n</AddressCollection>')
     fh.close()
 
-    # write rest to a holdoutfile
+    print('writing the holdout data to an XML file...')
     if holdout is not None:
         fh = open(outpath + holdoutfile, mode='w')
         fh.write('<AddressCollection>')
@@ -247,4 +269,5 @@ def createTrainingData(data, trainingsize=5,
 
 if __name__ == "__main__":
     data = combineAddressBaseData()
+    # data = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/training/ABforTraining.csv', dtype=str)
     createTrainingData(data)
