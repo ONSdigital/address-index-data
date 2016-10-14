@@ -1,3 +1,28 @@
+"""
+ONS Address Index - Probabilistic Parser Tokenizing Test
+========================================================
+
+A few unit tests to check that the tokenizer splits the data correctly.
+
+
+Requirements
+------------
+
+:requires: addressParser
+
+
+Author
+------
+
+:author: Sami Niemi (sami.niemi@valtech.co.uk)
+
+
+Version
+-------
+
+:version: 0.1
+:date: 14-Oct-2016
+"""
 from addressParser import tokenize
 import unittest
 
