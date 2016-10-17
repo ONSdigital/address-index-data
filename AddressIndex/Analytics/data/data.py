@@ -120,14 +120,15 @@ def combineMiniABtestingData():
         if 'CLASSIFICATION' in file or 'SREET.csv' in file:
             pass
 
-        tmp = pd.read_csv(file)
+        tmp = pd.read_csv(file, dtype=str)
 
         if 'BLPU' in file:
             BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
 
         if 'DELIVERY_POINT' in file:
-            DP = tmp[['UPRN', 'BUILDING_NUMBER', 'BUILDING_NAME', 'SUB_BUILDING_NAME',
-                      'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN']]
+            DP = tmp[['UPRN', 'ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
+                      'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
+                      'POST_TOWN', 'POSTCODE']]
 
         if 'LPI' in file:
             LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
@@ -148,20 +149,20 @@ def combineMiniABtestingData():
     # drop if all null
     data.dropna(inplace=True, how='all')
 
-    # drop if no UPRN
-    data = data[np.isfinite(data['UPRN'])]
-
     # change uprn to int
     data['UPRN'] = data['UPRN'].astype(int)
 
-    print(data.info())
+    # drop if no UPRN
+    data = data[np.isfinite(data['UPRN'].values)]
 
     # drop some that are not needed
-    data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
+    data.drop(['LANGUAGE', 'USRN'], axis=1, inplace=True)
+
+    print(data.info())
     print(len(data.index), 'addresses')
 
     # save to a file
-    data.to_csv(path + 'combined.csv', index=0)
+    data.to_csv(path + 'ABmini.csv', index=0)
 
 
 def combineAddressBaseData(filename='AB.h5'):
@@ -315,6 +316,6 @@ if __name__ == "__main__":
     # _simpleTest()
     # testParsing()
     # processPostcodeFile()
-    # combineMiniABtestingData()
-    combineAddressBaseData()
+    combineMiniABtestingData()
+    # combineAddressBaseData()
     # modifyEdgeCasesData()

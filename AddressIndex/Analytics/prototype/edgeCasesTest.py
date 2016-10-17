@@ -12,10 +12,10 @@ not the highest accuracy but to quickly test different ideas.
 Requirements
 ------------
 
+:requires: addressParser (CRF model build using parserator)
 :requires: pandas
 :requires: numpy
 :requires: matplotlib
-:requires: libpostal (https://github.com/openvenues/libpostal)
 :requires: recordlinkage (https://pypi.python.org/pypi/recordlinkage/)
 
 
@@ -28,13 +28,13 @@ Author
 Version
 -------
 
-:version: 0.9
-:date: 12-Oct-2016
+:version: 1.0
+:date: 17-Oct-2016
 """
 import pandas as pd
 import numpy as np
 import recordlinkage
-from postal.parser import parse_address
+import addressParser
 import matplotlib.pyplot as plt
 import time
 import re
@@ -80,16 +80,47 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     :return: pandas dataframe of the requested information
     :rtype: pandas.DataFrame
     """
-    df = pd.read_csv(path + filename, dtype={'UPRN': np.int64, 'postcode': str, 'ORGANISATION_NAME': str,
-                                             'SUB_BUILDING_NAME': str, 'building_name': str,
-                                             'building_number': np.float32, 'SAO_START_NUMBER': np.float32,
-                                             'sao_text': str, 'PAO_START_NUMBER': np.float32, 'pao_text': str,
-                                             'ORGANISATION': str, 'street_descriptor': str, 'locality': str,
-                                             'town_name': str, 'flat_number': np.float32, 'postcode_in': str,
-                                             'postcode_out': str, 'DEPARTMENT_NAME': str, 'PAO_START_SUFFIX': str})
+    df = pd.read_csv(path + filename, dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION_NAME': str,
+                                             'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                             'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
+                                             'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str, 'PAO_START_NUMBER': str,
+                                             'SAO_TEXT': str, 'SAO_START_NUMBER': str, 'ORGANISATION': str,
+                                             'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str})
     print('Found', len(df.index), 'addresses from AddressBase...')
 
-    df.loc[df['PAO_START_SUFFIX'].isnull(), 'PAO_START_SUFFIX'] = 'NOSUFFIX'
+    # combine information
+    msk = df['THROUGHFARE'].isnull()
+    df.loc[msk, 'THROUGHFARE'] = df.loc[msk, 'STREET_DESCRIPTOR']
+
+    msk = df['ORGANISATION_NAME'].isnull()
+    df.loc[msk, 'ORGANISATION_NAME'] = df.loc[msk, 'ORGANISATION']
+
+    msk = df['POSTCODE'].isnull()
+    df.loc[msk, 'POSTCODE'] = df.loc[msk, 'POSTCODE_LOCATOR']
+
+    msk = df['SUB_BUILDING_NAME'].isnull()
+    df.loc[msk, 'SUB_BUILDING_NAME'] = df.loc[msk, 'SAO_TEXT']
+
+    msk = df['POST_TOWN'].isnull()
+    df.loc[msk, 'POST_TOWN'] = df.loc[msk, 'TOWN_NAME']
+
+    msk = df['LOCALITY'].isnull()
+    df.loc[msk, 'LOCALITY'] = df.loc[msk, 'DEPENDENT_LOCALITY']
+
+    # drop some that are not needed
+    df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'STREET_DESCRIPTOR'], axis=1, inplace=True)
+
+    pcodes = df['POSTCODE'].str.split(' ', expand=True)
+    pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+    df = pd.concat([df, pcodes], axis=1)
+
+    # rename some columns
+    df.rename(columns={'THROUGHFARE': 'streetName',
+                       'POST_TOWN': 'townName',
+                       'POSTCODE': 'postcode',
+                       'PAO_TEXT': 'pao_text',
+                       'LOCALITY': 'locality',
+                       'BUILDING_NAME': 'buildingName'}, inplace=True)
 
     return df
 
@@ -185,7 +216,22 @@ def _splitRoadHouse(row, part):
     return tmp.strip()
 
 
-def parseEdgeCaseData(df, postcodeinfo):
+def _fixBuildingNumber(row):
+    if row['BuildingName'] is not None:
+        tmp = row['BuildingName'].split(' ')
+        if len(tmp) > 1:
+            try:
+                number = int(tmp[0])
+                return number
+            except:
+                return None
+        else:
+            return row['BuildingName']
+    else:
+        return None
+
+
+def parseEdgeCaseData(df):
     """
     Parses the address information from the edge case data. Examples:
 
@@ -261,23 +307,23 @@ def parseEdgeCaseData(df, postcodeinfo):
     # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('&', 'AND'), axis=1)
 
     # expand common synonyms
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' avenue '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' avenue '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' avenue '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' lane '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' apartment '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' apartment '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' apartment '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' apartment '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' block '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' boulevard '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' drive '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' road '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' park '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' street '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' number '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' number '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' house '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' AVENUE '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' AVENUE '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' AVENUE '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' LANE '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' APARTMENT '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' APARTMENT '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' APARTMENT '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' APARTMENT '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' BLOCK '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' BOULEVARD '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' DRIVE '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' ROAD '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' PARK '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' STREET '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' NUMBER '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' NUMBER '), axis=1)
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' HOUSE '), axis=1)
 
     # modify some names
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
@@ -289,280 +335,108 @@ def parseEdgeCaseData(df, postcodeinfo):
     print('Parsing', len(addresses), 'addresses...')
 
     # temp data storage
-    postcodes = []
-    house_number = []
-    house_number_suffix = []
-    house = []
-    road = []
-    city = []
-    # building_name = []
-    flats = []
+    organisation = []
+    department = []
+    subbuilding = []
+    buildingname = []
+    buildingnumber = []
+    street = []
     locality = []
+    town = []
+    postcode = []
 
-    # loop over addresses - todo: quite in efficient, should avoid a loop
+    # loop over addresses - quite inefficient, should avoid a loop
     for address in addresses:
-        parsed = parse_address(address) # probabilistic
+        parsed = addressParser.tag(address.upper())
         pcode = getPostcode(address) # regular expression extraction
 
-        store = {}
-
-        for tmp in parsed:
-
-            if tmp[1] == 'city':
-                if store.get('city', None) is not None:
-                    # todo: city already identified, what should we do?
-                    # print(tmp[0], store['city'])
-                    store['city'] = tmp[0].strip()
-                else:
-                    store['city'] = tmp[0].strip()
-
-            if tmp[1] == 'house_number':
-                store['house_number'] = tmp[0].strip()
-
-            if tmp[1] == 'house':
-                store['house'] = tmp[0].strip()
-
-            if tmp[1] == 'road':
-                store['road'] = tmp[0].strip()
-
-            if tmp[1] == 'suburb':
-                store['locality'] = tmp[0].strip()
-
-            if tmp[1] == 'postcode':
-                if tmp[0] == pcode:
-                    store['postcode'] = pcode
-                else:
-                    if pcode is None:
-                            inc = tmp[0][-3:]
-                            out = tmp[0].replace(inc, '')
-                            constructedPostcode = out + ' ' + inc
-                            store['postcode'] = constructedPostcode
-                    else:
-                        store['postcode'] = pcode
+        # if both parsers found postcode then check that they are the same
+        if parsed.get('Postcode', None) is not None and pcode is not None:
+            if parsed['Postcode'] != pcode:
+                # not the same, use pcode
+                parsed['Postcode'] = pcode
 
         # if the probabilistic parser did not find postcode but regular expression did, then use that
-        if store.get('postcode', None) is None and pcode is not None:
-            store['postcode'] = pcode
+        if parsed.get('Postcode', None) is None and pcode is not None:
+            parsed['Postcode'] = pcode
 
-        # # test if the incode actually matches the city
-        # if store.get('postcode', None) is not None:
-        #     tmp = store['postcode'].split(' ')
-        #     msk = postcodeinfo['postcode'] == tmp[0]
-        #
-        #     if len(postcodeinfo.loc[msk].index) == 0:
-        #         print('incorrect postcode found', store['postcode']) #if city exists then pick the first one
-        #
-        #         if store.get('city', None) is not None:
-        #             msk3 = postcodeinfo['town'].str.contains(store['city'])
-        #             if msk3.sum() == 0:
-        #                 print('Cannot find anything with the city', store['city'], store['postcode'], address)
-        #             else:
-        #                 pass
-        #                 #store['postcode'] = postcodeinfo.loc[msk3, 'postcode'].values[0] + ' ' + store['postcode'][-3:]
-        #                 #print('Using city to infer postcode', address, store['postcode'])
-        #     else:
-        #         # found the postcode, need to test if it matches the city
-        #         potentialTowns = postcodeinfo.loc[msk]
-        #
-        #         if store.get('city', None) is not None:
-        #             #test if the city is a potential match for the postcode
-        #             msk2 = potentialTowns['town'].str.contains(store['city'])
-        #
-        #             if len(potentialTowns.loc[msk2].index) == 0:
-        #                 print('City and Postcode do not match, trying to resolve...', address)
-        #                 # city might contain more than the actual city
-        #                 parts = store['city'].split(' ')
-        #                 if len(parts) > 1:
-        #                     print('City contained multiple parts', store['city'])
-        #                     for part in parts:
-        #                         msk2 = potentialTowns['town'].str.contains(part)
-        #                         if len(potentialTowns.loc[msk2].index) > 0:
-        #                             #match change city to part, discard the other part
-        #                             print('changing city from', store['city'], 'to', part, address)
-        #                             store['city'] = part
-        #                             # todo: add the rest to store['locality']
-        #                             break
-        #                 else:
-        #                     # option one, typo in the postcode, search for other postcodes
-        #                     msk = postcodeinfo['postcode'].str.contains(tmp[0][:2])
-        #                     possiblities = postcodeinfo.loc[msk]
-        #
-        #                     # if city in the list of possible towns then change the postcode, otherwise change city
-        #                     msk2 = possiblities['town'] == store['city'].strip().lower()
-        #
-        #                     if len(possiblities.loc[msk2, 'postcode']) == 0:
-        #                         print('Incorrect city, using postcode to infer city...')
-        #                         old = store['city']
-        #                         store['city'] = possiblities['town'].values[0]
-        #
-        #                         if store.get('road', None) is not None:
-        #                             print('swapping city and road')
-        #                             store['road'] = old
-        #                         print(store)
-        #                     else:
-        #                         incode = possiblities.loc[msk2, 'postcode'].values[0]
-        #                         store['postcode'] = incode + ' ' + tmp[1]
-        #                         print('Likely typo in the postcode', store['postcode'], address)
-        #
-        #         else:
-        #             print(parsed)
-        #             print('Adding city', potentialTowns['town'].values[0], 'to', address)
-        #             store['city'] = potentialTowns['town'].values[0]
-        #
-        #             # sometimes the city is stored in a wrong field
-        #             for key, value in store.items():
-        #                 if 'city' in key:
-        #                     pass
-        #                 else:
-        #                     if store['city'] in value:
-        #                         store[key] = value.replace(store['city'], '')
+        if parsed.get('Postcode', None) is not None:
+            # check that there is space, if not then add
+            if ' ' not in parsed['Postcode']:
+                inc = parsed['Postcode'][-3:]
+                out = parsed['Postcode'].replace(inc, '')
+                parsed['Postcode'] = out + ' ' + inc
 
-        # sometimes house number ends up in the house field - switch these
-        if store.get('house_number', None) is None and store.get('house', None) is not None:
-            store['house_number'] = store['house']
-            store['house'] = None
+            # change to all capitals
+            parsed['Postcode'] = parsed['Postcode'].upper()
 
-        # sometimes flats end up on the house_number column
-        if store.get('house', None) is None and store.get('house_number', None) is not None:
-            if 'flat' in store['house_number']:
-                # sometimes both the house number and flat is combined
-                tmp = store.get('house_number', None).lower().strip().split()
-                if tmp[1] == 'flat' and len(tmp) == 3:
-                    store['house_number'] = tmp[0]
-                    store['flat'] = tmp[1] + ' ' + tmp[2]
-                elif tmp[0] == 'flat' and len(tmp) == 3:
-                    store['house_number'] = tmp[2]
-                    store['flat'] = tmp[0] + ' ' + tmp[1]
-
-            # sometimes care home names end up in house_number and house name is empty
-            elif len(store['house_number']) > 8 or 'house' in store['house_number']:
-                if 'flat' in store['house_number']:
-                    tmp = house['house_number'].strip().split()
-                    if 'flat' in tmp[0]:
-                        house['flat'] = tmp[0] + ' ' + tmp[1]
-                        house['house'] = house['house_number'].strip().replace(tmp[0], '').replace(tmp[1], '').strip()
-                else:
-                    store['house'] = store['house_number']
-                    store['house_number'] = None
-
-        # house number needs to be just a number if say 52a then should match with house_number_suffix
-        try:
-            store['house_number'] = int(store['house_number'])
-        except:
-            store['house_number_suffix'] = store.get('house_number', None)
-            try:
-                store['house_number'] = int(store['house_number'][:-1])
-            except:
-                store['house_number'] = None
-
-        if store.get('house_number_suffix', None) is not None and store.get('house_number', None) is not None:
-            store['house_number_suffix'] = store['house_number_suffix'].replace(str(store['house_number']), '')
-
-        # if house number None, try to get it from the front of the string
-        if store.get('house_number', None) is None:
-            tmp = address.strip().split()
-            try:
-                store['house_number'] = int(tmp[0])
-            except:
-                store['house_number'] = None
-
-        if store.get('house', None) is not None and store.get('flat', None) is None:
-            if 'flat' in store.get('house', None):
-                store['flat'] = store['house']
-                store['house'] = None
-
-        # if the string starts with FLAT or APARTMENT then capture that
-        if address.lower().strip().startswith('flat'):
-            tmp = address.lower().strip().split()
-            store['flat'] = tmp[0] + ' ' + tmp[1]
-
-        if address.lower().strip().startswith('apartment'):
-            tmp = address.lower().strip().split()
-            store['flat'] = tmp[0] + ' ' + tmp[1]
-
-        # if flat contains incorrectly formatted postcode, then remove
-        if testIfIllformattedPostcode(store.get('flat', None)):
-            store['flat'] = None
-
-        city.append(store.get('city', None))
-        house_number.append(store.get('house_number', None))
-        house.append(store.get('house', None))
-        road.append(store.get('road', None))
-        postcodes.append(store.get('postcode', None))
-        # building_name.append(store.get('building_name', None))
-        flats.append(store.get('flat', None))
-        locality.append(store.get('locality', None))
-        house_number_suffix.append((store.get('house_number_suffix', None)))
+        organisation.append(parsed.get('OrganisationName', None))
+        department.append(parsed.get('DepartmentName', None))
+        subbuilding.append(parsed.get('SubBuildingName', None))
+        buildingname.append(parsed.get('BuildingName', None))
+        buildingnumber.append(parsed.get('BuildingNumber', None))
+        street.append(parsed.get('StreetName', None))
+        locality.append(parsed.get('Locality', None))
+        town.append(parsed.get('TownName', None))
+        postcode.append(parsed.get('Postcode', None))
 
     # add the parsed information to the dataframe
-    df['postcode'] = postcodes
-    df['house_number'] = house_number
-    df['house_number_suffix'] = house_number_suffix
-    df['house'] = house
-    df['road'] = road
-    df['locality'] = locality
-    df['city'] = city
-    # df['building_name'] = building_name
-    df['flat'] = flats
-
-    # move flat from house or building_name to flat column
-    msk = df['house'].str.contains('flat|apartment', na=False)
-    msk2 = df['flat'].isnull()
-    df.loc[msk & msk2, 'flat'] = df.loc[msk & msk2, 'house']
-    df.loc[msk, 'house'] = None
-    # msk = df['building_name'].str.contains('flat|apartment', na=False)
-    # msk2 = df['flat'].isnull()
-    # df.loc[msk & msk2, 'flat'] = df.loc[msk & msk2, 'building_name']
-    # df.loc[msk, 'building_name'] = None
-
-    # sometimes building name has ilformatted postcode, remove these
-    # df['tmp'] = df.apply(lambda x: x['postcode'].strip().replace(' ', ''), axis=1)
-    # msk = df['building_name'] == df['tmp']
-    # df.loc[msk, 'building_name'] = None
-    # df.drop('tmp', axis=1, inplace=True)
+    df['OrganisationName'] = organisation
+    df['DepartmentName'] = department
+    df['SubBuildingName'] = subbuilding
+    df['BuildingName'] = buildingname
+    df['BuildingNumber'] = buildingnumber
+    df['StreetName'] = street
+    df['Locality'] = locality
+    df['TownName'] = town
+    df['Postcode'] = postcode
 
     # split the postcode to in and out
-    pcodes = df['postcode'].str.split(' ', expand=True)
+    pcodes = df['Postcode'].str.split(' ', expand=True)
     pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
     df = pd.concat([df, pcodes], axis=1)
 
-    # split flat or apartment number as separate for numerical comparison
-    df['flat_number'] = None
-    msk = df['flat'].str.contains('flat|apartment', na=False)
-    df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
-    df.loc[msk, 'flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
-    df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
+    # if BuildingNumber is empty, sometimes it's in BuildingName, try grabbing it
+    msk = df['BuildingNumber'].isnull()
+    df['temp'] = None
+    potentials = df.loc[msk, 'BuildingName']
+    df.loc[msk, 'temp'] = potentials
+    df.loc[msk, 'BuildingNumber'] = df.loc[msk].apply(_fixBuildingNumber, axis=1)
+    msk = df['BuildingNumber'] == df['BuildingName']
+    df.loc[msk, 'BuildingName'] = None
 
-    # remove those with numbers from flat column - no need to double check
-    msk = ~df['flat_number'].isnull()
-    df.loc[msk, 'flat'] = None
-    df.loc[df['flat'].isnull(), 'flat'] = 'NO'
-    df.loc[df['house'].isnull(), 'house'] = 'NO'
-    # df.loc[df['building_name'].isnull(), 'building_name'] = 'NONAME'
-    df.loc[df['house_number_suffix'].isnull(), 'house_number_suffix'] = 'NOSUFFIX'
+    # # split flat or apartment number as separate for numerical comparison
+    # df['flat_number'] = None
+    # msk = df['flat'].str.contains('flat|apartment', na=False)
+    # df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
+    # df.loc[msk, 'flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
+    # df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
+    #
+    # # remove those with numbers from flat column - no need to double check
+    # msk = ~df['flat_number'].isnull()
+    # df.loc[msk, 'flat'] = None
+    # df.loc[df['flat'].isnull(), 'flat'] = 'NO'
+    # df.loc[df['house'].isnull(), 'house'] = 'NO'
+    # # df.loc[df['building_name'].isnull(), 'building_name'] = 'NONAME'
+    # df.loc[df['house_number_suffix'].isnull(), 'house_number_suffix'] = 'NOSUFFIX'
 
-    # sometimes road and house has been mushed together - try to split
-    msk = df['road'].str.contains(' house ', na=False)
-    df.loc[msk, 'house'] = df.loc[msk].apply(_splitRoadHouse, args=(0,), axis=1)
-    df.loc[msk, 'road'] = df.loc[msk].apply(_splitRoadHouse, args=(1,), axis=1)
-
-    # some funky postcodes, parser cannot get these because e.g. LZ1 is not valid...
-    msk = df['postcode_in'] == 'z1'
+    # some funky postcodes, remove these
+    msk = df['postcode_in'] == 'Z1'
     df.loc[msk, 'postcode_in'] = None
-    df.loc[msk, 'postcode'] = None
-    # msk = df['postcode_out'].str.contains('[0-9][^a]z', na=False)
-    msk = df['postcode_out'].str.contains('z', na=False)
+    df.loc[msk, 'Postcode'] = None
+    msk = df['postcode_out'].str.contains('[0-9][^ABCDEFGHIJKLMNOPQRSTX][Z]', na=False)
+    # msk = df['postcode_out'].str.contains('Z', na=False)
     df.loc[msk, 'postcode_out'] = None
-    df.loc[msk, 'postcode'] = None
-    msk = df['postcode_in'] == 'z11'
+    df.loc[msk, 'Postcode'] = None
+    msk = df['postcode_in'] == 'Z11'
     df.loc[msk, 'postcode_in'] = None
-    df.loc[msk, 'postcode'] = None
+    df.loc[msk, 'Postcode'] = None
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv', index=False)
 
     # drop the temp info
-    df.drop(['ADDRESS2'], axis=1, inplace=True)
+    df.drop(['ADDRESS2', 'temp'], axis=1, inplace=True)
 
     return df
 
@@ -592,10 +466,10 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     if houseNumberBlocking:
         print('Start matching those with postcode information, using postcode and house number blocking...')
-        pairs = pcl.block(left_on=['postcode', 'house_number'], right_on=['postcode', 'PAO_START_NUMBER'])
+        pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'PAO_START_NUMBER'])
     else:
         print('Start matching those with postcode information, using postcode and street name blocking...')
-        pairs = pcl.block(left_on=['postcode', 'road'], right_on=['postcode', 'street_descriptor'])
+        pairs = pcl.block(left_on=['Postcode', 'StreetName'], right_on=['postcode', 'streetName'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
@@ -604,32 +478,34 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
 
     # set rules for simple addresses
     if houseNumberBlocking:
-        compare.string('street_descriptor', 'road', method='damerau_levenshtein', name='street_dl')
-    compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein',
-                   missing_value=0, name='pao_suffix_dl')
-    compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl') # good for care homes
-    compare.string('town_name', 'city', method='damerau_levenshtein', name='town_dl')
-    compare.string('locality', 'locality', method='damerau_levenshtein', name='locality_dl')
+        compare.string('streetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
+    # compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein',
+    #                missing_value=0, name='pao_suffix_dl')
+    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
+    compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
+    compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
 
     # set rules for carehome type addresses
-    compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
-    compare.string('SUB_BUILDING_NAME', 'flat', method='damerau_levenshtein', name='flatw_dl')
-    compare.string('ORGANISATION', 'house', method='damerau_levenshtein', name='organisation_dl')
-    compare.string('ORGANISATION_NAME', 'house', method='damerau_levenshtein', name='organisation2_dl')
+    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
+    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
+    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
+    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
     if ~houseNumberBlocking:
-        compare.numeric('PAO_START_NUMBER', 'house_number', threshold=0.1, missing_value=-123, name='pao_number_dl')
+        # compare.numeric('PAO_START_NUMBER', 'BuildingNumber', threshold=0.1, missing_value=-123, name='pao_number_dl')
+        compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
 
-    compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
+    # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
 
     # execute the comparison model
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    compare.vectors['pao_suffix_dl'] *= 10. # helps with addresses with suffix e.g. 55A
+    # compare.vectors['pao_suffix_dl'] *= 10. # helps with addresses with suffix e.g. 55A
     compare.vectors['pao_dl'] *= 5. # helps with carehomes
     compare.vectors['organisation_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
-    compare.vectors['sao_number_dl'] *= 2.
+    # compare.vectors['sao_number_dl'] *= 2.
     compare.vectors['flatw_dl'] *= 1.
 
     # add sum of the components to the comparison vectors dataframe
@@ -679,36 +555,35 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
-    # pairs = pcl.block(left_on=['house_number', 'road', 'city'],
-    #                   right_on=['PAO_START_NUMBER', 'street_descriptor', 'town_name'])
-    pairs = pcl.block(left_on=['house_number', 'road'], right_on=['PAO_START_NUMBER', 'street_descriptor'])
+    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['PAO_START_NUMBER', 'streetName'])
     # pairs = pcl.sortedneighbourhood('postcode_in', window=3, block_on='postcode_in')
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
-    compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein', name='pao_suffix_dl')
-    compare.string('pao_text', 'house', method='damerau_levenshtein', name='pao_dl') # good for care homes
-    compare.string('locality', 'locality', method='damerau_levenshtein', name='locality_dl')
-    compare.string('building_number', 'house_number', method='damerau_levenshtein', name='number_dl')
-    # compare.string('sao_text', 'flat', method='damerau_levenshtein', name='flat_dl')
-    # compare.string('SUB_BUILDING_NAME', 'flat', method='damerau_levenshtein', name='flatw_dl')
-    compare.string('ORGANISATION', 'house', method='damerau_levenshtein', name='organisation_dl')
-    compare.string('ORGANISATION_NAME', 'house', method='damerau_levenshtein', name='organisation2_dl')
-    compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
-    compare.string('town_name', 'city', method='damerau_levenshtein', name='city_dl')
+    # compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein', name='pao_suffix_dl')
+    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl') # good for care homes
+    compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
+    compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='number_dl')
+    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
+    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
+    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
+    compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
+    # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
+    compare.string('townName', 'TownName', method='damerau_levenshtein', name='city_dl')
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
     # compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
     # compare.exact('flat_number', 'flat_number', missing_value='-1234', disagree_value=-0.1, name='flat_number_dl')
-    compare.string('flat_number', 'flat_number',  method='damerau_levenshtein', name='flat_number_dl')
+    # compare.string('flat_number', 'flat_number',  method='damerau_levenshtein', name='flat_number_dl')
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 4.
     compare.vectors['city_dl'] *= 5.
-    compare.vectors['pao_suffix_dl'] *= 10. # helps with addresses with suffix e.g. 55A
+    # compare.vectors['pao_suffix_dl'] *= 10. # helps with addresses with suffix e.g. 55A
     compare.vectors['number_dl'] *= 10.
-    compare.vectors['flat_number_dl'] *= 8.
+    # compare.vectors['flat_number_dl'] *= 8.
     compare.vectors['organisation_dl'] *= 5.
 
     # add sum of the components to the comparison vectors dataframe
@@ -851,8 +726,8 @@ def runAll():
 
     :return: None
     """
-    print('\nReading in Postcode Data...')
-    postcodeinfo = loadPostcodeInformation()
+    # print('\nReading in Postcode Data...')
+    # postcodeinfo = loadPostcodeInformation()
 
     print('\nReading in Address Base Data...')
     start = time.clock()
@@ -869,7 +744,7 @@ def runAll():
 
     print('\nParsing Edge Case data...')
     start = time.clock()
-    parsedEdgeCases = parseEdgeCaseData(edgeCases, postcodeinfo)
+    parsedEdgeCases = parseEdgeCaseData(edgeCases)
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
@@ -878,7 +753,7 @@ def runAll():
     parsedEdgeCases.index.name = 'EC_Index'
 
     # split to those with full postcode and no postcode - use different matching strategies
-    msk = parsedEdgeCases['postcode'].isnull()
+    msk = parsedEdgeCases['Postcode'].isnull()
     withPC = parsedEdgeCases.loc[~msk]
     noPC = parsedEdgeCases.loc[msk]
 
@@ -886,7 +761,7 @@ def runAll():
     start = time.clock()
     ms1 = ms2 = m1a = m1b = False
     if len(withPC.index) > 0:
-        msk = withPC['house_number'].isnull()
+        msk = withPC['BuildingNumber'].isnull()
         withPCnoHouseNumber = withPC.loc[msk]
         withPCHouseNumber = withPC.loc[~msk]
         if len(withPCHouseNumber) > 0:
@@ -944,57 +819,32 @@ if __name__ == "__main__":
 
     """
     This version with full AB and reasonable runtime:
-        Matched 3427 entries
-        Total Match Fraction 68.5
-        Correctly Matched 2559
-        Correctly Matched Fraction 51.2
-        False Positives 868
-        False Positive Rate 17.4
-        Correctly Matched 668 CARE_HOMES
-        Match Fraction 66.8
-        False Positives 104
-        False Positive Rate 10.4
-        Correctly Matched 999 DEAD_SIMPLE
-        Match Fraction 99.9
-        False Positives 1
-        False Positive Rate 0.1
-        Correctly Matched 427 ORDER_MATTERS
-        Match Fraction 42.7
-        False Positives 465
-        False Positive Rate 46.5
-        Correctly Matched 190 PAF_MISMATCH
-        Match Fraction 19.0
-        False Positives 44
-        False Positive Rate 4.4
-        Correctly Matched 275 PARTS_MISSING
-        Match Fraction 27.5
-        False Positives 254
-        False Positive Rate 25.4
+        NA
     On Mini:
-        Matched 3536 entries
-        Total Match Fraction 70.7
-        Correctly Matched 3498
-        Correctly Matched Fraction 70.0
-        False Positives 38
-        False Positive Rate 0.8
-        Correctly Matched 727 CARE_HOMES
-        Match Fraction 72.7
-        False Positives 3
+        Matched 3162 entries
+        Total Match Fraction 63.2
+        Correctly Matched 3145
+        Correctly Matched Fraction 62.9
+        False Positives 17
         False Positive Rate 0.3
-        Correctly Matched 997 DEAD_SIMPLE
-        Match Fraction 99.7
+        Correctly Matched 711 CARE_HOMES
+        Match Fraction 71.1
+        False Positives 5
+        False Positive Rate 0.5
+        Correctly Matched 946 DEAD_SIMPLE
+        Match Fraction 94.6
+        False Positives 0
+        False Positive Rate 0.0
+        Correctly Matched 552 ORDER_MATTERS
+        Match Fraction 55.2
         False Positives 1
         False Positive Rate 0.1
-        Correctly Matched 862 ORDER_MATTERS
-        Match Fraction 86.2
-        False Positives 16
-        False Positive Rate 1.6
-        Correctly Matched 190 PAF_MISMATCH
-        Match Fraction 19.0
-        False Positives 3
-        False Positive Rate 0.3
-        Correctly Matched 722 PARTS_MISSING
-        Match Fraction 72.2
-        False Positives 15
-        False Positive Rate 1.5
+        Correctly Matched 330 PAF_MISMATCH
+        Match Fraction 33.0
+        False Positives 0
+        False Positive Rate 0.0
+        Correctly Matched 606 PARTS_MISSING
+        Match Fraction 60.6
+        False Positives 11
+        False Positive Rate 1.1
     """

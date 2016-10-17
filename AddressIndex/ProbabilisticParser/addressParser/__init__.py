@@ -63,12 +63,14 @@ NULL_LABEL = 'Null'                         # the null XML tag
 DIRECTIONS = {'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'north', 'south', 'east', 'west',
               'northeast', 'northwest', 'southeast', 'southwest'}
 FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
-        'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'COTTAGE'}
+        'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'BLK'}
 COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
 ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU', 'SQUARE',
-        'LANE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT', 'CLOSE', 'CL', 'WALK'}
-# Residential = {'HOUSE', 'FARM', 'LODGE', 'COURT'}
-# Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK'}
+        'LANE', 'LNE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT',
+        'CLOSE', 'CL', 'WALK', 'WAY', 'TERRACE', 'BVLD'}
+# Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COURT', 'COTTAGE', 'COTTAGES', 'VILLA', 'VILLAS', 'MAISONETTE, 'MEWS'}
+# Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'}
+# Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH'}
 
 # get some extra info - possible incodes and the linked post towns
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
@@ -103,6 +105,7 @@ def parse(raw_string):
 
 def tag(raw_string):
     tagged = OrderedDict()
+
     for token, label in parse(raw_string):
         tagged.setdefault(label, []).append(token)
 
