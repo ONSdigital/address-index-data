@@ -23,8 +23,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 13-Oct-2016
+:version: 0.3
+:date: 14-Oct-2016
 """
 import pandas as pd
 import numpy as np
@@ -182,9 +182,9 @@ def _toXML(row):
     return ''.join(xml)
 
 
-def createTrainingData(data, trainingsize=1000000, holdoutsize=100000,
-                       outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
-                       outfile='training.xml', holdoutfile='holdout.xml'):
+def createTrainingDataFullAB(data, trainingsize=1000000, holdoutsize=100000,
+                             outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
+                             outfile='training.xml', holdoutfile='holdout.xml'):
     """
     Create training and holdout files for the probabilistic parser. Takes a pandas dataframe
     as an input, re-orders the information, splits it to training and holdout data, and finally
@@ -267,7 +267,109 @@ def createTrainingData(data, trainingsize=1000000, holdoutsize=100000,
         fh.close()
 
 
+def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                              filename='ABP_E39_DELIVERY_POINT.csv',
+                              trainingsize=1000000, holdoutsize=100000,
+                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
+                              outfile='training.xml', holdoutfile='holdout.xml'):
+    """
+    Create training and holdout files for the probabilistic parser. Takes a pandas dataframe
+    as an input, re-orders the information, splits it to training and holdout data, and finally
+    outputs to two XML files.
+
+    The output is in the following format:
+        <AddressCollection>
+            <AddressString><label>token</label> <label>token</label> <label>token</label></AddressString>
+            <AddressString><label>token</label> <label>token</label></AddressString>
+        </AddressCollection>
+
+    :param path:
+    :type path:
+    :param filename:
+    :type filename:
+    :param trainingsize: number of training samples, if exceeds the number of examples then no holdout data
+    :type trainingsize: int
+    :param holdoutsize: number of holdout samples, if exceeds the number of potential holdouts, then use all
+    :type holdoutsize: int
+    :param outpath: location where to store the output files
+    :type outpath: str
+    :param outfile: name of the training data file
+    :type outfile: str
+    :param holdoutfile: name of the holdout data file
+    :type holdoutfile: str
+
+    :return: None
+    """
+
+    data = pd.read_csv(path + filename, dtype=str,
+                       usecols=['ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
+                                'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
+                                'POST_TOWN', 'POSTCODE'])
+
+    print('Renaming columns...')
+    data.rename(columns={'ORGANISATION_NAME': 'OrganisationName',
+                         'DEPARTMENT_NAME': 'DepartmentName',
+                         'SUB_BUILDING_NAME': 'SubBuildingName',
+                         'BUILDING_NAME': 'BuildingName',
+                         'BUILDING_NUMBER': 'BuildingNumber',
+                         'THROUGHFARE': 'StreetName',
+                         'DEPENDENT_LOCALITY': 'Locality',
+                         'POST_TOWN': 'TownName',
+                         'POSTCODE': 'Postcode'}, inplace=True)
+
+    print('re-ordering the columns to match the order expected in an address...')
+    neworder = ['OrganisationName',
+                'DepartmentName',
+                'SubBuildingName',
+                'BuildingName',
+                'BuildingNumber',
+                'StreetName',
+                'Locality',
+                'TownName',
+                'Postcode']
+    data = data[neworder]
+    print(data.info())
+
+    print('Initial length', len(data.index))
+    print('remove those with STREET RECORD, PARKING SPACE, or POND in BuildingName...')
+    msk = data['BuildingName'].str.contains('STREET RECORD|PARKING SPACE|POND', na=False)
+    data = data.loc[~msk]
+    print('After removing parking spaces etc.',len(data.index))
+
+    print('changing ampersands to AND...')
+    for col in data.columns.values.tolist():
+        data[col] = data[col].str.replace(r'&', 'AND', case=False)
+
+    print('Deriving training and holdout data...')
+    if len(data.index) > trainingsize:
+        rows = np.random.choice(data.index.values, trainingsize)
+        msk = np.in1d(data.index.values, rows)
+        training = data.loc[msk]
+        holdout = data.loc[~msk]
+        if len(holdout.index) > holdoutsize:
+            holdout = holdout.sample(n=holdoutsize)
+    else:
+        print('ERROR: only', len(data.index), 'addresses, using all for training!')
+        training = data
+        holdout = None
+
+    print('writing training data to an XML file...')
+    fh = open(outpath + outfile, mode='w')
+    fh.write('<AddressCollection>')
+    fh.write(''.join(training.apply(_toXML, axis=1)))
+    fh.write('\n</AddressCollection>')
+    fh.close()
+
+    print('writing the holdout data to an XML file...')
+    if holdout is not None:
+        fh = open(outpath + holdoutfile, mode='w')
+        fh.write('<AddressCollection>')
+        fh.write(''.join(holdout.apply(_toXML, axis=1)))
+        fh.write('\n</AddressCollection>')
+        fh.close()
+
+
 if __name__ == "__main__":
-    data = combineAddressBaseData()
-    # data = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/training/ABforTraining.csv', dtype=str)
-    createTrainingData(data)
+    # data = combineAddressBaseData()
+    # createTrainingDataFullAB(data)
+    createTrainingDataFromPAF()

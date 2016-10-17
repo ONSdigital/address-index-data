@@ -44,14 +44,11 @@ MODEL_FILE = 'addresses.crfsuite'
 # |1. CONFIGURE LABELS! |
 # |_____________________|
 
-LABELS = ['SubBuildingPrefix',
-          'SubBuildingNumber',
-          'SubBuildingName',
-          'OrganisationName',
+LABELS = ['OrganisationName',
           'DepartmentName',
+          'SubBuildingName',
           'BuildingName',
           'BuildingNumber',
-          'BuildingNumberSuffix',
           'StreetName',
           'Locality',
           'TownName',
@@ -65,10 +62,13 @@ NULL_LABEL = 'Null'                         # the null XML tag
 # set some features that are being used to identify tokens
 DIRECTIONS = {'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'north', 'south', 'east', 'west',
               'northeast', 'northwest', 'southeast', 'southwest'}
-FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT', 'ROOM', 'ANNEXE', 'UNIT', 'BLOCK'}
-COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
-ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU',
+FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
+        'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'COTTAGE'}
+COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
+ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU', 'SQUARE',
         'LANE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT', 'CLOSE', 'CL', 'WALK'}
+# Residential = {'HOUSE', 'FARM', 'LODGE', 'COURT'}
+# Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK'}
 
 # get some extra info - possible incodes and the linked post towns
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
@@ -198,6 +198,7 @@ def tokenFeatures(token):
                 'flat': token_clean.upper() in FLAT,
                 'company': token_clean.upper() in COMPANY,
                 'road': token_clean.upper() in ROAD
+                # how many dashes, like 127-129 or bradford-on-avon
                 }
     return features
 
