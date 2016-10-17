@@ -23,8 +23,8 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 14-Oct-2016
+:version: 0.4
+:date: 17-Oct-2016
 """
 import pandas as pd
 import numpy as np
@@ -352,6 +352,14 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
         print('ERROR: only', len(data.index), 'addresses, using all for training!')
         training = data
         holdout = None
+
+    print('Removing 5 per cent postcodes and mushing 5 per cent together')
+    rows = np.random.choice(data.index.values, int(trainingsize*0.05))
+    msk = np.in1d(data.index.values, rows)
+    data.loc[msk, 'Postcode'] = data.loc[msk, 'Postcode'].str.replace(' ', '')
+    rows = np.random.choice(data.index.values, int(trainingsize*0.05))
+    msk = np.in1d(data.index.values, rows)
+    data.loc[msk, 'Postcode'] = None
 
     print('writing training data to an XML file...')
     fh = open(outpath + outfile, mode='w')
