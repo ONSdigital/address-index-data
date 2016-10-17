@@ -8,6 +8,13 @@ This file defines the Conditional Random Field parser settings including output 
 structure of the XML expected to hold training data, tokens and features.
 
 
+Training
+--------
+
+Command line:
+    parserator train training/training.xml addressParser
+
+
 Requirements
 ------------
 
@@ -25,8 +32,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 14-Oct-2016
+:version: 0.2
+:date: 17-Oct-2016
 """
 import pycrfsuite
 import os
@@ -68,9 +75,11 @@ COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UN
 ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU', 'SQUARE',
         'LANE', 'LNE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT',
         'CLOSE', 'CL', 'WALK', 'WAY', 'TERRACE', 'BVLD'}
-# Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COURT', 'COTTAGE', 'COTTAGES', 'VILLA', 'VILLAS', 'MAISONETTE, 'MEWS'}
-# Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'}
-# Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH'}
+Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COURT', 'COTTAGE',
+               'COTTAGES', 'VILLA', 'VILLAS', 'MAISONETTE', 'MEWS'}
+Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'}
+Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR',
+              'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH'}
 
 # get some extra info - possible incodes and the linked post towns
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
@@ -178,31 +187,26 @@ def tokens2features(tokens):
 
 
 def tokenFeatures(token):
-    # this defines a dict of features for an individual token
-    # if token in (u'&', u'#', u'½'):
-    #     token_clean = token
-    # else:
-    #     token_clean = re.sub(r'(^[\W]*)|([^.\w]*$)', u'', token, flags=re.UNICODE)
 
-    token_clean = token
-    token_abbrev = re.sub(r'[.]', u'', token_clean.lower())
+    token_clean = token.upper()
 
-    features = {#'abbrev': token_clean[-1] == u'.',
-                'digits': digits(token_clean),
-                'word': (token_abbrev if not token_abbrev.isdigit() else False),
-                # 'trailing.zeros': (trailingZeros(token_abbrev) if token_abbrev.isdigit() else False),
-                'length': (u'd:' + str(len(token_abbrev)) if token_abbrev.isdigit() else u'w:' + str(len(token_abbrev))),
+    features = {'digits': digits(token_clean),
+                'word': (token_clean if not token_clean.isdigit() else False),
+                'length': (u'd:' + str(len(token_clean)) if token_clean.isdigit() else u'w:' + str(len(token_clean))),
                 'endsinpunc': (token[-1] if bool(re.match('.+[^.\w]', token, flags=re.UNICODE)) else False),
-                'directional': token_abbrev.upper() in DIRECTIONS,
-                'outcode': token_clean.upper() in OUTCODES,
-                # 'postcode': isPostcode(token_clean),
-                'posttown': token_clean.upper() in POSTTOWNS,
-                'has.vowels': bool(set(token_abbrev[1:]) & set('aeiou')),
-                'flat': token_clean.upper() in FLAT,
-                'company': token_clean.upper() in COMPANY,
-                'road': token_clean.upper() in ROAD
+                'directional': token_clean in DIRECTIONS,
+                'outcode': token_clean in OUTCODES,
+                'posttown': token_clean in POSTTOWNS,
+                'has.vowels': bool(set(token_clean) & set('AEIOU')),
+                'flat': token_clean in FLAT,
+                'company': token_clean in COMPANY,
+                'road': token_clean in ROAD,
+                'residential': token_clean in Residential,
+                'business': token_clean in Business,
+                'locational': token_clean in Locational
                 # how many dashes, like 127-129 or bradford-on-avon
                 }
+
     return features
 
 
@@ -217,27 +221,6 @@ def casing(token):
     elif token.isalpha():
         return 'mixed'
     else:
-        return False
-
-
-def isPostcode(string):
-    """
-    Extract a postcode from address information.
-
-    Uses regular expression to extract the postcode:
-    http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
-
-    :param string: string to be parsed
-    :type string: str
-
-    :return: postcode
-    :rtype: str
-    """
-    regx = r'(([gG][iI][rR] {0,}0[aA]{2})|((([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y]?[0-9][0-9]?)|(([a-pr-uwyzA-PR-UWYZ][0-9][a-hjkstuwA-HJKSTUW])|([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y][0-9][abehmnprv-yABEHMNPRV-Y]))) {0,}[0-9][abd-hjlnp-uw-zABD-HJLNP-UW-Z]{2}))'
-    try:
-        tmp = re.findall(regx, string)[0][0]
-        return True
-    except:
         return False
 
 

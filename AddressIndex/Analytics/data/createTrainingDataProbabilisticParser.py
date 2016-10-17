@@ -353,13 +353,15 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
         training = data
         holdout = None
 
-    print('Removing 5 per cent postcodes and mushing 5 per cent together')
-    rows = np.random.choice(data.index.values, int(trainingsize*0.05))
-    msk = np.in1d(data.index.values, rows)
-    data.loc[msk, 'Postcode'] = data.loc[msk, 'Postcode'].str.replace(' ', '')
-    rows = np.random.choice(data.index.values, int(trainingsize*0.05))
-    msk = np.in1d(data.index.values, rows)
-    data.loc[msk, 'Postcode'] = None
+    print('Removing 5 per cent of postcodes and mushing 5 per cent together')
+    rows = np.random.choice(training.index.values, int(trainingsize*0.05))
+    msk = np.in1d(training.index.values, rows)
+    training.loc[msk, 'Postcode'] = training.loc[msk, 'Postcode'].str.replace(' ', '')
+    rows = np.random.choice(training.index.values, int(trainingsize*0.05))
+    msk = np.in1d(training.index.values, rows)
+    training.loc[msk, 'Postcode'] = None
+
+    # todo: maybe on should drop randomly also building number or street name from some addresses?
 
     print('writing training data to an XML file...')
     fh = open(outpath + outfile, mode='w')
