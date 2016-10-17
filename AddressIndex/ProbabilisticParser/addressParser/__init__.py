@@ -8,8 +8,8 @@ This file defines the Conditional Random Field parser settings including output 
 structure of the XML expected to hold training data, tokens and features.
 
 
-Training
---------
+Training a Model
+----------------
 
 Command line:
     parserator train training/training.xml addressParser
@@ -43,14 +43,10 @@ import string
 from collections import OrderedDict
 import pandas as pd
 
-
 # filename for the crfsuite settings file
 MODEL_FILE = 'addresses.crfsuite'
 
-#  _____________________
-# |1. CONFIGURE LABELS! |
-# |_____________________|
-
+# set labels - token names expected in the training file
 LABELS = ['OrganisationName',
           'DepartmentName',
           'SubBuildingName',
@@ -62,17 +58,17 @@ LABELS = ['OrganisationName',
           'Postcode']
 
 # set the XML segment names
-PARENT_LABEL = 'AddressString'              # the XML tag for each labeled string
-GROUP_LABEL = 'AddressCollection'           # the XML tag for a group of strings
-NULL_LABEL = 'Null'                         # the null XML tag
+PARENT_LABEL = 'AddressString'  # the XML tag for each labeled string
+GROUP_LABEL = 'AddressCollection'  # the XML tag for a group of strings
+NULL_LABEL = 'Null'  # the null XML tag
 
 # set some features that are being used to identify tokens
-DIRECTIONS = {'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'north', 'south', 'east', 'west',
-              'northeast', 'northwest', 'southeast', 'southwest'}
+DIRECTIONS = {'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST',
+              'NORTHEAST', 'NORTHWEST', 'SOUTHEAST', 'SOUTHWEST'}
 FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
         'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'BLK'}
 COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
-ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE','AVENEU', 'SQUARE',
+ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE', 'AVENEU', 'SQUARE',
         'LANE', 'LNE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT',
         'CLOSE', 'CL', 'WALK', 'WAY', 'TERRACE', 'BVLD'}
 Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COURT', 'COTTAGE',
@@ -81,7 +77,7 @@ Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'
 Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR',
               'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH'}
 
-# get some extra info - possible incodes and the linked post towns
+# get some extra info - possible incodes and the linked post towns, used to identify tokens
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
 OUTCODES = set(df['postcode'].values)
 POSTTOWNS = set(df['town'].values)
@@ -98,6 +94,15 @@ except IOError:
 
 
 def parse(raw_string):
+    """
+    Parse the given input string using a trained model. Returns a list of tokens and labels.
+
+    :param raw_string: input string to parse
+    :type raw_string: str
+
+    :return: a list of tokens and labels
+    :rtype: list
+    """
     if not TAGGER:
         raise IOError(
             '\nMISSING MODEL FILE: %s\nYou must train the model before you can use the parse and tag methods\nTo train the model annd create the model file, run:\nparserator train [traindata] [modulename]' % MODEL_FILE)
@@ -109,10 +114,22 @@ def parse(raw_string):
     features = tokens2features(tokens)
 
     tags = TAGGER.tag(features)
+
     return list(zip(tokens, tags))
 
 
 def tag(raw_string):
+    """
+    Parse the given input string using a trained model. Returns an ordered dictionary of tokens and labels.
+    Unlike the parse function returns a complete label i.e. joins multiple labels to a single string and
+    labels the full string given the label.
+
+    :param raw_string: input string to parse and label
+    :type raw_string: str
+
+    :return: a dictionary of tokens and labels
+    :rtype: Ordered Dictionary
+    """
     tagged = OrderedDict()
 
     for token, label in parse(raw_string):
@@ -130,8 +147,16 @@ def tag(raw_string):
 # |2. CONFIGURE TOKENS! |
 # |_____________________| 
 def tokenize(raw_string):
-    # this determines how any given string is split into its tokens
-    # handle any punctuation you want to split on, as well as any punctuation to capture
+    """
+    The function determines how any given string is split into its tokens.
+    Uses regular expression to split a given string to tokens.
+
+    :param raw_string: an unprocessed string
+    :type raw_string: str or bytes
+
+    :return: a list of tokens
+    :rtype: list
+    """
 
     if isinstance(raw_string, bytes):
         try:
@@ -144,6 +169,7 @@ def tokenize(raw_string):
 
     if not tokens:
         return []
+
     return tokens
 
 
@@ -151,9 +177,13 @@ def tokenize(raw_string):
 # |3. CONFIGURE FEATURES! |
 # |_______________________| 
 def tokens2features(tokens):
-    # this should call tokenFeatures to get features for individual tokens,
-    # as well as define any features that are dependent upon tokens before/after
+    """
+    This should call tokenFeatures to get features for individual tokens,
+    as well as define any features that are dependent upon tokens before/after.
 
+    :param tokens:
+    :return:
+    """
     feature_sequence = [tokenFeatures(tokens[0])]
     previous_features = feature_sequence[-1].copy()
 
@@ -187,7 +217,18 @@ def tokens2features(tokens):
 
 
 def tokenFeatures(token):
+    """
+    Compute the features for a given string token. Features include the length of the token,
+    whether there digits and if the token is directional, residential, business, locational,
+    company, road, or posttown or postcode. In addition, check whether the token contains
+    vowels and ends in punctuation.
 
+    :param token: input token
+    :type token: str
+
+    :return: dictionary of the computed features
+    :rtype: dict
+    """
     token_clean = token.upper()
 
     features = {'digits': digits(token_clean),
@@ -210,8 +251,16 @@ def tokenFeatures(token):
     return features
 
 
-# get the casing of a token
 def casing(token):
+    """
+    Get the casing of a token.
+
+    :param token: input token
+    :type token: str
+
+    :return: description of the content
+    :rtype: str
+    """
     if token.isupper():
         return 'upper'
     elif token.islower():
@@ -225,6 +274,15 @@ def casing(token):
 
 
 def digits(token):
+    """
+    Whether a given string token contains digits or not.
+
+    :param token: input token
+    :type token: str
+
+    :return: description of the content
+    :rtype: str
+    """
     if token.isdigit():
         return 'all_digits'
     elif set(token) & set(string.digits):
@@ -234,6 +292,15 @@ def digits(token):
 
 
 def trailingZeros(token):
+    """
+    Whether a given string token contains trailing zeros.
+
+    :param token: input token
+    :type token: str
+
+    :return: description of the content
+    :rtype: str
+    """
     results = re.findall(r'(0+)$', token)
     if results:
         return results[0]
