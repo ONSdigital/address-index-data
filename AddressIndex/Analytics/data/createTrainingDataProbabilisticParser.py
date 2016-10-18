@@ -23,13 +23,16 @@ Author
 Version
 -------
 
-:version: 0.4
-:date: 17-Oct-2016
+:version: 0.5
+:date: 18-Oct-2016
 """
 import pandas as pd
 import numpy as np
 import glob
 import numbers
+
+# set the random seed so that we get the same training and holdout data even if rerun
+np.random.seed(seed=42)
 
 
 def combineAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
@@ -269,9 +272,10 @@ def createTrainingDataFullAB(data, trainingsize=1000000, holdoutsize=100000,
 
 def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
                               filename='ABP_E39_DELIVERY_POINT.csv',
-                              trainingsize=1000000, holdoutsize=100000,
+                              trainingsize=10000000, holdoutsize=100000,
+                              subtaining_samples=(1000000, 100000, 10000, 1000),
                               outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
-                              outfile='training.xml', holdoutfile='holdout.xml'):
+                              outfile='training10M.xml', holdoutfile='holdout.xml'):
     """
     Create training and holdout files for the probabilistic parser. Takes a pandas dataframe
     as an input, re-orders the information, splits it to training and holdout data, and finally
@@ -283,14 +287,16 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
             <AddressString><label>token</label> <label>token</label></AddressString>
         </AddressCollection>
 
-    :param path:
-    :type path:
-    :param filename:
-    :type filename:
+    :param path: location of the address base data
+    :type path: str
+    :param filename: name of the address base PAF file
+    :type filename: str
     :param trainingsize: number of training samples, if exceeds the number of examples then no holdout data
     :type trainingsize: int
     :param holdoutsize: number of holdout samples, if exceeds the number of potential holdouts, then use all
     :type holdoutsize: int
+    :param subtaining_samples: a tuple of containing the number of samples to use for subsamples drawn from the training data
+    :type subtaining_samples: tuple
     :param outpath: location where to store the output files
     :type outpath: str
     :param outfile: name of the training data file
@@ -300,7 +306,6 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
 
     :return: None
     """
-
     data = pd.read_csv(path + filename, dtype=str,
                        usecols=['ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
                                 'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
@@ -363,7 +368,7 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
 
     # todo: maybe on should drop randomly also building number or street name from some addresses?
 
-    print('writing training data to an XML file...')
+    print('writing full training data to an XML file...')
     fh = open(outpath + outfile, mode='w')
     fh.write('<AddressCollection>')
     fh.write(''.join(training.apply(_toXML, axis=1)))
@@ -375,6 +380,17 @@ def createTrainingDataFromPAF(path='/Users/saminiemi/Projects/ONS/AddressIndex/d
         fh = open(outpath + holdoutfile, mode='w')
         fh.write('<AddressCollection>')
         fh.write(''.join(holdout.apply(_toXML, axis=1)))
+        fh.write('\n</AddressCollection>')
+        fh.close()
+
+    # take smaller samples - useful for testing the impact of training data
+    for sample_size in subtaining_samples:
+        print('Drawing randomly', sample_size, 'samples from the training data...')
+        sample = training.sample(n=sample_size)
+        print('writing small training data of', sample_size, 'to an XML file...')
+        fh = open(outpath + outfile.replace('10M', str(sample_size)), mode='w')
+        fh.write('<AddressCollection>')
+        fh.write(''.join(sample.apply(_toXML, axis=1)))
         fh.write('\n</AddressCollection>')
         fh.close()
 
