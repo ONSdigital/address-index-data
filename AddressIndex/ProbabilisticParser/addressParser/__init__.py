@@ -18,8 +18,8 @@ Command line:
 Requirements
 ------------
 
-:requires: parserator
-:requires: pycrfsuite
+:requires: parserator (http://parserator.readthedocs.io/en/latest/)
+:requires: pycrfsuite (https://python-crfsuite.readthedocs.io/en/latest/)
 :requires: pandas
 
 
@@ -32,8 +32,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 17-Oct-2016
+:version: 0.3
+:date: 18-Oct-2016
 """
 import pycrfsuite
 import os
@@ -70,12 +70,15 @@ FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
 COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
 ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE', 'AVENEU', 'SQUARE',
         'LANE', 'LNE', 'LN', 'COURT', 'CRT', 'CT', 'PARK', 'PK', 'GRDN', 'GARDEN', 'CRESCENT',
-        'CLOSE', 'CL', 'WALK', 'WAY', 'TERRACE', 'BVLD'}
-Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COURT', 'COTTAGE',
-               'COTTAGES', 'VILLA', 'VILLAS', 'MAISONETTE', 'MEWS'}
-Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'}
-Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR',
-              'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH'}
+        'CLOSE', 'CL', 'WALK', 'WAY', 'TERRACE', 'BVLD', 'HEOL', 'FFORDD', 'PLACE', 'GARDENS',
+        'GROVE', 'VIEW', 'HILL', 'GREEN'}
+Residential = {'HOUSE', 'HSE', 'FARM', 'LODGE', 'COTTAGE', 'COTTAGES', 'VILLA', 'VILLAS', 'MAISONETTE', 'MEWS'}
+Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY', 'PRISON', 'HMP', 'RC',
+            'UWE', 'UEA', 'LSE', 'KCL', 'UCL', 'UNI', 'UNIV', 'UNIVERSITY', 'UNIVERISTY'}
+Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'HIGHER',
+              'ATTIC', 'LEFT', 'RIGHT', 'FRONT', 'BACK', 'REAR', 'WHOLE', 'PART', 'SIDE'}
+Ordinal = {'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH',
+           'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHT', '8TH'}
 
 # get some extra info - possible incodes and the linked post towns, used to identify tokens
 df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
@@ -244,8 +247,9 @@ def tokenFeatures(token):
                 'road': token_clean in ROAD,
                 'residential': token_clean in Residential,
                 'business': token_clean in Business,
-                'locational': token_clean in Locational
-                # how many dashes, like 127-129 or bradford-on-avon
+                'locational': token_clean in Locational,
+                'ordinal': token_clean in Ordinal,
+                'hyphenations': token_clean.count('-') # how many dashes, like 127-129 or bradford-on-avon
                 }
 
     return features

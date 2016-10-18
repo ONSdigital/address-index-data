@@ -73,7 +73,9 @@ def readHoldoutData(xmlFile):
         # convert string representation back to xml
         sequence_xml = etree.fromstring(component_string)
         raw_text = etree.tostring(sequence_xml, method='text', encoding='utf-8')
+        raw_text = str(raw_text, encoding='utf-8')
         sequence_components = []
+
         for component in list(sequence_xml):
             sequence_components.append([component.text, component.tag])
 
@@ -99,12 +101,15 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
     :return: None
     """
     correct = 0
-    incorrect = 0
+    correctItems = 0
     all = 0
+    allItems = 0
     store = []
 
     print('Predicting holdout data...')
     for raw_string, components in readHoldoutData('holdout.xml'):
+        all += 1
+
         # get the true labels
         _, true_labels = list(zip(*components))
         true_labels = list(true_labels)
@@ -113,19 +118,24 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
         parsed = predict(raw_string)
         predicted = [x[1] for x in parsed]
 
-        # test whether the prediction was correct, if not store for inspection
+        # test whether the full prediction was correct, if not store for inspection
         if true_labels == predicted:
             correct += 1
         else:
-            incorrect += 1
             store.append([raw_string, str(true_labels), str(predicted)])
 
-        all += 1
+        # loop over the tokens to check which are correct
+        for a, b in zip(predicted, true_labels):
+            allItems += 1
+            if a == b:
+                correctItems += 1
+        # todo: test each label separately
 
-    print('All:', all)
-    print('Correct:', correct)
-    print('Incorrect:', incorrect)
+    print('Holdout Addresses:', all)
+    print('All Tokens Correct:', correct)
     print('Percent of Correct:', float(correct)/all*100.)
+    print ('Correct Tokens:', correctItems)
+    print ('Percent of Tokens Correct:', float(correctItems)/allItems*100.)
 
     print('Outputting the incorrect ones to a file...')
     fh = open(outputfile, mode='w')
