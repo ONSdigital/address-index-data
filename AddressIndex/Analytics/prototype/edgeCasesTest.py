@@ -821,30 +821,30 @@ if __name__ == "__main__":
     This version with full AB and reasonable runtime:
         NA
     On Mini:
-        Matched 3162 entries
-        Total Match Fraction 63.2
-        Correctly Matched 3145
-        Correctly Matched Fraction 62.9
-        False Positives 17
+        Matched 3464 entries
+        Total Match Fraction 69.3
+        Correctly Matched 3446
+        Correctly Matched Fraction 68.9
+        False Positives 18
+        False Positive Rate 0.4
+        Correctly Matched 716 CARE_HOMES
+        Match Fraction 71.6
+        False Positives 4
+        False Positive Rate 0.4
+        Correctly Matched 965 DEAD_SIMPLE
+        Match Fraction 96.5
+        False Positives 0
+        False Positive Rate 0.0
+        Correctly Matched 837 ORDER_MATTERS
+        Match Fraction 83.7
+        False Positives 3
         False Positive Rate 0.3
-        Correctly Matched 711 CARE_HOMES
-        Match Fraction 71.1
-        False Positives 5
-        False Positive Rate 0.5
-        Correctly Matched 946 DEAD_SIMPLE
-        Match Fraction 94.6
+        Correctly Matched 324 PAF_MISMATCH
+        Match Fraction 32.4
         False Positives 0
         False Positive Rate 0.0
-        Correctly Matched 552 ORDER_MATTERS
-        Match Fraction 55.2
-        False Positives 1
-        False Positive Rate 0.1
-        Correctly Matched 330 PAF_MISMATCH
-        Match Fraction 33.0
-        False Positives 0
-        False Positive Rate 0.0
-        Correctly Matched 606 PARTS_MISSING
-        Match Fraction 60.6
+        Correctly Matched 604 PARTS_MISSING
+        Match Fraction 60.4
         False Positives 11
         False Positive Rate 1.1
     """
