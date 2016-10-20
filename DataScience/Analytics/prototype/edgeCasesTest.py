@@ -12,7 +12,7 @@ not the highest accuracy but to quickly test different ideas.
 Requirements
 ------------
 
-:requires: addressParser (CRF model build using parserator)
+:requires: ProbabilisticParser (CRF model)
 :requires: pandas
 :requires: numpy
 :requires: matplotlib
@@ -34,11 +34,11 @@ Version
 import pandas as pd
 import numpy as np
 import recordlinkage
-import addressParser
+from ProbabilisticParser import parser
 import matplotlib.pyplot as plt
 import time
 import re
-from AddressIndex.Analytics.data import data
+from Analytics.data import data
 
 
 def loadEdgeCaseTestingData(filename='EDGE_CASES_EC5K_NoPostcode.csv',
@@ -347,7 +347,7 @@ def parseEdgeCaseData(df):
 
     # loop over addresses - quite inefficient, should avoid a loop
     for address in addresses:
-        parsed = addressParser.tag(address.upper())
+        parsed = parser.tag(address.upper())
         pcode = getPostcode(address) # regular expression extraction
 
         # if both parsers found postcode then check that they are the same
@@ -821,30 +821,30 @@ if __name__ == "__main__":
     This version with full AB and reasonable runtime:
         NA
     On Mini:
-        Matched 3464 entries
-        Total Match Fraction 69.3
-        Correctly Matched 3446
-        Correctly Matched Fraction 68.9
-        False Positives 18
+        Matched 3470 entries
+        Total Match Fraction 69.4
+        Correctly Matched 3451
+        Correctly Matched Fraction 69.0
+        False Positives 19
         False Positive Rate 0.4
-        Correctly Matched 716 CARE_HOMES
-        Match Fraction 71.6
-        False Positives 4
-        False Positive Rate 0.4
-        Correctly Matched 965 DEAD_SIMPLE
-        Match Fraction 96.5
-        False Positives 0
-        False Positive Rate 0.0
-        Correctly Matched 837 ORDER_MATTERS
-        Match Fraction 83.7
+        Correctly Matched 719 CARE_HOMES
+        Match Fraction 71.9
         False Positives 3
         False Positive Rate 0.3
-        Correctly Matched 324 PAF_MISMATCH
-        Match Fraction 32.4
+        Correctly Matched 967 DEAD_SIMPLE
+        Match Fraction 96.7
         False Positives 0
         False Positive Rate 0.0
-        Correctly Matched 604 PARTS_MISSING
-        Match Fraction 60.4
-        False Positives 11
-        False Positive Rate 1.1
+        Correctly Matched 839 ORDER_MATTERS
+        Match Fraction 83.9
+        False Positives 2
+        False Positive Rate 0.2
+        Correctly Matched 328 PAF_MISMATCH
+        Match Fraction 32.8
+        False Positives 1
+        False Positive Rate 0.1
+        Correctly Matched 598 PARTS_MISSING
+        Match Fraction 59.8
+        False Positives 13
+        False Positive Rate 1.3
     """

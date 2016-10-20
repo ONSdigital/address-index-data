@@ -27,17 +27,17 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 19-Oct-2016
+:version: 0.3
+:date: 20-Oct-2016
 """
-import addressParser
+from ProbabilisticParser import parser
+import ProbabilisticParser.common.tokens as t
 from lxml import etree
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import sys
-import operator
 
 
 # set seaborn style
@@ -45,57 +45,6 @@ sns.set_style("whitegrid")
 sns.set_context("poster")
 sns.set(rc={"figure.figsize": (12, 12)})
 sns.set(font_scale=1.5)
-
-
-def _stripFormatting(collection):
-    """
-    Clears formatting for an xml collection.
-
-    :param collection:
-
-    :return:
-    """
-    collection.text = None
-    for element in collection:
-        element.text = None
-        element.tail = None
-
-    return collection
-
-
-def readHoldoutData(xmlFile):
-    """
-
-    :param xmlFile:
-    :return:
-    """
-    component_string_list = []
-
-    # loop through xml file
-    if os.path.isfile(xmlFile):
-        with open(xmlFile, 'r+') as f:
-            tree = etree.parse(f)
-            file_xml = tree.getroot()
-            file_xml = _stripFormatting(file_xml)
-            for component_etree in file_xml:
-                # etree components to string representations
-                component_string_list.append(etree.tostring(component_etree))
-    else:
-        print('WARNING: %s does not exist' % xmlFile)
-        sys.exit(-9)
-
-    # loop through unique string representations
-    for component_string in component_string_list:
-        # convert string representation back to xml
-        sequence_xml = etree.fromstring(component_string)
-        raw_text = etree.tostring(sequence_xml, method='text', encoding='utf-8')
-        raw_text = str(raw_text, encoding='utf-8')
-        sequence_components = []
-
-        for component in list(sequence_xml):
-            sequence_components.append([component.text, component.tag])
-
-        yield raw_text, sequence_components
 
 
 def predict(address):
@@ -109,7 +58,7 @@ def predict(address):
     :return: parsed address
     :rtype: list
     """
-    parsed = addressParser.parse(address.upper())
+    parsed = parser.parse(address.upper())
     return parsed
 
 
@@ -126,7 +75,7 @@ def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects
     # compute the fractions
     frac = []
     labels = []
-    for token in countsAll:
+    for token in countsCorrect.keys():
         frac.append(float(countsCorrect[token])/countsAll[token]*100.)
         labels.append(token)
 
@@ -174,7 +123,7 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
     store = []
 
     print('Predicting holdout data...')
-    for raw_string, components in readHoldoutData('holdout.xml'):
+    for raw_string, components in t.readXML('holdout.xml'):
         all += 1
 
         # get the true labels
@@ -199,7 +148,7 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
                 correctItems += 1
 
             # check for each token separately and store to a dictionary
-            for token in addressParser.LABELS:
+            for token in t.LABELS:
                 if token == b:
                     countsAll[token] = countsAll.get(token, 0) + 1
                     if a == b:
@@ -211,7 +160,7 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
     print('Correct Tokens:', correctItems)
     print('Percent of Tokens Correct:', float(correctItems)/allItems*100.)
 
-    for token in addressParser.LABELS:
+    for token in countsCorrect.keys():
         print(float(countsCorrect[token])/countsAll[token]*100.,'percent of', token, 'were correct')
 
     # # add the all tokens to the dictionaries so that can plot them as well
