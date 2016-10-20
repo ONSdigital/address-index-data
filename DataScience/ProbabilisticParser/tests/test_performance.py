@@ -11,8 +11,7 @@ the performance metric per token type.
 Requirements
 ------------
 
-:requires: lxml
-:requires: addressParser
+:requires: sklearn-crfsuite (http://sklearn-crfsuite.readthedocs.io/en/latest/index.html)
 :requires: seaborn
 :requires: matplotlib
 :requires: numpy
@@ -27,17 +26,16 @@ Author
 Version
 -------
 
-:version: 0.3
+:version: 0.4
 :date: 20-Oct-2016
 """
 from ProbabilisticParser import parser
 import ProbabilisticParser.common.tokens as t
-from lxml import etree
+import sklearn_crfsuite
+from sklearn_crfsuite import metrics
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import os
-import sys
 
 
 # set seaborn style
@@ -105,7 +103,57 @@ def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects
     plt.close()
 
 
-def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrectlyParsed.csv'):
+def sequence_accuracy_score(y_true, y_pred):
+    """
+    Return sequence accuracy score. Match is counted only when two sequences are equal.
+
+    :param y_true:
+    :param y_pred:
+
+    :return:
+    """
+    total = len(y_true)
+
+    matches = sum(1 for yseq_true, yseq_pred in zip(y_true, y_pred)
+                  if list(yseq_true) == list(yseq_pred))
+
+    return matches / total
+
+
+def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml'):
+    """
+
+    :param holdoutfile: location and name of the holdout XML data file
+    :type holdoutfile: str
+
+    :return: None
+    """
+    crf = sklearn_crfsuite.CRF(model_filename=t.MODEL_PATH + t.MODEL_FILE, verbose=True)
+    X_test, y_test = t.readData(holdoutfile)
+
+    # store labels
+    labels = list(crf.classes_)
+    sorted_labels = sorted(labels, key=lambda name: name)
+
+    print('Predicting holdout data...')
+    y_pred = crf.predict(X_test)
+
+    print('\nPerformance:')
+    # Calculate metrics for each label, and find their average,
+    # weighted by support (the number of true instances for each label).
+    total = metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
+    # full sequence accuracy
+    sequence_accuracy = sequence_accuracy_score(y_test, y_pred)
+
+    print('F1-score:', total)
+    print('Sequence accuracy:', sequence_accuracy)
+
+    print("")
+    report = metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3)
+    print(report)
+
+
+def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrectlyParsed.csv'):
     """
     Predict the tokens for the holdout data and check the performance.
 
@@ -179,4 +227,5 @@ def runAll(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrect
 
 
 if __name__ == "__main__":
-    runAll()
+    # _manual()
+    checkPerformance()

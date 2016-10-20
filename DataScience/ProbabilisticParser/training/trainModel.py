@@ -52,7 +52,6 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
         print('Read in holdout data')
     X_test, y_test = t.readData(holdoutfile)
 
-
     return X_train, y_train, X_test, y_test
 
 
@@ -82,7 +81,9 @@ def trainModel(X_train, y_train, X_test, y_test):
 
     print('Performance:')
     total = metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
-    print(total)
+    sequence_accuracy = metrics.sequence_accuracy_score(y_test, y_pred)
+    print('F1-score', total)
+    print('Sequence accuracy', sequence_accuracy)
 
     sorted_labels = sorted(labels, key=lambda name: (name[1:], name[0]))
     print(metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3))

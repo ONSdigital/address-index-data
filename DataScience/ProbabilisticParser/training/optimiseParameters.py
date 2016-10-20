@@ -3,7 +3,8 @@ ONS Address Index - Optimise the Probabilistic Parser
 =====================================================
 
 A simple script to run random search over CRF parameters to find an optimised model.
-Uses a smaller training data set to speed up the process.
+Uses a smaller training data set to speed up the process. Five-fold cross-validation
+is being used to assess the performance.
 
 
 Requirements
@@ -12,7 +13,7 @@ Requirements
 :requires: scikit-learn
 :requires: sklearn-crfsuite (http://sklearn-crfsuite.readthedocs.io/en/latest/index.html)
 :requires: scipy
-:requires: numpy
+:requires: matplotlib
 
 
 Author
@@ -30,10 +31,11 @@ Version
 import ProbabilisticParser.common.tokens as t
 from scipy import stats
 import sklearn_crfsuite
-import numpy as np
 from sklearn_crfsuite import metrics
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import RandomizedSearchCV
+import matplotlib.pyplot as plt
+
 
 
 def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training100000.xml',
@@ -63,6 +65,35 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
     return X_train, y_train, X_test, y_test
 
 
+def plotSearchSpace(rs, param1='c1', param2='c2', outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
+    """
+
+    :param rs:
+    :param param1:
+    :param param2:
+    :param outpath:
+
+    :return:
+    """
+    _x = [s.parameters[param1] for s in rs.grid_scores_]
+    _y = [s.parameters[param2] for s in rs.grid_scores_]
+    _c = [s.mean_validation_score for s in rs.grid_scores_]
+    # print(rs.cv_results_)
+
+    plt.figure()
+    ax = plt.gca()
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel(param1)
+    ax.set_ylabel(param2)
+    ax.set_title("Randomised Hyperparameter Search CV Results (min={:0.3}, max={:0.3})".format(min(_c), max(_c)))
+    sc = ax.scatter(_x, _y, c=_c, s=60, alpha=0.7, edgecolors=[0, 0, 0])
+    plt.colorbar(sc)
+    plt.tight_layout()
+    plt.savefig(outpath + 'hyperparameterOptimisation.pdf')
+    plt.close()
+
+
 def optimiseModel(X_train, y_train, X_test, y_test):
     """
     Randomised search to optimise the regularisation and other parameters of the CRF model.
@@ -83,9 +114,9 @@ def optimiseModel(X_train, y_train, X_test, y_test):
 
     # metrics needs a list of labels
     labels = t.LABELS
-    # labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
-    #           'Locality', 'TownName', 'Postcode']
-    print('Labels:', labels)
+    labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
+              'Locality', 'TownName', 'Postcode']
+    # print('Labels:', labels)
 
     # use the same metric for evaluation
     f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
@@ -109,7 +140,8 @@ def optimiseModel(X_train, y_train, X_test, y_test):
     sorted_labels = sorted(labels, key=lambda name: (name[1:], name[0]))
     print(metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3))
 
-    return crf
+    print('Generating a figure...')
+    plotSearchSpace(rs)
 
 
 if __name__ == '__main__':
