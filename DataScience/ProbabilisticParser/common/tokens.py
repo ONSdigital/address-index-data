@@ -34,7 +34,7 @@ import string
 
 
 # hardcoded filename and path
-MODEL_FILE = 'addresses.crfsuite'
+MODEL_FILE = 'addressCRF.crfsuite'
 MODEL_PATH = '/Users/saminiemi/PycharmProjects/ONSAI/DataScience/ProbabilisticParser/training/'
 
 # set labels - token names expected in the training file

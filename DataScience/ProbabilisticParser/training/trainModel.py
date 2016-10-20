@@ -32,16 +32,26 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
              holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml',
              verbose=True):
     """
+    Read in the training and holdout data from XML files.
 
-    :param trainingfile:
-    :param holdoutfile:
-    :param verbose:
-    :return:
+    :param trainingfile: location of the training data
+    :type trainingfile: str
+    :param holdoutfile: location of the holdout data
+    :type holdoutfile: str
+    :param verbose: whether or not to print to stdout
+    :type verbose: bool
+
+    :return: training data and labels, holdout data and labels
+    :rtype: list
     """
-    if verbose: print('Read in training data...')
+    if verbose:
+        print('Read in training data...')
     X_train, y_train = t.readData(trainingfile)
-    if verbose: print('Read in holdout data')
+
+    if verbose:
+        print('Read in holdout data')
     X_test, y_test = t.readData(holdoutfile)
+
 
     return X_train, y_train, X_test, y_test
 
@@ -53,12 +63,11 @@ def trainModel(X_train, y_train, X_test, y_test):
 
     :return:
     """
-
     print('Training a CRF model')
     crf = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                               c1=0.1,
-                               c2=0.01,
-                               all_possible_transitions=False,
+                               c1=0.4,
+                               c2=0.05,
+                               all_possible_transitions=True,
                                keep_tempfiles=True,
                                model_filename=t.MODEL_FILE,
                                verbose=True)
