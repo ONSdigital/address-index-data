@@ -57,16 +57,23 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
 
 def trainModel(X_train, y_train, X_test, y_test):
     """
-    # refer to http://www.chokkan.org/software/crfsuite/manual.html
-    # for description of parameters
+    Train a linear-chain Conditional Random Fields model using the input training data and labels.
+    Calculates hte performance on holdout data given.
 
-    :return:
+    :param X_train: training data in 2D array
+    :param y_train: training data labels
+    :param X_test: holdout data in 2D array
+    :type y_test: holdout data true labels
+
+    :return: None
     """
     print('Training a CRF model')
+    # the below values for the regularisation terms are not optimised!
+    # todo: switch to optimised parameters
     crf = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                               c1=0.4,
-                               c2=0.05,
-                               all_possible_transitions=True,
+                               c1=0.1,
+                               c2=0.01,
+                               all_possible_transitions=False,
                                keep_tempfiles=True,
                                model_filename=t.MODEL_FILE,
                                verbose=True)

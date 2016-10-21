@@ -73,7 +73,6 @@ POSTTOWNS = set(df['town'].values)
 # county?
 
 
-
 def _stripFormatting(collection):
     """
     Clears formatting for an xml collection.

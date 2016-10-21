@@ -25,8 +25,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 20-Oct-2016
+:version: 0.2
+:date: 21-Oct-2016
 """
 import ProbabilisticParser.common.tokens as t
 from scipy import stats
@@ -35,7 +35,7 @@ from sklearn_crfsuite import metrics
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import RandomizedSearchCV
 import matplotlib.pyplot as plt
-
+import pickle
 
 
 def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training100000.xml',
@@ -97,13 +97,14 @@ def plotSearchSpace(rs, param1='c1', param2='c2', outpath='/Users/saminiemi/Proj
 def optimiseModel(X_train, y_train, X_test, y_test):
     """
     Randomised search to optimise the regularisation and other parameters of the CRF model.
+    The regularisation parameters are drawn from exponential distributions.
 
-    :param X_train:
-    :param y_train:
-    :param X_test:
-    :param y_test:
+    :param X_train: training data in 2D array
+    :param y_train: training data labels
+    :param X_test: holdout data in 2D array
+    :type y_test: holdout data true labels
 
-    :return:
+    :return: None
     """
     # define fixed parameters and parameters to search
     crf = sklearn_crfsuite.CRF(algorithm='lbfgs', verbose=False)
@@ -114,9 +115,8 @@ def optimiseModel(X_train, y_train, X_test, y_test):
 
     # metrics needs a list of labels
     labels = t.LABELS
-    labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
-              'Locality', 'TownName', 'Postcode']
-    # print('Labels:', labels)
+    # labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
+    #           'Locality', 'TownName', 'Postcode']
 
     # use the same metric for evaluation
     f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
@@ -129,6 +129,11 @@ def optimiseModel(X_train, y_train, X_test, y_test):
                             n_iter=100,
                             scoring=f1_scorer)
     rs.fit(X_train, y_train)
+
+    print('saving the optimisation results to a pickled file...')
+    fh = open(t.MODEL_PATH + 'optimisation.pickle', mode='wb')
+    pickle.dump(rs, fh)
+    fh.close()
 
     crf = rs.best_estimator_
     print('best params:', rs.best_params_)
