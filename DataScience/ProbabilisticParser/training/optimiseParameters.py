@@ -3,8 +3,9 @@ ONS Address Index - Optimise the Probabilistic Parser
 =====================================================
 
 A simple script to run random search over CRF parameters to find an optimised model.
-Uses a smaller training data set to speed up the process. Five-fold cross-validation
-is being used to assess the performance.
+Uses a smaller training data set to speed up the process. Three-fold cross-validation
+is being used to assess the performance. Uses weighted F1-score as the metrics to
+maximise.
 
 
 Requirements
@@ -25,8 +26,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 21-Oct-2016
+:version: 0.3
+:date: 24-Oct-2016
 """
 import ProbabilisticParser.common.tokens as t
 from scipy import stats
@@ -67,13 +68,18 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
 
 def plotSearchSpace(rs, param1='c1', param2='c2', outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
     """
+    Generates a figure showing the search results as a function of two parameters.
 
-    :param rs:
-    :param param1:
-    :param param2:
-    :param outpath:
+    :param rs: scikit-learn randomised search object
+    :ttype rs: object
+    :param param1: name of the first parameter that was used in the optimisation
+    :type param1: str
+    :param param2: name of the second parameter that was used in the optimisation
+    :type param2: str
+    :param outpath: location to which the figure will be stored
+    :type outpath: str
 
-    :return:
+    :return: None
     """
     _x = [s.parameters[param1] for s in rs.grid_scores_]
     _y = [s.parameters[param2] for s in rs.grid_scores_]
@@ -109,24 +115,25 @@ def optimiseModel(X_train, y_train, X_test, y_test):
     # define fixed parameters and parameters to search
     crf = sklearn_crfsuite.CRF(algorithm='lbfgs', verbose=False)
 
-    # search parameters random draws from exponential functions
+    # search parameters random draws from exponential functions and boolean for transitions
     params_space = {'c1': stats.expon(scale=0.5), 'c2': stats.expon(scale=0.05),
                     'all_possible_transitions': [True, False]}
 
     # metrics needs a list of labels
-    labels = t.LABELS
-    # labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
-    #           'Locality', 'TownName', 'Postcode']
+    # labels = t.LABELS
+    labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
+              'Locality', 'TownName', 'Postcode']
 
-    # use the same metric for evaluation
+    # use (flattened) f1-score for evaluation
+    # todo: should one use complete sequence rather than f1?
     f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
 
     print('Performing randomised search using cross-validations...')
     rs = RandomizedSearchCV(crf, params_space,
-                            cv=5,
+                            cv=3,
                             verbose=1,
                             n_jobs=-1,
-                            n_iter=100,
+                            n_iter=50,
                             scoring=f1_scorer)
     rs.fit(X_train, y_train)
 
