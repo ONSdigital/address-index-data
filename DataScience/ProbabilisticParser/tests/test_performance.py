@@ -142,14 +142,14 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     # Remove last blank column
     plt.xlim((0, AUC.shape[1]))
 
-    # Turn off all the ticks
+    # Turn off all the ticks§
     ax = plt.gca()
-    for t in ax.xaxis.get_major_ticks():
-        t.tick1On = False
-        t.tick2On = False
-    for t in ax.yaxis.get_major_ticks():
-        t.tick1On = False
-        t.tick2On = False
+    for tick in ax.xaxis.get_major_ticks():
+        tick.tick1On = False
+        tick.tick2On = False
+    for tick in ax.yaxis.get_major_ticks():
+        tick.tick1On = False
+        tick.tick2On = False
 
     # Add color bar
     plt.colorbar(c)
@@ -414,4 +414,3 @@ def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrec
 
 if __name__ == "__main__":
     checkPerformance()
-    # _manual()

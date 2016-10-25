@@ -260,27 +260,9 @@ def parseEdgeCaseData(df):
 
     # remove commas and apostrophes and insert space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(',', ' '), axis=1)
+
     # remove blackslash if present and replace with space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
-
-    # # expand common synonyms to help with parsing
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' AVENUE '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' AVENUE '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' AVENUE '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' LANE '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' APARTMENT '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' APARTMENT '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' APARTMENT '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' APARTMENT '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' BLOCK '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' BOULEVARD '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' DRIVE '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' ROAD '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' PARK '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' STREET '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' NUMBER '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' NUMBER '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' HOUSE '), axis=1)
 
     # modify some names to help with parsing
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
