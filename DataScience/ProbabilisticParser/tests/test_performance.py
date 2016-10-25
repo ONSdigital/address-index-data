@@ -31,7 +31,7 @@ Version
 """
 from ProbabilisticParser import parser
 import ProbabilisticParser.common.tokens as t
-import ProbabilisticParser.common.metrics as m
+import ProbabilisticParser.common.metrics as metric
 import sklearn_crfsuite
 from sklearn_crfsuite import metrics
 import numpy as np
@@ -314,7 +314,7 @@ def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/dat
     # weighted by support (the number of true instances for each label).
     total = metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
     # full sequence accuracy
-    sequence_accuracy = m.sequence_accuracy_score(y_test, y_pred)
+    sequence_accuracy = metric.sequence_accuracy_score(y_test, y_pred)
 
     print('F1-score:', total)
     print('Sequence accuracy:', sequence_accuracy)
