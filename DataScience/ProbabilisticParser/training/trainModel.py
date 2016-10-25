@@ -32,7 +32,7 @@ Version
 :date: 25-Oct-2016
 """
 import ProbabilisticParser.common.tokens as t
-import ProbabilisticParser.common.metrics as m
+import ProbabilisticParser.common.metrics as metric
 import sklearn_crfsuite
 from sklearn_crfsuite import metrics
 
@@ -107,7 +107,7 @@ def trainModel(X_train, y_train, X_test, y_test, LBFGS=True):
 
     print('Performance:')
     total = metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
-    sequence_accuracy = m.sequence_accuracy_score(y_test, y_pred)
+    sequence_accuracy = metric.sequence_accuracy_score(y_test, y_pred)
     print('F1-score', total)
     print('Sequence accuracy', sequence_accuracy)
 
