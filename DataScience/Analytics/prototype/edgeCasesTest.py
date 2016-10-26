@@ -247,85 +247,24 @@ def parseEdgeCaseData(df):
     # parsing gets really confused if region or county is in the line
     # for a quick hack I remove these, but regions should probably be part of the training as might help to identify
     # the correct area if no postcode
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST MIDLANDS', ''), axis=1)
-    # todo: test if another format is faster
-    #df['ADDRESS2'] = df['ADDRESS2'].str.replace('WEST MIDLANDS', '', case=False)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST YORKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('S YORKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('N YORKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('W YORKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LANCS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LINCS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LEICS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HERTS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WARKS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BUCKS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BERKS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HANTS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WILTS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WORCS', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('MIDDX', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('W SUSSEX', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('E SUSSEX', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('KENT', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOUTH GLAMORGAN', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('MID GLAMORGAN', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('WEST GLAMORGAN', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('ESSEX', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SURREY', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SUFFOLK', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CHESHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DERBYSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BERKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('YORKSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('HEREFORDSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('LINCOLNSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NOTTINGHAMSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('OXFORDSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('BUCKINGHAMSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SHROPSHIRE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DORSET', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('DEVON', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOMERSET', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CORNWALL', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('ISLE OF WIGHT', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('CLEVELAND', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NORFOLK', ''), axis=1)
+    remove = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'LANCS', 'LINCS',
+              'LEICS', 'HERTS', 'WARKS', 'BUCKS', 'BERKS', 'HANTS', 'WILTS', 'WORCS', 'MIDDX', 'STAFFS', 'W SUSSEX',
+              'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', 'ESSEX', 'SURREY', 'SUFFOLK',
+              'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE', 'LINCOLNSHIRE',
+              'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
+              'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
+              'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', '\'')
 
-    # remove postal counties
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('NORTH HUMBERSIDE', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('SOUTH HUMBERSIDE', ''), axis=1)
+    for r in remove:
+        df['ADDRESS2'] = df['ADDRESS2'].str.replace(r, '', case=False)
 
-    # remove full stop if followed by a space
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('. ', ' '), axis=1)
-    # remove commas and apostrophes
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\' ', ''), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\'', ''), axis=1)
+    # remove commas and apostrophes and insert space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(',', ' '), axis=1)
-    # remove blackslash if present
+
+    # remove blackslash if present and replace with space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
-    # df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('&', 'AND'), axis=1)
 
-    # expand common synonyms
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' AVENUE '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' AVENUE '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' AVENUE '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' LANE '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' APARTMENT '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' APARTMENT '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' APARTMENT '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' APARTMENT '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' BLOCK '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' BOULEVARD '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' DRIVE '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' ROAD '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' PARK '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' STREET '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' NUMBER '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' NUMBER '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' HOUSE '), axis=1)
-
-    # modify some names
+    # modify some names to help with parsing
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '), axis=1)

@@ -26,16 +26,18 @@ Author
 Version
 -------
 
-:version: 0.4
-:date: 20-Oct-2016
+:version: 0.6
+:date: 22-Oct-2016
 """
 from ProbabilisticParser import parser
 import ProbabilisticParser.common.tokens as t
+import ProbabilisticParser.common.metrics as metric
 import sklearn_crfsuite
 from sklearn_crfsuite import metrics
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 # set seaborn style
@@ -58,6 +60,164 @@ def predict(address):
     """
     parsed = parser.parse(address.upper())
     return parsed
+
+
+def show_values(pc, fmt="%.2f", **kw):
+    """
+
+    :param pc:
+    :param fmt:
+    :param kw:
+
+    :return: None
+    """
+    pc.update_scalarmappable()
+    ax = pc.get_axes()
+    for p, color, value in zip(pc.get_paths(), pc.get_facecolors(), pc.get_array()):
+        x, y = p.vertices[:-2, :].mean(0)
+
+        if np.all(color[:3] > 0.5):
+            color = (0.0, 0.0, 0.0)
+        else:
+            color = (1.0, 1.0, 1.0)
+
+        ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
+
+
+def cm2inch(*tupl):
+    """
+    Specify figure size in centimeter in matplotlib.
+
+    Source: http://stackoverflow.com/a/22787457/395857
+
+    :param tupl:
+
+    :return:
+    """
+    inch = 2.54
+    if type(tupl[0]) == tuple:
+        return tuple(i/inch for i in tupl[0])
+    else:
+        return tuple(i/inch for i in tupl)
+
+
+def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40,
+            figure_height=20, correct_orientation=False, cmap='RdBu'):
+    """
+    Generate a heatmap of the classification report information.
+
+    Inspired by:
+        - http://stackoverflow.com/a/16124677/395857
+        - http://stackoverflow.com/a/25074150/395857
+
+    :param AUC:
+    :param title:
+    :param xlabel:
+    :param ylabel:
+    :param xticklabels:
+    :param yticklabels:
+    :param figure_width:
+    :param figure_height:
+    :param correct_orientation:
+    :param cmap:
+
+    :return: None
+    """
+    fig, ax = plt.subplots()
+    c = ax.pcolor(AUC, edgecolors='k', linestyle='dashed', linewidths=0.2, cmap=cmap)
+
+    # put the major ticks at the middle of each cell
+    ax.set_yticks(np.arange(AUC.shape[0]) + 0.5, minor=False)
+    ax.set_xticks(np.arange(AUC.shape[1]) + 0.5, minor=False)
+
+    # set tick labels
+    ax.set_xticklabels(xticklabels, minor=False)
+    ax.set_yticklabels(yticklabels, minor=False)
+
+    # set title and x/y labels
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    # Remove last blank column
+    plt.xlim((0, AUC.shape[1]))
+
+    # Turn off all the ticks§
+    ax = plt.gca()
+    for tick in ax.xaxis.get_major_ticks():
+        tick.tick1On = False
+        tick.tick2On = False
+    for tick in ax.yaxis.get_major_ticks():
+        tick.tick1On = False
+        tick.tick2On = False
+
+    # Add color bar
+    plt.colorbar(c)
+
+    # Add text in each cell
+    show_values(c)
+
+    # Proper orientation (origin at the top left instead of bottom left)
+    if correct_orientation:
+        ax.invert_yaxis()
+        ax.xaxis.tick_top()
+
+    # resize figure
+    fig = plt.gcf()
+    fig.set_size_inches(cm2inch(figure_width, figure_height))
+
+
+def plotClassificationReport(classification_report, title='Classification report ', cmap='RdBu',
+                             outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
+    """
+    Visualise a classification report. Assumes that the report is in the scikit-learn format.
+
+    from http://stackoverflow.com/questions/28200786/how-to-plot-scikit-learn-classification-report
+
+    :param classification_report: a classification report as returned by scikit-learn
+    :type classification_report: str
+    :param title: title of the figure
+    :type title: str
+    :param cmap: name of the matplotlib colour map to use
+    :type cmap: str
+    :param outpath: location to which the output figure is stored
+    :type outpath: str
+
+    :return: None
+    """
+    lines = classification_report.split('\n')
+
+    classes = []
+    plotMat = []
+    support = []
+    class_names = []
+
+    for line in lines[2: (len(lines) - 2)]:
+        t = line.strip().split()
+
+        if len(t) < 2:
+            continue
+
+        v = [float(x) for x in t[1: len(t) - 1]]
+
+        classes.append(t[0])
+        support.append(int(t[-1]))
+        class_names.append(t[0])
+        plotMat.append(v)
+
+    xlabel = 'Metrics'
+    ylabel = 'Address Tokens'
+    xticklabels = ['Precision', 'Recall', 'F1-score']
+    yticklabels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup  in enumerate(support)]
+    figure_width = 25
+    figure_height = len(class_names) + 7
+    correct_orientation = False
+
+    heatmap(np.array(plotMat), title, xlabel, ylabel, xticklabels, yticklabels,
+            figure_width, figure_height, correct_orientation, cmap=cmap)
+
+    plt.savefig(outpath + 'tokenParsingPerformanceReport.pdf', dpi=200, bbox_inches='tight')
+    plt.close()
 
 
 def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
@@ -103,25 +263,36 @@ def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects
     plt.close()
 
 
-def sequence_accuracy_score(y_true, y_pred):
+
+def printTransitions(transFeatures):
     """
-    Return sequence accuracy score. Match is counted only when two sequences are equal.
+    Outputs the token transitions and the associated weight.
 
-    :param y_true:
-    :param y_pred:
+    :param transFeatures: counter of model instance transition features
 
-    :return:
+    :return: None
     """
-    total = len(y_true)
+    for (label_from, label_to), weight in transFeatures:
+        print("%-6s -> %-7s %0.6f" % (label_from, label_to, weight))
 
-    matches = sum(1 for yseq_true, yseq_pred in zip(y_true, y_pred)
-                  if list(yseq_true) == list(yseq_pred))
 
-    return matches / total
+def printStateFeatures(stateFeatures):
+    """
+    Outputs the features that help to predict a label.
+
+    :param stateSeatures: counter of model instance state features
+
+    :return: None
+    """
+    for (attr, label), weight in stateFeatures:
+        print("%0.6f %-8s %s" % (weight, label, attr))
 
 
 def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml'):
     """
+    Checks the performance of the trained model using given holdout data.
+    Computes weighted f1-score, sequence accuracy, and a classification report.
+    Visualises the classification report.
 
     :param holdoutfile: location and name of the holdout XML data file
     :type holdoutfile: str
@@ -143,7 +314,7 @@ def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/dat
     # weighted by support (the number of true instances for each label).
     total = metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
     # full sequence accuracy
-    sequence_accuracy = sequence_accuracy_score(y_test, y_pred)
+    sequence_accuracy = metric.sequence_accuracy_score(y_test, y_pred)
 
     print('F1-score:', total)
     print('Sequence accuracy:', sequence_accuracy)
@@ -151,6 +322,21 @@ def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/dat
     print("")
     report = metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3)
     print(report)
+
+    print('Generating a plot...')
+    plotClassificationReport(report)
+
+    print("Likeliest transitions:")
+    printTransitions(Counter(crf.transition_features_).most_common(15))
+
+    print("Least likely transitions:")
+    printTransitions(Counter(crf.transition_features_).most_common()[-15:])
+
+    print("Top 30 positive features:")
+    printStateFeatures(Counter(crf.state_features_).most_common(30))
+
+    print("Top 30 negative features:")
+    printStateFeatures(Counter(crf.state_features_).most_common()[-30:])
 
 
 def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrectlyParsed.csv'):
@@ -227,5 +413,4 @@ def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrec
 
 
 if __name__ == "__main__":
-    # _manual()
     checkPerformance()
