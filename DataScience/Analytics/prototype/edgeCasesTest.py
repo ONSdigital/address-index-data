@@ -108,7 +108,7 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     df.loc[msk, 'LOCALITY'] = df.loc[msk, 'DEPENDENT_LOCALITY']
 
     # drop some that are not needed
-    df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'STREET_DESCRIPTOR'], axis=1, inplace=True)
+    df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
 
     pcodes = df['POSTCODE'].str.split(' ', expand=True)
     pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
@@ -231,14 +231,16 @@ def _fixBuildingNumber(row):
         return None
 
 
-def parseEdgeCaseData(df):
+def _normalizeData(df, expandSynonyms=False):
     """
-    Parses the address information from the edge case data. Examples:
+    Normalize the address information.
 
-    :param df: pandas dataframe containing ADDRESS column that is being parsed
+    :param df: pandas dataframe containing ADDRESS column that is being copied to ADDRESS2 and modified
     :type df: pandas.DataFrame
+    :param expandSynonyms: whether to expand common synonyms or not
+    :type expandSynonyms: bool
 
-    :return: pandas dataframe where the parsed information has been included
+    :return: pandas dataframe where the normalised address information is in column ADDRESS2
     :rtype: pandas.DataFrame
     """
     # make a copy of the actual address field and run the parsing against it
@@ -268,6 +270,43 @@ def parseEdgeCaseData(df):
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '), axis=1)
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '), axis=1)
+
+    if expandSynonyms:
+        # expand common synonyms to help with parsing
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' AVENUE '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' AVENUE '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' AVENUE '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' LANE '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' APARTMENT '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' APARTMENT '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' APARTMENT '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' APARTMENT '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' BLOCK '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' BOULEVARD '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' DRIVE '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' ROAD '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' PARK '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' STREET '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' NUMBER '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' NUMBER '), axis=1)
+        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' HOUSE '), axis=1)
+
+    return df
+
+
+def parseEdgeCaseData(df, expandSynonyms=False):
+    """
+    Parses the address information from the edge case data. Examples:
+
+    :param df: pandas dataframe containing ADDRESS column that is being parsed
+    :type df: pandas.DataFrame
+    :param expandSynonyms: whether to expand common synonyms or not
+    :type expandSynonyms: bool
+
+    :return: pandas dataframe where the parsed information has been included
+    :rtype: pandas.DataFrame
+    """
+    df = _normalizeData(df, expandSynonyms=expandSynonyms)
 
     # get addresses and store separately as an vector
     addresses = df['ADDRESS2'].values
@@ -335,36 +374,17 @@ def parseEdgeCaseData(df):
     pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
     df = pd.concat([df, pcodes], axis=1)
 
-    # if BuildingNumber is empty, sometimes it's in BuildingName, try grabbing it
+    # if BuildingNumber is empty, sometimes the info is in BuildingName, try grabbing it
     msk = df['BuildingNumber'].isnull()
-    df['temp'] = None
-    potentials = df.loc[msk, 'BuildingName']
-    df.loc[msk, 'temp'] = potentials
     df.loc[msk, 'BuildingNumber'] = df.loc[msk].apply(_fixBuildingNumber, axis=1)
     msk = df['BuildingNumber'] == df['BuildingName']
     df.loc[msk, 'BuildingName'] = None
-
-    # # split flat or apartment number as separate for numerical comparison
-    # df['flat_number'] = None
-    # msk = df['flat'].str.contains('flat|apartment', na=False)
-    # df.loc[msk, 'flat_number'] = df.loc[msk, 'flat']
-    # df.loc[msk, 'flat_number'] = df.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
-    # df['flat_number'] = pd.to_numeric(df['flat_number'], errors='coerce')
-    #
-    # # remove those with numbers from flat column - no need to double check
-    # msk = ~df['flat_number'].isnull()
-    # df.loc[msk, 'flat'] = None
-    # df.loc[df['flat'].isnull(), 'flat'] = 'NO'
-    # df.loc[df['house'].isnull(), 'house'] = 'NO'
-    # # df.loc[df['building_name'].isnull(), 'building_name'] = 'NONAME'
-    # df.loc[df['house_number_suffix'].isnull(), 'house_number_suffix'] = 'NOSUFFIX'
 
     # some funky postcodes, remove these
     msk = df['postcode_in'] == 'Z1'
     df.loc[msk, 'postcode_in'] = None
     df.loc[msk, 'Postcode'] = None
     msk = df['postcode_out'].str.contains('[0-9][^ABCDEFGHIJKLMNOPQRSTX][Z]', na=False)
-    # msk = df['postcode_out'].str.contains('Z', na=False)
     df.loc[msk, 'postcode_out'] = None
     df.loc[msk, 'Postcode'] = None
     msk = df['postcode_in'] == 'Z11'
@@ -375,7 +395,7 @@ def parseEdgeCaseData(df):
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv', index=False)
 
     # drop the temp info
-    df.drop(['ADDRESS2', 'temp'], axis=1, inplace=True)
+    df.drop(['ADDRESS2', ], axis=1, inplace=True)
 
     return df
 
@@ -509,6 +529,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
     compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
+    compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
     # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='city_dl')
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
@@ -520,7 +541,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 4.
     compare.vectors['city_dl'] *= 5.
-    # compare.vectors['pao_suffix_dl'] *= 10. # helps with addresses with suffix e.g. 55A
+    compare.vectors['flatw_dl'] *= 8.
     compare.vectors['number_dl'] *= 10.
     # compare.vectors['flat_number_dl'] *= 8.
     compare.vectors['organisation_dl'] *= 5.
@@ -574,7 +595,7 @@ def mergeMatchedAndAB(matches, toMatch, AddressBase):
     return data
 
 
-def checkPerformance(df, edgeCases):
+def checkPerformance(df, edgeCases, prefix='EdgeCase'):
     """
     Check performance - calculate for example match rate and the number of false postives.
     Show the performance for the full dataset and for each class.
@@ -604,17 +625,17 @@ def checkPerformance(df, edgeCases):
     print('False Positive Rate', round(fp/all*100., 1))
 
     # save false positives
-    df.loc[~msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_false_positives.csv',
+    df.loc[~msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched_false_positives.csv',
                         index=False)
     # save correctly matched
-    df.loc[msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_correctly_matched.csv',
+    df.loc[msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_correctly_matched.csv',
                         index=False)
 
     # find those that were not found
     uprns = df['uprn_edge'].values
     missing_msk = ~edgeCases['uprn_edge'].isin(uprns)
     missing = edgeCases.loc[missing_msk]
-    missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched_missing.csv', index=False)
+    missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched_missing.csv', index=False)
 
     # print out results for each class separately
     mne = []
@@ -647,7 +668,7 @@ def checkPerformance(df, edgeCases):
     plt.title('Edge Case - Prototype Matching')
     plt.xticks(x + width, mne, rotation=45)
     plt.tight_layout()
-    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/EdgeCases.png')
+    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/' + prefix + '.png')
     plt.close()
 
 
@@ -670,14 +691,15 @@ def runAll():
 
     print('\nReading in Address Base Data...')
     start = time.clock()
-    # ab = loadAddressBaseData()
-    ab = loadAddressBaseData(filename='ABmini.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/')
+    ab = loadAddressBaseData()
+    # ab = loadAddressBaseData(filename='ABmini.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
     print('\nReading in Edge Case data...')
     start = time.clock()
-    edgeCases = loadEdgeCaseTestingData()#filename='MissingPostcodesTest.csv')
+    # edgeCases = loadEdgeCaseTestingData()
+    edgeCases = loadEdgeCaseTestingData(filename='MissingPostcodesTest.csv')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
