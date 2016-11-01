@@ -4,7 +4,8 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
-  *
+  * Provide global access to the spark context instance.
+  * Also handles the initialization of the spark context
   */
 object SparkProvider {
   private val appName = "ONS-address-base-batch"
