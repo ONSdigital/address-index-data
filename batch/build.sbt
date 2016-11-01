@@ -7,11 +7,16 @@ scalaVersion := "2.10.6"
 // allows us to include spark packages
 resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
 
+resolvers += "clojars" at "https://clojars.org/repo"
+
+resolvers += "conjars" at "http://conjars.org/repo"
+
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % "1.6.2",
-  "org.apache.spark" %% "spark-sql" % "1.6.2",
+  "org.apache.spark" %% "spark-core" % "1.6.0",
+  "org.apache.spark" %% "spark-sql" % "1.6.0",
   "com.databricks" %% "spark-csv" % "1.5.0",
   "com.typesafe" % "config" % "1.3.1",
+  "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0",
   "org.scalatest" %% "scalatest" % "3.0.0" % Test
 )
 
