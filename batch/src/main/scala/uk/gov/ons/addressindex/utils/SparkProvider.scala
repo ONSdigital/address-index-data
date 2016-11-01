@@ -12,6 +12,7 @@ object SparkProvider {
   private val master = "local[*]"
 
   private val conf = new SparkConf().setAppName(appName).setMaster(master)
+  conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
   // ES index should be created manually
   conf.set("es.index.auto.create", "true")
   // IMPORTANT: without this elasticsearch-hadoop will try to access the interlan nodes
