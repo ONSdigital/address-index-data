@@ -29,7 +29,7 @@ Version
 -------
 
 :version: 1.1
-:date: 31-Oct-2016
+:date: 1-Nov-2016
 """
 import pandas as pd
 import numpy as np
@@ -152,8 +152,10 @@ def loadAddressBaseDataFromDB():
 
 def loadPostcodeInformation(file='/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv'):
     """
+    Load in a simple dataframe joining postcodes to post towns.
 
-    :param file:
+    :param file: name of the CSV containing the mapping
+
     :return:
     """
     df = pd.read_csv(file)
@@ -235,9 +237,11 @@ def _fixBuildingNumber(row):
         return None
 
 
-def _normalizeData(df, expandSynonyms=False):
+def _normalizeData(df, expandSynonyms=True):
     """
-    Normalize the address information.
+    Normalize the address information. Removes white spaces, commas, and backslashes.
+    Can be used to expand common synonyms such as RD or BERKS. Finally parses counties
+    as the an early version of the probabilistic parser was not trained to parser counties.
 
     :param df: pandas dataframe containing ADDRESS column that is being copied to ADDRESS2 and modified
     :type df: pandas.DataFrame
@@ -253,59 +257,78 @@ def _normalizeData(df, expandSynonyms=False):
     # remove white spaces if present
     df['ADDRESS2'] = df['ADDRESS2'].str.strip()
 
-    # parsing gets really confused if region or county is in the line
-    remove = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'LANCS', 'LINCS', 'HFDS',
-              'LEICS', 'HERTS', 'WARKS', 'BUCKS', 'BERKS', 'HANTS', 'WILTS', 'WORCS', 'MIDDX', 'STAFFS', 'W SUSSEX',
-              'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', 'ESSEX', 'SURREY', 'SUFFOLK',
-              'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE', 'LINCOLNSHIRE',
-              'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
-              'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
-              'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', 'CUMBRIA', 'FLINTSHIRE', 'GLOUCESTERSHIRE', 'MIDDX', 'WILTSHIRE',
-              'GLOS', 'DENBIGHSHIRE', 'BEDS', 'TYNE AND WEAR', 'NORTHUMBERLAND', 'NORTHAMPTONSHIRE', 'NORTHANTS',
-              'GWENT', 'NORFOLK', 'OXON', 'CAMBS', 'CHESHIRE', 'POWYS', '\'')
-
-    # remove county from address but add a column for it
-    df['County'] = None
-    for r in remove:
-        msk = df['ADDRESS2'].str.contains(r, na=False)
-        df.loc[msk, 'County'] = r
-        df['ADDRESS2'] = df['ADDRESS2'].str.replace(r, '', case=False)
-
     # remove commas and apostrophes and insert space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(',', ' '), axis=1)
 
     # remove backslash if present and replace with space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
 
-    # modify some names to help with parsing
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STOKE ON TRENT ', ' STOKE-ON-TRENT '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '), axis=1)
-    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '), axis=1)
+    # synonyms to expand - format is [(from, to), ]
+    synonyms = [(' AVEN ', ' AVENUE '),
+                (' AVE ', ' AVENUE '),
+                (' AV ', ' AVENUE '),
+                (' LN ', ' LANE '),
+                (' APPTS ', ' APARTMENT '),
+                (' APPT ', ' APARTMENT '),
+                (' APTS ', ' APARTMENT '),
+                (' APT ', ' APARTMENT '),
+                (' BLK ', ' BLOCK '),
+                (' BVLD ', ' BOULEVARD '),
+                (' DR ', ' DRIVE '),
+                (' RD ', ' ROAD '),
+                (' PK ', ' PARK '),
+                (' STR ', ' STREET '),
+                (' NOS ', ' NUMBER '),
+                (' NO ', ' NUMBER '),
+                (' HSE ', ' HOUSE '),
+                (' BERKS(?:\s|\Z)', ' BERKSHIRE '),
+                (' WARKS(?:\s|\Z)', ' WARWICKSHIRE '),
+                (' BUCKS(?:\s|\Z)', ' BUCKINGHAMSHIRE '),
+                (' HANTS(?:\s|\Z)', ' HAMPSHIRE '),
+                (' LEICS(?:\s|\Z)', ' LEICESTERSHIRE '),
+                (' LINCS(?:\s|\Z)', ' LINCOLNSHIRE '),
+                (' LANCS(?:\s|\Z)', ' LANCASHIRE '),
+                (' MIDDX(?:\s|\Z)', ' MIDDLESEX '),
+                (' STAFFS(?:\s|\Z)', ' STAFFORDSHIRE '),
+                (' WORCS(?:\s|\Z)', ' WORCESTERSHIRE '),
+                (' WILTS(?:\s|\Z)', ' WILTSHIRE '),
+                (' HERTS(?:\s|\Z)', ' HERTFORDSHIRE '),
+                (' CAMBS(?:\s|\Z)', ' CAMBRIDGESHIRE '),
+                (' OXON(?:\s|\Z)', ' OXFORDSHIRE '),
+                (' HFDS(?:\s|\Z)', ' HERTFORDSHIRE '),
+                (' BEDS(?:\s|\Z)', ' BEDFORDSHIRE '),
+                (' STOKE ON TRENT ', ' STOKE-ON-TRENT '),
+                (' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '),
+                (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA ')]
 
+    # expand common synonyms to help with parsing
     if expandSynonyms:
-        # expand common synonyms to help with parsing
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVEN ', ' AVENUE '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AVE ', ' AVENUE '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' AV ', ' AVENUE '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' LN ', ' LANE '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPTS ', ' APARTMENT '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APPT ', ' APARTMENT '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APTS ', ' APARTMENT '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' APT ', ' APARTMENT '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BLK ', ' BLOCK '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' BVLD ', ' BOULEVARD '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' DR ', ' DRIVE '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' RD ', ' ROAD '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' PK ', ' PARK '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' STR ', ' STREET '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NOS ', ' NUMBER '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' NO ', ' NUMBER '), axis=1)
-        df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' HSE ', ' HOUSE '), axis=1)
+        print('Expanding synonyms as a part of normalisation...')
+        for fro, to in synonyms:
+            df['ADDRESS2'] = df['ADDRESS2'].str.replace(fro, to)
+
+    # parsing gets really confused if region or county is in the line
+    counties = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'W SUSSEX',
+                'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', 'ESSEX', 'SURREY', 'SUFFOLK',
+                'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE', 'LINCOLNSHIRE',
+                'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
+                'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
+                'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', 'CUMBRIA', 'FLINTSHIRE', 'GLOUCESTERSHIRE', 'WILTSHIRE',
+                'DENBIGHSHIRE', 'TYNE AND WEAR', 'NORTHUMBERLAND', 'NORTHAMPTONSHIRE', 'WARWICKSHIRE', 'HAMPSHIRE',
+                'GWENT', 'NORFOLK', 'CHESHIRE', 'POWYS', 'LEICESTERSHIRE', 'NORTHAMPTONSHIRE', 'NORTHANTS',
+                'WORCESTERSHIRE', 'HERTFORDSHIRE', 'CAMBRIDGESHIRE', 'BEDFORDSHIRE')
+
+    # remove county from address but add a column for it
+    df['County'] = None
+    for county in counties:
+        msk = df['ADDRESS2'].str.contains(county, na=False)
+        df.loc[msk, 'County'] = county
+        df['ADDRESS2'] = df['ADDRESS2'].str.replace(county, '', case=False)
 
     return df
 
 
-def parseInputData(df, expandSynonyms=False):
+def parseInputData(df, expandSynonyms=True):
     """
     Parses the address information from the input data.
 
@@ -330,6 +353,7 @@ def parseInputData(df, expandSynonyms=False):
     subbuilding = []
     buildingname = []
     buildingnumber = []
+    buildingsuffix = []
     street = []
     locality = []
     town = []
@@ -373,6 +397,13 @@ def parseInputData(df, expandSynonyms=False):
                     parsed['Locality'] = loc
                     parsed['StreetName'] = parsed['StreetName'].replace(loc, '').strip()
 
+        # if BuildingName is e.g. 55A then should get the number and suffix separately
+        if parsed.get('BuildingName', None) is not None:
+            parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
+            # accept suffixes that are only maximum two chars
+            if len(parsed['BuildingSuffix']) > 2:
+                parsed['BuildingSuffix'] = None
+
         # store the parsed information to separate lists
         organisation.append(parsed.get('OrganisationName', None))
         department.append(parsed.get('DepartmentName', None))
@@ -383,6 +414,7 @@ def parseInputData(df, expandSynonyms=False):
         locality.append(parsed.get('Locality', None))
         town.append(parsed.get('TownName', None))
         postcode.append(parsed.get('Postcode', None))
+        buildingsuffix.append(parsed.get('BuildingSuffix', None))
 
     # add the parsed information to the dataframe
     df['OrganisationName'] = organisation
@@ -394,11 +426,16 @@ def parseInputData(df, expandSynonyms=False):
     df['Locality'] = locality
     df['TownName'] = town
     df['Postcode'] = postcode
+    df['BuildingSuffix'] = buildingsuffix
 
-    # split the postcode to in and out
-    pcodes = df['Postcode'].str.split(' ', expand=True)
-    pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-    df = pd.concat([df, pcodes], axis=1)
+    # if valid postcode information found then split between in and outcode
+    if df['Postcode'].count() > 0:
+        pcodes = df['Postcode'].str.split(' ', expand=True)
+        pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+        df = pd.concat([df, pcodes], axis=1)
+    else:
+        df['postcode_in'] = None
+        df['postcode_out'] = None
 
     # if BuildingNumber is empty, sometimes the info is in BuildingName, try grabbing it
     msk = df['BuildingNumber'].isnull()
@@ -406,9 +443,14 @@ def parseInputData(df, expandSynonyms=False):
     msk = df['BuildingNumber'] == df['BuildingName']
     df.loc[msk, 'BuildingName'] = None
 
-    # if SubBuildingName is null then add string NULL - to improve matching where None is a special case
-    # msk = df['SubBuildingName'].isnull()
-    # df.loc[msk, 'SubBuildingName'] = 'NULL'
+    # # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
+    df['FlatNumber'] = None
+    msk = df['BuildingName'].str.contains('flat|apartment', na=False)
+    df.loc[msk, 'FlatNumber'] = df.loc[msk, 'BuildingName']
+    df.loc[msk, 'FlatNumber'] = df.loc[msk].apply(lambda x:
+                                                  x['FlatNumber'].strip().replace('FLAT', '').replace('APARTMENT', ''),
+                                                  axis=1)
+    df['FlatNumber'] = pd.to_numeric(df['FlatNumber'], errors='coerce')
 
     # some funky postcodes, remove these
     msk = df['postcode_in'] == 'Z1'
@@ -432,12 +474,16 @@ def parseInputData(df, expandSynonyms=False):
 
 def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=0.1):
     """
-    Match toMatch data against the AddressBase source information.
+    Link toMatch data to the AddressBase source information.
 
     Uses blocking to speed up the matching. This is dangerous for postcodes that have been misspelled
     and will potentially lead to false positives.
 
-    :param AddressBase: address based dataframe which functions as the source
+    .. note: the aggressive blocking does not work when both BuildingNumber and BuildingName is missing.
+             This is somewhat common for example for care homes. One should really separate these into
+             different category and do blocking only on postcode.
+
+    :param AddressBase: AddressBase dataframe which functions as the source
     :type AddressBase: pandas.DataFrame
     :param toMatch: dataframe holding the address information that is to be matched against a source
     :type toMatch: pandas.DataFrame
@@ -453,6 +499,7 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
+    # todo: include an option when neither BuildingNumber nor BuildingName is present (e.g. carehomes)
     if houseNumberBlocking:
         print('Start matching those with postcode information, using postcode and house number blocking...')
         # pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'PAO_START_NUMBER'])
@@ -521,11 +568,10 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
 
 def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     """
-    Match toMatch data against the AddressBase source information.
-
+    Link toMatch data to the AddressBase source information.
     Uses blocking to speed up the matching.
 
-    :param AddressBase: address based dataframe which functions as the source
+    :param AddressBase: AddressBase dataframe which functions as the source
     :type AddressBase: pandas.DataFrame
     :param toMatch: dataframe holding the address information that is to be matched against a source
     :type toMatch: pandas.DataFrame
@@ -542,8 +588,12 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
-    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['PAO_START_NUMBER', 'streetName'])
+    # pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['PAO_START_NUMBER', 'streetName'])
     # pairs = pcl.sortedneighbourhood('postcode_in', window=3, block_on='postcode_in')
+    # pairs = pcl.block(left_on=['BuildingNumber', 'StreetName', 'TownName'], right_on=['BUILDING_NUMBER', 'streetName', 'townName'])
+    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'streetName'])
+    # while town name blocking allows a wider search space it also takes a lot longer on a laptop...
+    # pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets - use different metrics for the comparison
@@ -567,8 +617,8 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    compare.vectors['pao_dl'] *= 4.
-    compare.vectors['city_dl'] *= 5.
+    compare.vectors['building_name_dl'] *= 4.
+    # compare.vectors['city_dl'] *= 10.
     compare.vectors['flatw_dl'] *= 8.
     compare.vectors['number_dl'] *= 10.
     # compare.vectors['flat_number_dl'] *= 8.
@@ -626,7 +676,7 @@ def mergeMatchedAndAB(matches, toMatch, AddressBase, dropColumns=False):
 
 def checkPerformance(df, edgeCases, prefix='EdgeCase'):
     """
-    Check performance - calculate for example match rate and the number of false postives.
+    Check performance - calculate for example match rate and the number of false positives.
     Show the performance for the full dataset and for each class.
 
     :param df:
@@ -658,7 +708,7 @@ def checkPerformance(df, edgeCases, prefix='EdgeCase'):
                         index=False)
     # save correctly matched
     df.loc[msk].to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_correctly_matched.csv',
-                        index=False)
+                       index=False)
 
     # find those that were not found
     uprns = df['uprn_edge'].values
@@ -720,14 +770,14 @@ def runAll():
     print('\nReading in Address Base Data...')
     start = time.clock()
     ab = loadAddressBaseData()
-    # ab = loadAddressBaseData(filename='ABmini.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
     print('\nReading in Edge Case data...')
     start = time.clock()
     # edgeCases = loadEdgeCaseTestingData()
-    edgeCases = loadEdgeCaseTestingData(filename='DeadSimpleTest.csv')
+    edgeCases = loadEdgeCaseTestingData(filename='DeadSimpleNoPostcode.csv')
+    # edgeCases = loadEdgeCaseTestingData(filename='DeadSimpleTest.csv')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
@@ -770,7 +820,7 @@ def runAll():
     start = time.clock()
     ab = ab.reset_index()
 
-    # most horrifying code ever... should rewrite completely
+    # most horrifying code ever... todo: complete rewrite required
     m1 = m2 = False
     if ms1:
         if m1a:
@@ -786,14 +836,14 @@ def runAll():
         matched1 = matched1a.append(matched1b)
     elif m1a:
         matched1 = matched1a
-    else:
+    elif m1b:
         matched1 = matched1b
 
     if m2 & m1:
         matched = matched1.append(matched2)
     elif m1:
         matched = matched1
-    else:
+    elif m2:
         matched = matched2
 
     matched.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EdgeCase_matched.csv', index=False)
@@ -809,16 +859,14 @@ if __name__ == "__main__":
 
     """
     This version with full AB and reasonable runtime (aggressive blocking):
-        Matched 994 entries
-        Total Match Fraction 99.4
-        Correctly Matched 994
-        Correctly Matched Fraction 99.4
-        False Positives 0
-        False Positive Rate 0.0
         Correctly Matched 994 DEAD_SIMPLE
         Match Fraction 99.4
         False Positives 0
         False Positive Rate 0.0
+        Correctly Matched 881 DEAD_SIMPLE_NO_PC
+        Match Fraction 88.1
+        False Positives 34
+        False Positive Rate 3.4
     On Mini version of AB:
         Matched 3470 entries
         Total Match Fraction 69.4
