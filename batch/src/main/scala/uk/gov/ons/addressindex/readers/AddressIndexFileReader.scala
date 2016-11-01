@@ -6,7 +6,7 @@ import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.utils.SparkProvider
 
 /**
-  *
+  * Contains static methods to read different cvs files related to the Address Index
   */
 object AddressIndexFileReader {
 

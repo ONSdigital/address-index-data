@@ -1,6 +1,6 @@
 name := "Address Index Batch‘"
 
-version := "0.0.0"
+version := "0.1.0"
 
 scalaVersion := "2.10.6"
 
