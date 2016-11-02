@@ -11,7 +11,7 @@ import uk.gov.ons.addressindex.utils.SparkProvider
 object AddressIndexFileReader {
 
   private lazy val config = ConfigFactory.load()
-  private lazy val pathToCsv = config.getString("addressindex.folders.csv")
+  private lazy val pathToCsv = config.getString("addressindex.elasticsearch.indices.paf")
 
   /**
     * Reads csv into a `DataFrame`
