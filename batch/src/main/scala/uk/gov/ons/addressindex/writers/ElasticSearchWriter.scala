@@ -12,7 +12,7 @@ import org.elasticsearch.spark.sql._
 object ElasticSearchWriter {
 
   private lazy val config = ConfigFactory.load()
-  private lazy val PAFIndex = config.getString("addressindex.es.paf")
+  private lazy val PAFIndex = config.getString("addressindex.elasticsearch.indices.paf")
 
   /**
     * Stores addresses (PAF) into ElasticSearch
