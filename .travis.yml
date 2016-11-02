@@ -23,7 +23,7 @@ cache:
 addons:
   # https://github.com/travis-ci/travis-ci/issues/5227#issuecomment-165131913
   hosts:
-    - ons-bi
-  hostname: ons-bi
+    - ons-ai
+  hostname: ons-ai
 notifications:
   slack: valtech-ons:nLeAGETA8HsuIi5fMQCaLe2G
