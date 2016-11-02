@@ -622,19 +622,18 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     # compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
 
     # Extras
-    # # compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
-    # compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
+    # compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
+    compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
 
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     # compare.vectors['flatw_dl'] *= 8.
-    # # compare.vectors['flat_number_dl'] *= 8.
     compare.vectors['pao_dl'] *= 5.
-    compare.vectors['town_dl'] *= 6.
-    compare.vectors['organisation_dl'] *= 4. # 5
+    compare.vectors['town_dl'] *= 7.
+    compare.vectors['organisation_dl'] *= 4.    # 5
     compare.vectors['flat_dl'] *= 3.
-    compare.vectors['building_name_dl'] *= 3. # 4
+    compare.vectors['building_name_dl'] *= 3.   # 4
     compare.vectors['locality_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
@@ -790,8 +789,7 @@ def runAll():
     print('\nReading in Edge Case data...')
     start = time.clock()
     # edgeCases = loadEdgeCaseTestingData()
-    edgeCases = loadEdgeCaseTestingData(filename='DeadSimpleNoPostcode.csv')
-    # edgeCases = loadEdgeCaseTestingData(filename='DeadSimpleTest.csv')
+    edgeCases = loadEdgeCaseTestingData(filename='DS.csv')
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
