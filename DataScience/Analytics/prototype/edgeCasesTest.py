@@ -28,8 +28,28 @@ Author
 Version
 -------
 
-:version: 1.1
-:date: 1-Nov-2016
+:version: 1.2
+:date: 2-Nov-2016
+
+
+Results
+-------
+
+With full AB and reasonable runtime (i.e. using very aggressive blocking):
+    Matched 1934 entries
+    Total Match Fraction 96.7
+    Correctly Matched 1921
+    Correctly Matched Fraction 96.0
+    False Positives 13
+    False Positive Rate 0.7
+    Correctly Matched 994 DEAD_SIMPLE
+    Match Fraction 99.4
+    False Positives 0
+    False Positive Rate 0.0
+    Correctly Matched 927 DEAD_SIMPLE_NO_PC
+    Match Fraction 92.7
+    False Positives 13
+    False Positive Rate 1.3
 """
 import pandas as pd
 import numpy as np
@@ -405,6 +425,11 @@ def parseInputData(df, expandSynonyms=True):
             if len(parsed['BuildingSuffix']) > 2:
                 parsed['BuildingSuffix'] = None
 
+        # some addresses contain place co place, where the co is not part of the actual name - remove these
+        if parsed.get('Locality', None) is not None:
+            if parsed['Locality'].endswith(' CO'):
+                parsed['Locality'] = parsed['Locality'].replace(' CO', '')
+
         # store the parsed information to separate lists
         organisation.append(parsed.get('OrganisationName', None))
         department.append(parsed.get('DepartmentName', None))
@@ -473,7 +498,7 @@ def parseInputData(df, expandSynonyms=True):
     return df
 
 
-def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=0.1):
+def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlocking=True):
     """
     Link toMatch data to the AddressBase source information.
 
@@ -491,6 +516,8 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
     :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
                   Affects for example the false positive rate.
     :type limit: float
+    :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
+    :type buildingNumberBlocking: bool
 
     :return: dataframe of matches
     :rtype: pandas.DataFrame
@@ -501,23 +528,25 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     # todo: include an option when neither BuildingNumber nor BuildingName is present (e.g. carehomes)
-    if houseNumberBlocking:
-        print('Start matching those with postcode information, using postcode and house number blocking...')
+    if buildingNumberBlocking:
+        print('Start matching those with postcode information, using postcode and building number blocking...')
         # pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'PAO_START_NUMBER'])
         # better to block on building_number rather than PAO_START_NUMBER as the latter is same for 8 and 8A
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
         # print('Start matching those with postcode information, using postcode and street name blocking...')
         # pairs = pcl.block(left_on=['Postcode', 'StreetName'], right_on=['postcode', 'StreetName'])
-        print('Start matching those with postcode information, using postcode and building number blocking...')
+        print('Start matching those with postcode information, using postcode and building name blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets
+    # the idea is to build evidence to support linking, hence some fields are compared multiple times
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
 
     # set rules for standard residential addresses
+    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
     compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
@@ -527,10 +556,9 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
 
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
-    # compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
+    compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
 
     # set rules for organisations such as care homes and similar type addresses
-    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
     # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
 
@@ -567,10 +595,15 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
     return matches
 
 
-def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
+def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=True):
     """
     Link toMatch data to the AddressBase source information.
     Uses blocking to speed up the matching.
+
+    .. note: the aggressive blocking that uses street name rules out any addresses with a typo in the street name.
+             Given that this is fairly common, one should use sorted neighbourhood search instead of blocking.
+             However, given that this prototype needs to run on a laptop with limited memory in a reasonable time
+             the aggressive blocking is used. In production, no blocking should be used.
 
     :param AddressBase: AddressBase dataframe which functions as the source
     :type AddressBase: pandas.DataFrame
@@ -579,35 +612,44 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
                   Affects for example the false positive rate.
     :type limit: float
+    :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
+    :type buildingNumberBlocking: bool
 
     :return: dataframe of matches
     :rtype: pandas.DataFrame
     """
-    print('Start matching those without postcode information...')
-
     # create pairs
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
+    if buildingNumberBlocking:
+        print('Start matching those without postcode information, using building number and street name blocking...')
+        pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
+        # while town name blocking allows a wider search space it also takes a lot longer on a laptop...
+        # pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
+    else:
+        print('Start matching those without postcode information, using building name and street name blocking...')
+        pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['buildingName', 'StreetName'])
+
     # pairs = pcl.sortedneighbourhood('StreetName', window=3,
     #                                 block_left_on='BuildingNumber', block_right_on='BUILDING_NUMBER')
-    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
-    # while town name blocking allows a wider search space it also takes a lot longer on a laptop...
-    # pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets - use different metrics for the comparison
+    # the idea is to build evidence to support linking, hence some fields are compared multiple times
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
 
     compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
-    compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    if ~buildingNumberBlocking:
+        compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
     compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
-    # add a comparison from another field
+    # add a comparison from other fields
     compare.string('TOWN_NAME', 'TownName', method='damerau_levenshtein', name='town2_dl')
+    # compare.string('TOWN_NAME', 'Locality', method='damerau_levenshtein', name='locality2_dl')
 
     # for some there might be a part of the postcode, this can be useful
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
@@ -618,8 +660,8 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     # set rules for organisations such as care homes and similar type addresses
     compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
-    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl')
-    # compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
+    compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl')
+    compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
 
     # Extras
     # compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
@@ -635,6 +677,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.   # 4
     compare.vectors['locality_dl'] *= 2.
+    # compare.vectors['locality2_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -810,20 +853,28 @@ def runAll():
 
     print('\nMatching Edge Cases to Address Base data...')
     start = time.clock()
-    ms1 = ms2 = m1a = m1b = False
+    ms1 = ms2 = m1a = m1b = m2a = m2b = False
     if len(withPC.index) > 0:
         msk = withPC['BuildingNumber'].isnull()
         withPCnoHouseNumber = withPC.loc[msk]
         withPCHouseNumber = withPC.loc[~msk]
         if len(withPCHouseNumber) > 0:
-            matches1a = matchDataWithPostcode(ab, withPCHouseNumber, houseNumberBlocking=True)
+            matches1a = matchDataWithPostcode(ab, withPCHouseNumber, buildingNumberBlocking=True)
             m1a = True
         if len(withPCnoHouseNumber) > 0:
-            matches1b = matchDataWithPostcode(ab, withPCnoHouseNumber, houseNumberBlocking=False)
+            matches1b = matchDataWithPostcode(ab, withPCnoHouseNumber, buildingNumberBlocking=False)
             m1b = True
         ms1 = True
     if len(noPC.index) > 0:
-        matches2 = matchDataNoPostcode(ab, noPC)
+        msk = noPC['BuildingNumber'].isnull()
+        noPCnoHouseNumber = noPC.loc[msk]
+        noPCHouseNumber = noPC.loc[~msk]
+        if len(noPCnoHouseNumber) > 0:
+            matches2a = matchDataNoPostcode(ab, noPCHouseNumber, buildingNumberBlocking=True)
+            m2a = True
+        if len(noPCHouseNumber) > 0:
+            matches2b = matchDataNoPostcode(ab, noPCnoHouseNumber, buildingNumberBlocking=False)
+            m2b = True
         ms2 = True
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
@@ -841,7 +892,10 @@ def runAll():
             matched1b = mergeMatchedAndAB(matches1b, parsedEdgeCases, ab)
         m1 = True
     if ms2:
-        matched2 = mergeMatchedAndAB(matches2, parsedEdgeCases, ab)
+        if m2a:
+            matched2a = mergeMatchedAndAB(matches2a, parsedEdgeCases, ab)
+        if m2b:
+            matched2b = mergeMatchedAndAB(matches2b, parsedEdgeCases, ab)
         m2 = True
 
     if m1a & m1b:
@@ -850,6 +904,13 @@ def runAll():
         matched1 = matched1a
     elif m1b:
         matched1 = matched1b
+
+    if m2a & m2b:
+        matched2 = matched2a.append(matched2b)
+    elif m2a:
+        matched2 = matched2a
+    elif m2b:
+        matched2 = matched2b
 
     if m2 & m1:
         matched = matched1.append(matched2)
@@ -868,42 +929,3 @@ def runAll():
 
 if __name__ == "__main__":
     runAll()
-
-    """
-    This version with full AB and reasonable runtime (aggressive blocking):
-        Correctly Matched 994 DEAD_SIMPLE
-        Match Fraction 99.4
-        False Positives 0
-        False Positive Rate 0.0
-        Correctly Matched 906 DEAD_SIMPLE_NO_PC
-        Match Fraction 90.6
-        False Positives 14
-        False Positive Rate 1.4
-    On Mini version of AB:
-        Matched 3470 entries
-        Total Match Fraction 69.4
-        Correctly Matched 3451
-        Correctly Matched Fraction 69.0
-        False Positives 19
-        False Positive Rate 0.4
-        Correctly Matched 719 CARE_HOMES
-        Match Fraction 71.9
-        False Positives 3
-        False Positive Rate 0.3
-        Correctly Matched 967 DEAD_SIMPLE
-        Match Fraction 96.7
-        False Positives 0
-        False Positive Rate 0.0
-        Correctly Matched 839 ORDER_MATTERS
-        Match Fraction 83.9
-        False Positives 2
-        False Positive Rate 0.2
-        Correctly Matched 328 PAF_MISMATCH
-        Match Fraction 32.8
-        False Positives 1
-        False Positive Rate 0.1
-        Correctly Matched 598 PARTS_MISSING
-        Match Fraction 59.8
-        False Positives 13
-        False Positive Rate 1.3
-    """
