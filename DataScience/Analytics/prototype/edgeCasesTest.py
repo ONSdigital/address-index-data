@@ -297,6 +297,7 @@ def _normalizeData(df, expandSynonyms=True):
                 (' OXON(?:\s|\Z)', ' OXFORDSHIRE '),
                 (' HFDS(?:\s|\Z)', ' HERTFORDSHIRE '),
                 (' BEDS(?:\s|\Z)', ' BEDFORDSHIRE '),
+                (' GLOS(?:\s|\Z)', ' GLOUCESTERSHIRE '),
                 (' STOKE ON TRENT ', ' STOKE-ON-TRENT '),
                 (' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '),
                 (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA ')]
@@ -526,7 +527,7 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
 
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
-    # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
+    # compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
 
     # set rules for organisations such as care homes and similar type addresses
     compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
@@ -598,18 +599,15 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
 
-    # # compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein', name='pao_suffix_dl')
-    # compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
-    # # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
-    # # compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
-    # # compare.exact('flat_number', 'flat_number', missing_value='-1234', disagree_value=-0.1, name='flat_number_dl')
-
+    compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
     compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
     compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
+    # add a comparison from another field
+    compare.string('TOWN_NAME', 'TownName', method='damerau_levenshtein', name='town2_dl')
 
     # for some there might be a part of the postcode, this can be useful
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
@@ -620,22 +618,24 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     # set rules for organisations such as care homes and similar type addresses
     compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
-    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
+    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl')
+    # compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
+
+    # Extras
+    # # compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
+    # compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
 
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    # compare.vectors['building_name_dl'] *= 4.
     # compare.vectors['flatw_dl'] *= 8.
-    # compare.vectors['pao_number_dl'] *= 10.
     # # compare.vectors['flat_number_dl'] *= 8.
-    # compare.vectors['organisation_dl'] *= 5.
     compare.vectors['pao_dl'] *= 5.
-    compare.vectors['town_dl'] *= 5.
-    compare.vectors['organisation_dl'] *= 4.
+    compare.vectors['town_dl'] *= 6.
+    compare.vectors['organisation_dl'] *= 4. # 5
     compare.vectors['flat_dl'] *= 3.
-    compare.vectors['building_name_dl'] *= 3.
-    # upweight locality
+    compare.vectors['building_name_dl'] *= 3. # 4
+    compare.vectors['locality_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -741,7 +741,7 @@ def checkPerformance(df, edgeCases, prefix='EdgeCase'):
         fp = len(df.loc[(df['UPRN'] != df['uprn_edge']) & (df['MNEMONIC'] == mnemonic)].index)
 
         print('Correctly Matched', nmatched, mnemonic)
-        print('Match Fraction', round(nmatched / outof *100., 1))
+        print('Match Fraction', round(nmatched / outof * 100., 1))
         print('False Positives', fp)
         print('False Positive Rate', round(fp / outof * 100., 1))
 
@@ -759,6 +759,7 @@ def checkPerformance(df, edgeCases, prefix='EdgeCase'):
     plt.ylabel('Fraction of the Sample')
     plt.title('Edge Case - Prototype Matching')
     plt.xticks(x + width, mne, rotation=45)
+    plt.ylim(0, 101)
     plt.tight_layout()
     plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/' + prefix + '.png')
     plt.close()
@@ -876,10 +877,10 @@ if __name__ == "__main__":
         Match Fraction 99.4
         False Positives 0
         False Positive Rate 0.0
-        Correctly Matched 900 DEAD_SIMPLE_NO_PC
-        Match Fraction 90.0
-        False Positives 20
-        False Positive Rate 2.0
+        Correctly Matched 906 DEAD_SIMPLE_NO_PC
+        Match Fraction 90.6
+        False Positives 14
+        False Positive Rate 1.4
     On Mini version of AB:
         Matched 3470 entries
         Total Match Fraction 69.4
