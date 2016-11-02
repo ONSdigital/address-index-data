@@ -4,12 +4,13 @@ version := "0.1.0"
 
 scalaVersion := "2.10.6"
 
-// allows us to include spark packages
-resolvers += "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/"
+resolvers ++= Seq(
+  // allows us to include spark packages
+  "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/",
+  "conjars" at "http://conjars.org/repo"
+)
 
-resolvers += "clojars" at "https://clojars.org/repo"
 
-resolvers += "conjars" at "http://conjars.org/repo"
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "1.6.0",
