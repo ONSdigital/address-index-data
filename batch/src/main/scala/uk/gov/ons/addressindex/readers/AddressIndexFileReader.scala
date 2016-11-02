@@ -22,7 +22,7 @@ object AddressIndexFileReader {
   def readDeliveryPointCSV(fileName: String): DataFrame =
     SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
-      .schema(CSVSchemas.deliveryPointSchema)
+      .schema(CSVSchemas.postcodeAddressFileSchema)
       .option("header", "true") // Use first line of all files as header
       .load(s"$pathToCsv/$fileName")
 

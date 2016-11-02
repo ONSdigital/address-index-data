@@ -8,9 +8,9 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType}
 object CSVSchemas {
 
   /**
-    * Delivery point CSV file schema
+    * Postcode address CSV file schema
     */
-  val deliveryPointSchema = StructType(Seq(
+  val postcodeAddressFileSchema = StructType(Seq(
     StructField("recordIdentifier", StringType, nullable = false),
     StructField("changeType", StringType, nullable = false),
     StructField("proOrder", StringType, nullable = false),
