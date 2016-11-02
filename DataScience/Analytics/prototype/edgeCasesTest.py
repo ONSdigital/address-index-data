@@ -118,7 +118,7 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     df = pd.concat([df, pcodes], axis=1)
 
     # rename some columns
-    df.rename(columns={'THROUGHFARE': 'streetName',
+    df.rename(columns={'THROUGHFARE': 'StreetName',
                        'POST_TOWN': 'townName',
                        'POSTCODE': 'postcode',
                        'PAO_TEXT': 'pao_text',
@@ -316,7 +316,7 @@ def _normalizeData(df, expandSynonyms=True):
                 'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', 'CUMBRIA', 'FLINTSHIRE', 'GLOUCESTERSHIRE', 'WILTSHIRE',
                 'DENBIGHSHIRE', 'TYNE AND WEAR', 'NORTHUMBERLAND', 'NORTHAMPTONSHIRE', 'WARWICKSHIRE', 'HAMPSHIRE',
                 'GWENT', 'NORFOLK', 'CHESHIRE', 'POWYS', 'LEICESTERSHIRE', 'NORTHAMPTONSHIRE', 'NORTHANTS',
-                'WORCESTERSHIRE', 'HERTFORDSHIRE', 'CAMBRIDGESHIRE', 'BEDFORDSHIRE')
+                'WORCESTERSHIRE', 'HERTFORDSHIRE', 'CAMBRIDGESHIRE', 'BEDFORDSHIRE', 'LANCASHIRE')
 
     # remove county from address but add a column for it
     df['County'] = None
@@ -384,7 +384,7 @@ def parseInputData(df, expandSynonyms=True):
             # change to all capitals
             parsed['Postcode'] = parsed['Postcode'].upper()
 
-        # if Hackney etc. in streetName then remove and move to locality
+        # if Hackney etc. in StreetName then remove and move to locality
         # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
         if parsed.get('StreetName', None) is not None:
             locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
@@ -507,7 +507,7 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
         # print('Start matching those with postcode information, using postcode and street name blocking...')
-        # pairs = pcl.block(left_on=['Postcode', 'StreetName'], right_on=['postcode', 'streetName'])
+        # pairs = pcl.block(left_on=['Postcode', 'StreetName'], right_on=['postcode', 'StreetName'])
         print('Start matching those with postcode information, using postcode and building number blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
 
@@ -520,7 +520,7 @@ def matchDataWithPostcode(AddressBase, toMatch, houseNumberBlocking=True, limit=
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
     compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
-    compare.string('streetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
+    compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
 
@@ -588,41 +588,54 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7):
     pcl = recordlinkage.Pairs(toMatch, AddressBase)
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
-    # pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['PAO_START_NUMBER', 'streetName'])
-    # pairs = pcl.sortedneighbourhood('postcode_in', window=3, block_on='postcode_in')
-    # pairs = pcl.block(left_on=['BuildingNumber', 'StreetName', 'TownName'], right_on=['BUILDING_NUMBER', 'streetName', 'townName'])
-    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'streetName'])
+    # pairs = pcl.sortedneighbourhood('StreetName', window=3,
+    #                                 block_left_on='BuildingNumber', block_right_on='BUILDING_NUMBER')
+    pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
     # while town name blocking allows a wider search space it also takes a lot longer on a laptop...
     # pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets - use different metrics for the comparison
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
-    # compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein', name='pao_suffix_dl')
-    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl') # good for care homes
+
+    # # compare.string('PAO_START_SUFFIX', 'house_number_suffix', method='damerau_levenshtein', name='pao_suffix_dl')
+    # compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
+    # # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
+    # # compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
+    # # compare.exact('flat_number', 'flat_number', missing_value='-1234', disagree_value=-0.1, name='flat_number_dl')
+
+    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
     compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
+    compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
+    compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
-    compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='number_dl')
-    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', missing_value=0., name='flat_dl')
-    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
-    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
-    compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
-    compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
-    # compare.string('SAO_START_NUMBER', 'flat_number', method='damerau_levenshtein', name='sao_number_dl')
-    compare.string('townName', 'TownName', method='damerau_levenshtein', name='city_dl')
+
+    # for some there might be a part of the postcode, this can be useful
     compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
-    # compare.numeric('flat_number', 'flat_number', threshold=0.1, missing_value=-123, name='flat_number_dl')
-    # compare.exact('flat_number', 'flat_number', missing_value='-1234', disagree_value=-0.1, name='flat_number_dl')
-    # compare.string('flat_number', 'flat_number',  method='damerau_levenshtein', name='flat_number_dl')
+
+    # the following is good for flats and apartments than have been numbered
+    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
+
+    # set rules for organisations such as care homes and similar type addresses
+    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
+    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
+    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
+
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    compare.vectors['building_name_dl'] *= 4.
-    # compare.vectors['city_dl'] *= 10.
-    compare.vectors['flatw_dl'] *= 8.
-    compare.vectors['number_dl'] *= 10.
-    # compare.vectors['flat_number_dl'] *= 8.
-    compare.vectors['organisation_dl'] *= 5.
+    # compare.vectors['building_name_dl'] *= 4.
+    # compare.vectors['flatw_dl'] *= 8.
+    # compare.vectors['pao_number_dl'] *= 10.
+    # # compare.vectors['flat_number_dl'] *= 8.
+    # compare.vectors['organisation_dl'] *= 5.
+    compare.vectors['pao_dl'] *= 5.
+    compare.vectors['town_dl'] *= 5.
+    compare.vectors['organisation_dl'] *= 4.
+    compare.vectors['flat_dl'] *= 3.
+    compare.vectors['building_name_dl'] *= 3.
+    # upweight locality
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -863,10 +876,10 @@ if __name__ == "__main__":
         Match Fraction 99.4
         False Positives 0
         False Positive Rate 0.0
-        Correctly Matched 881 DEAD_SIMPLE_NO_PC
-        Match Fraction 88.1
-        False Positives 34
-        False Positive Rate 3.4
+        Correctly Matched 900 DEAD_SIMPLE_NO_PC
+        Match Fraction 90.0
+        False Positives 20
+        False Positive Rate 2.0
     On Mini version of AB:
         Matched 3470 entries
         Total Match Fraction 69.4
