@@ -91,9 +91,13 @@ def _stripFormatting(collection):
 
 def readXML(xmlFile):
     """
+    Parser XML file and yield the raw text and parsed sequence components.
 
-    :param xmlFile:
-    :return:
+    :param xmlFile: name of the XML file to parse
+    :type xmlFile: str
+
+    :return: raw text, sequence components
+    :rtype: list
     """
     component_string_list = []
 
@@ -248,6 +252,11 @@ def tokenize(raw_string):
 def readData(xmlFile):
     """
     Parses the specified data files and returns it in sklearn format.
+
+    :param xmlFile: name of the XML file to parse
+    :type xmlFile: str
+
+    :return: features (X) and labels (y)
     """
     data = readXML(xmlFile)
 
