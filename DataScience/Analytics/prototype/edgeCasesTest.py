@@ -219,9 +219,14 @@ def getPostcode(string):
 
 def testIfIllformattedPostcode(string):
     """
+    Test whether a postcode is correctly formatted. Valid postcodes will return True, while
+    invalid will return False. Can be used to validate postcode formats.
 
-    :param string:
-    :return:
+    :param string: input string containing a postcode that is being tested for validity
+    :type string: str
+
+    :return: whether or not the input string contains a valid postcode
+    :rtype: bool
     """
     try:
         tmp = \
@@ -232,17 +237,12 @@ def testIfIllformattedPostcode(string):
         return False
 
 
-def _splitRoadHouse(row, part):
-    try:
-        tmp = row['road'].split('house')[part]
-        if part == 0:
-            tmp += 'house'
-    except:
-        tmp = row['road']
-    return tmp.strip()
-
-
 def _fixBuildingNumber(row):
+    """
+
+    :param row:
+    :return:
+    """
     if row['BuildingName'] is not None:
         tmp = row['BuildingName'].split(' ')
         if len(tmp) > 1:
@@ -652,7 +652,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     # compare.string('TOWN_NAME', 'Locality', method='damerau_levenshtein', name='locality2_dl')
 
     # for some there might be a part of the postcode, this can be useful
-    compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
+    # compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
 
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
@@ -676,6 +676,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     compare.vectors['organisation_dl'] *= 4.    # 5
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.   # 4
+    # compare.vectors['postcode_in_dl'] *= 1.
     compare.vectors['locality_dl'] *= 2.
     # compare.vectors['locality2_dl'] *= 2.
 
@@ -710,9 +711,12 @@ def mergeMatchedAndAB(matches, toMatch, AddressBase, dropColumns=False):
     Merge address base information to the identified matches.
     Outputs the merged information to a CSV file for later inspection.
 
-    :param matches:
-    :param toMatch:
-    :param AddressBase:
+    :param matches: found matches
+    :type matches: pandas.DataFrame
+    :param toMatch: addresses that were being matched
+    :type toMatch: pandas.DataFrame
+    :param AddressBase: original AddressBase dataframe
+    :type AddressBase: pandas.DataFrame
 
     :return: merged dataframe
     :rtype: pandas.DataFrame
@@ -734,8 +738,13 @@ def checkPerformance(df, edgeCases, prefix='EdgeCase'):
     Check performance - calculate for example match rate and the number of false positives.
     Show the performance for the full dataset and for each class.
 
-    :param df:
-    :param edgeCases:
+    .. note: consider adding e.g. confusion matrix (recordlinkage.confusion_matrix()), precision,
+             recall, f-score, etc.
+
+    :param df: data frame with linked addresses and similarity metrics
+    :type df: pandas.DataFrame
+    :param edgeCases: input edge case data, used to identify e.g. those addresses not linked
+    :type edgeCases: pandas.DataFrame
 
     :return: None
     """
@@ -805,13 +814,6 @@ def checkPerformance(df, edgeCases, prefix='EdgeCase'):
     plt.tight_layout()
     plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/' + prefix + '.png')
     plt.close()
-
-    # confusion matrix
-    # recordlinkage.confusion_matrix()
-    # precision
-    # recall
-    # f-score
-    # number of false positives and fp rate
 
 
 def runAll():
