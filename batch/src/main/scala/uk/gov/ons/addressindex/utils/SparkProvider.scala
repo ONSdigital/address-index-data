@@ -15,7 +15,7 @@ object SparkProvider {
   private val master = config.getString("addressindex.spark.master")
 
   private val conf = new SparkConf().setAppName(appName).setMaster(master)
-  conf.set("spark.serializer", config.getString("org.apache.spark.serializer.KryoSerializer"))
+  conf.set("spark.serializer", config.getString("addressindex.spark.serializer"))
   // ES index should be created manually
   conf.set("es.index.auto.create", config.getString("addressindex.elasticsearch.index-autocreate"))
   // IMPORTANT: without this elasticsearch-hadoop will try to access the interlan nodes
