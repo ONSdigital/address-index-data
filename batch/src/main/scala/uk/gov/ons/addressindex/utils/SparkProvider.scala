@@ -16,7 +16,13 @@ object SparkProvider {
 
   private val conf = new SparkConf().setAppName(appName).setMaster(master)
   conf.set("spark.serializer", config.getString("addressindex.spark.serializer"))
-  // ES index should be created manually
+
+  conf.set("es.nodes", config.getString("addressindex.elasticsearch.nodes"))
+  conf.set("es.port", config.getString("addressindex.elasticsearch.port"))
+  conf.set("es.net.http.auth.user", config.getString("addressindex.elasticsearch.user"))
+  conf.set("es.net.http.auth.pass", config.getString("addressindex.elasticsearch.pass"))
+
+  // decides either if ES index should be created manually or not
   conf.set("es.index.auto.create", config.getString("addressindex.elasticsearch.index-autocreate"))
   // IMPORTANT: without this elasticsearch-hadoop will try to access the interlan nodes
   // that are located on a private ip address. This is generally the case when es is
