@@ -22,8 +22,8 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 11-Oct-2016
+:version: 0.7
+:date: 27-Oct-2016
 """
 import pandas as pd
 import numpy as np
@@ -81,10 +81,11 @@ def _getPostcode(row, column='address'):
 
 def _removePostcode(row, column='address', postcode='postcode'):
     """
+    A function to remove postcode from the string in column.
 
-    :param row:
-    :param column:
-    :param postcode:
+    :param row: pandas dataframe row
+    :param column: name of the column from which the postcode gets removed
+    :param postcode: name of the column where the postcode is stored
 
     :return:
     """
@@ -113,6 +114,13 @@ def _simpleTest():
 
 
 def combineMiniABtestingData():
+    """
+    Read in a subset of AddressBase Epoch 39 data and combine to a single CSV file.
+    A subset of the AddressBase was produced by ONS to provide early access to AB
+    without needing to move the full AddressBase out of ONS network.
+
+    :return: None
+    """
     path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/miniAB/'
     files = glob.glob(path + '*.csv')
 
@@ -139,7 +147,6 @@ def combineMiniABtestingData():
         if 'ORGANISATION' in file:
             ORG = tmp[['UPRN', 'ORGANISATION']]
 
-
     # join the various dataframes
     data = pd.merge(BLPU, DP, how='left', on='UPRN')
     data = pd.merge(data, LPI, how='left', on='UPRN')
@@ -165,12 +172,10 @@ def combineMiniABtestingData():
     data.to_csv(path + 'ABmini.csv', index=0)
 
 
-def combineAddressBaseData(filename='AB.h5'):
+def combineAddressBaseData(filename='AB.csv'):
     """
-    Read in all the Address Base Epoch 39 CSV files and combine to a single HDF5 file.
-    Only relevant information is retained. All information is converted to lowercase.
-    Postcode is split to in and outcodes. In addition, a column listing flat number
-    is added.
+    Read in all the Address Base Epoch 39 CSV files and combine to a single CSV file.
+    Only relevant information is retained to compress the AB for easier handling.
 
     :param filename: name of the output file
     :type filename: str
@@ -181,100 +186,62 @@ def combineAddressBaseData(filename='AB.h5'):
     files = glob.glob(path + 'ABP_E39_*.csv')
 
     for file in files:
-        print('\nReading file:', file)
+        if 'CLASSIFICATION' in file or 'SREET.csv' in file:
+            pass
+
+        print('Reading in', files)
+
+        tmp = pd.read_csv(file, dtype=str)
 
         if 'BLPU' in file:
-            BLPU = pd.read_csv(file, usecols=['UPRN', 'POSTCODE_LOCATOR'])
-            print(BLPU.info())
+            BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
 
         if 'DELIVERY_POINT' in file:
-            DP = pd.read_csv(file, usecols=['UPRN', 'BUILDING_NUMBER', 'BUILDING_NAME', 'SUB_BUILDING_NAME',
-                                            'ORGANISATION_NAME', 'POSTCODE', 'POST_TOWN', 'DEPARTMENT_NAME'])
-            print(DP.info())
+            DP = tmp[['UPRN', 'ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
+                      'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
+                      'POST_TOWN', 'POSTCODE']]
 
         if 'LPI' in file:
-            LPI = pd.read_csv(file, usecols=['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX',
-                                             'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE'])
-            print(LPI.info())
+            LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
 
         if 'STREET_DESC' in file:
-            ST = pd.read_csv(file, usecols=['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY'])
-            print(ST.info())
+            ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']]
 
         if 'ORGANISATION' in file:
-            ORG = pd.read_csv(file, usecols=['UPRN', 'ORGANISATION'])
-            print(ORG.info())
+            ORG = tmp[['UPRN', 'ORGANISATION']]
 
-    print('\njoining the individual files...')
+    print('joining the individual dataframes...')
     data = pd.merge(BLPU, DP, how='left', on='UPRN')
     data = pd.merge(data, LPI, how='left', on='UPRN')
     data = pd.merge(data, ORG, how='left', on=['UPRN'])
     data = pd.merge(data, ST, how='left', on=['USRN', 'LANGUAGE'])
 
-    print('dropping unnecessary information...')
-    # drop if all null - there shouldn't be any...
+    # drop if all null
     data.dropna(inplace=True, how='all')
-
-    # drop some columns which are not needed
-    data.drop(['POST_TOWN', 'POSTCODE', 'LANGUAGE', 'USRN'], axis=1, inplace=True)
-
-    # drop if no UPRN - there shouldn't be any...
-    data = data[np.isfinite(data['UPRN'])]
 
     # change uprn to int
     data['UPRN'] = data['UPRN'].astype(int)
 
-    print('converting everything to lower case...')
-    for tmp in data.columns:
-        try:
-            data[tmp] = data[tmp].str.lower()
-        except:
-            pass
+    # drop if no UPRN
+    data = data[np.isfinite(data['UPRN'].values)]
 
-    print('combining and splitting information...')
-    # if SAO_TEXT is None and a value exists in SUB_BUILDING_NAME then use this
-    msk = data['SAO_TEXT'].isnull()
-    data.loc[msk, 'SAO_TEXT'] = data.loc[msk, 'SUB_BUILDING_NAME'].copy()
+    # drop some that are not needed
+    data.drop(['LANGUAGE', 'USRN'], axis=1, inplace=True)
 
-    # split flat or apartment number as separate for numerical comparison
-    data['flat_number'] = None
-    msk = data['SAO_TEXT'].str.contains('flat|apartment', na=False)
-    data.loc[msk, 'flat_number'] = data.loc[msk, 'SAO_TEXT']
-    data['flat_number'] = data.loc[msk].apply(lambda x: x['flat_number'].strip().replace('flat', '').replace('apartment', ''), axis=1)
-    data['flat_number'] = pd.to_numeric(data['flat_number'], errors='coerce')
-
-    # if SAO_TEXT or ORGANISATION is None, force it to NO, if BUILDING_NAME is None then set it to NONAME
-    data.loc[data['SAO_TEXT'].isnull(), 'SAO_TEXT'] = 'NO'
-    data.loc[data['ORGANISATION'].isnull(), 'ORGANISATION'] = 'NO'
-    data.loc[data['BUILDING_NAME'].isnull(), 'BUILDING_NAME'] = 'NONAME'
-    data.loc[data['PAO_START_SUFFIX'].isnull(), 'PAO_START_SUFFIX'] = 'NOSUFFIX'
-
-    # change column names
-    data.rename(columns={'POSTCODE_LOCATOR': 'postcode', 'STREET_DESCRIPTOR': 'street_descriptor',
-                         'TOWN_NAME': 'town_name', 'BUILDING_NUMBER': 'building_number', 'PAO_TEXT': 'pao_text',
-                         'SAO_TEXT': 'sao_text', 'BUILDING_NAME': 'building_name', 'LOCALITY': 'locality'}, inplace=True)
-
-    print('splitting the postcode to in and out...')
-    pcodes = data['postcode'].str.split(' ', expand=True)
-    pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-    data = pd.concat([data, pcodes], axis=1)
     print(data.info())
-    print(len(data.index), 'addresses in the combined file')
+    print(len(data.index), 'addresses')
 
     print('storing to a CSV file...')
-    data.to_csv(path + filename.replace('.h5', '.csv'), index=False)
-
-    # print('converting object types to string types - HDF5 does not like storing python objects...')
-    # for col in data.columns:
-    #     if data[col].dtype == object:
-    #         data[col] = data[col].astype(str)
-    # print(data.info())
-
-    # print('storing to a HDF5 file...')
-    # data.to_hdf(path + filename, 'data', format='table', mode='w', dropna=True)
+    data.to_csv(path + filename, index=False)
 
 
 def processPostcodeFile():
+    """
+    Modify the scraped postcode file, for example, remove if 'shared' appears
+    in any of the postcodes.
+
+    :return: None
+    """
     path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/old/'
     df = pd.read_csv(path + 'postcodefile.csv')
 
@@ -282,7 +249,7 @@ def processPostcodeFile():
     b = b.reset_index()[[0, 'PostTown']]  # var1 variable is currently labeled 0
     b.columns = ['PostTown', 'PostcodeDistricts']  # renaming var1
 
-    #lower case and stripping
+    # lower case and stripping
     b['PostTown'] = b['PostTown'].apply(lambda x: x.strip().lower().replace('shared', ''))
     b['PostcodeDistricts'] = b['PostcodeDistricts'].apply(lambda x: x.strip().lower())
 
@@ -303,12 +270,15 @@ def modifyEdgeCasesData():
     """
     df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K.csv')
     print(df.info())
+
     # remove postcode
     df['postcode'] = df.apply(_getPostcode, args=('ADDRESS',), axis=1)
     msk = df['MNEMONIC'] == 'ORDER_MATTERS'
     df['ADDRESS'].loc[msk] = df.loc[msk].apply(_removePostcode, args=('ADDRESS', 'postcode'), axis=1)
     df.drop(['postcode', ], axis=1, inplace=True)
+
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/EDGE_CASES_EC5K_NoPostcode.csv', index=False)
+
     print(df.info())
 
 
@@ -316,6 +286,6 @@ if __name__ == "__main__":
     # _simpleTest()
     # testParsing()
     # processPostcodeFile()
-    combineMiniABtestingData()
-    # combineAddressBaseData()
+    # combineMiniABtestingData()
+    combineAddressBaseData()
     # modifyEdgeCasesData()
