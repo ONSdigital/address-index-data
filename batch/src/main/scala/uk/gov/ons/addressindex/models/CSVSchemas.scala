@@ -33,7 +33,6 @@ object CSVSchemas {
     StructField("welshThoroughfare", StringType, nullable = false),
     StructField("welshDoubleDependentLocality", StringType, nullable = false),
     StructField("welshDependentLocality", StringType, nullable = false),
-    StructField("welshDependentLocality", StringType, nullable = false),
     StructField("welshPostTown", StringType, nullable = false),
     StructField("poBoxNumber", StringType, nullable = false),
     StructField("processDate", StringType, nullable = false),
