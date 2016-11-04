@@ -11,19 +11,18 @@ import uk.gov.ons.addressindex.utils.SparkProvider
 object AddressIndexFileReader {
 
   private lazy val config = ConfigFactory.load()
-  private lazy val pathToCsv = config.getString("addressindex.folders.csv")
+  private lazy val pathToCsv = config.getString("addressindex.files.csv.delivery-point")
 
   /**
     * Reads csv into a `DataFrame`
     *
-    * @param fileName name of the CSV file
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(fileName: String): DataFrame =
+  def readDeliveryPointCSV(): DataFrame =
     SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
       .schema(CSVSchemas.postcodeAddressFileSchema)
       .option("header", "true") // Use first line of all files as header
-      .load(s"$pathToCsv/$fileName")
+      .load(s"$pathToCsv")
 
 }
