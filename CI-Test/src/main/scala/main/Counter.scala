@@ -8,7 +8,7 @@ object Counter {
     val conf = new SparkConf().setAppName("AI Counter")
     val sc = new SparkContext(conf)
 
-    val textFile = sc.textFile("hdfs://dev3/user/thornsj/ABP_E39_DELIVERY_POINT.csv")
+    val textFile = sc.textFile("hdfs://dev3/ons/addressIndex/AddressBase/ABP_E39_DELIVERY_POINT.csv")
 
     println("Partitions: " + textFile.partitions.length)
     println("Total lines: " + textFile.count())
@@ -20,6 +20,6 @@ object Counter {
     println("Lines with Empson Count: " + linesWithEmpson.count())
     linesWithEmpson.collect.foreach(println)
 
-    linesWithEmpson.saveAsTextFile("file:///home/thornsj/empson_results")
+    linesWithEmpson.saveAsTextFile("hdfs://dev3/ons/addressIndex/Results/empson_results")
   }
 }
