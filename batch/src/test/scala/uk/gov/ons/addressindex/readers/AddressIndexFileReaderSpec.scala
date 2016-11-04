@@ -6,8 +6,6 @@ class AddressIndexFileReaderSpec extends FlatSpec with Matchers {
   "AddressIndexFileReader" should
     "read delivery point csv file" in {
     // Given
-    val fileName = "delivery_point/read_test.csv"
-
     val expectedFirstDeliveryPoint = List("28", "I", "272650", "1", "19", "CIBO", "department", "FLAT E",
       "COTTAGE", "1", "throughfare", "SOME_STREET", "locality", "STIXTON", "LONDON", "POSTCODE", "S", "1Q", "welsh1",
       "welsh2", "welsh3", "welsh4", "welsh5", "welsh6", "2016-01-18", "2012-04-23", "2012-04-25",
@@ -15,7 +13,7 @@ class AddressIndexFileReaderSpec extends FlatSpec with Matchers {
 
 
     // When
-    val result = AddressIndexFileReader.readDeliveryPointCSV(fileName).collect()
+    val result = AddressIndexFileReader.readDeliveryPointCSV().collect()
 
     // Then
     result.length shouldBe 3 // 4 with the header
