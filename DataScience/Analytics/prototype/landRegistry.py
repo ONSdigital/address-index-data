@@ -35,15 +35,15 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 10-Nov-2016
+:version: 0.2
+:date: 11-Nov-2016
 
 
 Results
 -------
 
-With full AB and reasonable runtime (i.e. using very aggressive blocking):
-    Total Match Fraction 83.2
+With full AB and reasonable runtime (i.e. using aggressive blocking):
+    Total Match Fraction 85.8
 """
 import pandas as pd
 import numpy as np
@@ -93,7 +93,7 @@ def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/O
         plt.close()
 
     # drop unnecessary information
-    df.drop(['TransactionID', 'Price', 'TransferDate', 'Type', 'New', 'Duration', 'PPD',
+    df.drop(['Price', 'TransferDate', 'Type', 'New', 'Duration', 'PPD',
              'District', 'RecordStatus'], axis=1, inplace=True)
 
     # fill NaNs with empty strings so that we can form a single address string
@@ -314,7 +314,7 @@ def _normalizeData(df, expandSynonyms=True):
 
     # parsing gets really confused if region or county is in the line
     counties = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'W SUSSEX',
-                'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', 'ESSEX', 'SURREY', 'SUFFOLK',
+                'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', ' ESSEX', 'SURREY', 'SUFFOLK',
                 'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE', 'LINCOLNSHIRE',
                 'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
                 'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
@@ -323,12 +323,17 @@ def _normalizeData(df, expandSynonyms=True):
                 'GWENT', 'NORFOLK', 'CHESHIRE', 'POWYS', 'LEICESTERSHIRE', 'NORTHAMPTONSHIRE', 'NORTHANTS',
                 'WORCESTERSHIRE', 'HERTFORDSHIRE', 'CAMBRIDGESHIRE', 'BEDFORDSHIRE', 'LANCASHIRE')
 
+    # use this for the counties so that e.g. ESSEX ROAD does not become just ROAD...
+    # todo: the regex is getting ridiculous, maybe do other way around i.e. country must be followed by postcode or
+    #       be the last component.
+    addRegex = '(?:\s)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH)'
+
     # remove county from address but add a column for it
     df['County'] = None
     for county in counties:
-        msk = df['ADDRESS2'].str.contains(county, na=False)
+        msk = df['ADDRESS2'].str.contains(county + addRegex, regex=True, na=False)
         df.loc[msk, 'County'] = county
-        df['ADDRESS2'] = df['ADDRESS2'].str.replace(county, '', case=False)
+        df['ADDRESS2'] = df['ADDRESS2'].str.replace(county + addRegex, '', case=False)
 
     return df
 
@@ -393,16 +398,28 @@ def parseInputData(df, expandSynonyms=True):
         # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
         if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
             if 'LONDON' in parsed['TownName']:
+                # todo: should move to a file rather than have inside the code and get a complete list from AB
                 locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
-                        'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK', 'COLINDALE', 'LEWISHAM', 'FOREST HILL',
-                        'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON', 'MOTTINGHAM',
-                        'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE', 'WEST KENSINGTON',
-                        'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE', 'GREEN LANES', 'KENSINGTON',
-                        'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM']
+                        'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
+                        'FOREST HILL',  'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
+                        'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
+                        'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
+                        'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
+                        'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
+                        'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
+                        'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
+                        'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
+                        'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
+                        'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
+                        'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
+                        'HOMERTON']
+
                 for loc in locs:
-                    if loc in parsed['StreetName']:
+                    if parsed['StreetName'].strip().endswith(loc):
                         parsed['Locality'] = loc
-                        parsed['StreetName'] = parsed['StreetName'].replace(loc, '').strip()
+                        # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
+                        # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK
+                        parsed['StreetName'] = ' '.join(parsed['StreetName'].strip().split(' ')[:-len(loc.split(' '))])
 
         # if BuildingName is e.g. 55A then should get the number and suffix separately
         if parsed.get('BuildingName', None) is not None:
@@ -411,10 +428,13 @@ def parseInputData(df, expandSynonyms=True):
             if len(parsed['BuildingSuffix']) > 2:
                 parsed['BuildingSuffix'] = None
 
-        # some addresses contain place co place, where the co is not part of the actual name - remove these
+        # some addresses contain place CO place, where the CO is not part of the actual name - remove these
+        # same is true for IN e.g. Road Marton IN Cleveland
         if parsed.get('Locality', None) is not None:
-            if parsed['Locality'].endswith(' CO'):
+            if parsed['Locality'].strip().endswith(' CO'):
                 parsed['Locality'] = parsed['Locality'].replace(' CO', '')
+            if parsed['Locality'].strip().endswith(' IN'):
+                parsed['Locality'] = parsed['Locality'].replace(' IN', '')
 
         # store the parsed information to separate lists
         organisation.append(parsed.get('OrganisationName', None))
@@ -502,17 +522,14 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
 
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
-    # todo: include an option when neither BuildingNumber nor BuildingName is present (e.g. carehomes)
     if buildingNumberBlocking:
         print('Start matching those with postcode information, using postcode and building number blocking...')
-        # pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'PAO_START_NUMBER'])
-        # better to block on building_number rather than PAO_START_NUMBER as the latter is same for 8 and 8A
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
-        # print('Start matching those with postcode information, using postcode and street name blocking...')
-        # pairs = pcl.block(left_on=['Postcode', 'StreetName'], right_on=['postcode', 'StreetName'])
-        print('Start matching those with postcode information, using postcode and building name blocking...')
-        pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
+        # print('Start matching those with postcode information, using postcode and building name blocking...')
+        # pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
+        print('Start matching those with postcode information, using postcode blocking...')
+        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
@@ -535,14 +552,12 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
 
     # set rules for organisations such as care homes and similar type addresses
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
-    # compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation2_dl')
 
     # execute the comparison model
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 5.
-    compare.vectors['organisation_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.
 
@@ -600,14 +615,10 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     if buildingNumberBlocking:
         print('Start matching those without postcode information, using building number and street name blocking...')
         pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
-        # while town name blocking allows a wider search space it also takes a lot longer on a laptop...
-        # pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
     else:
         print('Start matching those without postcode information, using building name and street name blocking...')
         pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['buildingName', 'StreetName'])
 
-    # pairs = pcl.sortedneighbourhood('StreetName', window=3,
-    #                                 block_left_on='BuildingNumber', block_right_on='BUILDING_NUMBER')
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
     # compare the two data sets - use different metrics for the comparison
@@ -624,10 +635,6 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
     # add a comparison from other fields
     compare.string('TOWN_NAME', 'TownName', method='damerau_levenshtein', name='town2_dl')
-    # compare.string('TOWN_NAME', 'Locality', method='damerau_levenshtein', name='locality2_dl')
-
-    # for some there might be a part of the postcode, this can be useful
-    # compare.string('postcode_in', 'postcode_in', method='damerau_levenshtein', name='postcode_in_dl')
 
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
@@ -639,26 +646,20 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
 
     # Extras
-    # compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
     compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
 
     compare.run()
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-    # compare.vectors['flatw_dl'] *= 8.
     compare.vectors['pao_dl'] *= 5.
     compare.vectors['town_dl'] *= 7.
     compare.vectors['organisation_dl'] *= 4.    # 5
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.   # 4
-    # compare.vectors['postcode_in_dl'] *= 1.
     compare.vectors['locality_dl'] *= 2.
-    # compare.vectors['locality2_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
-    # normalise the comparison vectors and the sum to be between zero and unity
-    # compare.vectors /= compare.vectors.max()
 
     # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
     matches = compare.vectors.loc[compare.vectors['similarity_sum'] > limit]
@@ -730,6 +731,13 @@ def checkPerformance(df, linkedData, prefix='LandRegistry'):
     # save matched
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched.csv', index=False)
 
+    # find those without match
+    IDs = df['TransactionID'].values
+    missing_msk = ~linkedData['TransactionID'].isin(IDs)
+    missing = linkedData.loc[missing_msk]
+    missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched_missing.csv', index=False)
+    print(len(missing.index), 'addresses were not linked...')
+
 
 def runAll():
     """
@@ -743,13 +751,13 @@ def runAll():
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
-    print('\nReading in Land Register data...')
+    print('\nReading in Land Registry data...')
     start = time.clock()
     testData = loadData()
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
-    print('\nParsing Edge Case data...')
+    print('\nParsing address data...')
     start = time.clock()
     parsedAddresses = parseInputData(testData)
     stop = time.clock()
