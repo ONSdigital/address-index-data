@@ -35,7 +35,7 @@ Author
 Version
 -------
 
-:version: 0.3
+:version: 0.4
 :date: 14-Nov-2016
 
 
@@ -43,7 +43,7 @@ Results
 -------
 
 With full AB and reasonable runtime (i.e. using aggressive blocking):
-    Total Match Fraction 89.9
+    Total Match Fraction 92.5
 """
 import pandas as pd
 import numpy as np
@@ -117,6 +117,12 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     Load a compressed version of the full AddressBase file. The information being used
     has been processed from a AB Epoch 39 files provided by ONS.
 
+    .. Note: this function modifies the original AB information by e.g. combining different tables. Such
+             activities are undertaken because of the aggressive blocking the prototype linking code uses.
+             The actual production system should take AB as it is and the linking should not perform blocking
+             but rather be flexible and take into account that in NAG the information can be stored in various
+             fields.
+
     :param filename: name of the file containing modified AddressBase
     :type filename: str
     :param path: location of the AddressBase combined data file
@@ -153,18 +159,25 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     df.loc[msk, 'LOCALITY'] = df.loc[msk, 'DEPENDENT_LOCALITY']
 
     # some addresses might have PAO_START_NUMBER but not BUILDING_NUMBER, e.g.
-    # 23 SUNNINGDALE CLOSE  NORTHAMPTON NN2 7LR is found in NAG under PLOT 4
+    # 23 SUNNINGDALE CLOSE  NORTHAMPTON NN2 7LR is found in NAG under PLOT 4.
+    # Others e.g. 13 HOME RIDINGS HOUSE FLINTERGILL COURT HEELANDS MILTON KEYNES MK13 7QS does
+    # not contain any building number as the 13 is part of building_name (parsed correctly)
+    # note: this is a rather bad fix and used only because using aggressive blocking. It should
+    # not be used in production system, which does not implement blocking.
     msk = df['BUILDING_NUMBER'].isnull()
     df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER']
+    msk = df['BUILDING_NUMBER'].isnull()
+    df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'SAO_START_NUMBER']
 
     # drop some that are not needed
     df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
 
+    # split postcode to in and outcode, useful in different ways of performing blocking
     pcodes = df['POSTCODE'].str.split(' ', expand=True)
     pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
     df = pd.concat([df, pcodes], axis=1)
 
-    # rename some columns
+    # rename some columns (sorted windowing requires column names to match)
     df.rename(columns={'THROUGHFARE': 'StreetName',
                        'POST_TOWN': 'townName',
                        'POSTCODE': 'postcode',
@@ -432,6 +445,21 @@ def parseInputData(df, expandSynonyms=True):
             # accept suffixes that are only maximum two chars
             if len(parsed['BuildingSuffix']) > 2:
                 parsed['BuildingSuffix'] = None
+
+        # this hack is used because of building number is used for blocking in the matching, and should not
+        # be replicated in production. E.g. 13 HOME RIDINGS HOUSE FLINTERGILL COURT HEELANDS MILTON KEYNES MK13 7QS
+        # is correctly parsed by the probabilistic parser ('BuildingName', '13 HOME RIDINGS HOUSE'), the equivalent
+        # field in AB is BUILDING_NAME and this address does not have building number of PAO_START_NUMBER.
+        if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
+            tmp = parsed['BuildingName'].split(' ')
+            try:
+                # if the first entity is integer then this is likely to be the building number
+                # take it and remove from building name
+                _ = int(tmp[0])
+                parsed['BuildingNumber'] = tmp[0]
+                parsed['BuildingName'] = parsed['BuildingName'].replace(tmp[0], '')
+            except:
+                pass
 
         # some addresses contain place CO place, where the CO is not part of the actual name - remove these
         # same is true for IN e.g. Road Marton IN Cleveland
