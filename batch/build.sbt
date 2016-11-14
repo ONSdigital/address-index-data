@@ -1,9 +1,3 @@
-name := "Address Index Batch‘"
-
-version := "0.1.0"
-
-scalaVersion := "2.10.6"
-
 resolvers ++= Seq(
   // allows us to include spark packages
   "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/",
@@ -13,6 +7,8 @@ resolvers ++= Seq(
 
 
 libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-compiler" % "2.10.6",
+  "org.scala-lang" % "scala-reflect" % "2.10.6",
   "org.apache.spark" %% "spark-core" % "1.6.0",
   "org.apache.spark" %% "spark-sql" % "1.6.0",
   "com.databricks" %% "spark-csv" % "1.5.0",
