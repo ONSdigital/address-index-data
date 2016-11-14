@@ -35,15 +35,15 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 11-Nov-2016
+:version: 0.3
+:date: 14-Nov-2016
 
 
 Results
 -------
 
 With full AB and reasonable runtime (i.e. using aggressive blocking):
-    Total Match Fraction 85.8
+    Total Match Fraction 89.9
 """
 import pandas as pd
 import numpy as np
@@ -59,7 +59,7 @@ import re
 def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
              verbose=False, plot=False):
     """
-    Read in the Land Register testing data.
+    Read in the Land Registry testing data.
 
     The data were downloaded from:
     https://data.gov.uk/dataset/land-registry-monthly-price-paid-data
@@ -151,6 +151,11 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
 
     msk = df['LOCALITY'].isnull()
     df.loc[msk, 'LOCALITY'] = df.loc[msk, 'DEPENDENT_LOCALITY']
+
+    # some addresses might have PAO_START_NUMBER but not BUILDING_NUMBER, e.g.
+    # 23 SUNNINGDALE CLOSE  NORTHAMPTON NN2 7LR is found in NAG under PLOT 4
+    msk = df['BUILDING_NUMBER'].isnull()
+    df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER']
 
     # drop some that are not needed
     df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
@@ -726,7 +731,7 @@ def checkPerformance(df, linkedData, prefix='LandRegistry'):
 
     # how many were matched
     print('\nMatched', nmatched, 'entries')
-    print('Total Match Fraction', round(nmatched / all * 100., 1))
+    print('Total Match Fraction', round(nmatched / all * 100., 1), 'per cent')
 
     # save matched
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched.csv', index=False)
@@ -772,7 +777,7 @@ def runAll():
     withPC = parsedAddresses.loc[~msk]
     noPC = parsedAddresses.loc[msk]
 
-    print('\nMatching Land Register to Address Base data...')
+    print('\nMatching Land Registry to Address Base data...')
     start = time.clock()
     ms1 = ms2 = m1a = m1b = m2a = m2b = False
     if len(withPC.index) > 0:
