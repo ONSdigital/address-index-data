@@ -35,15 +35,15 @@ Author
 Version
 -------
 
-:version: 0.4
-:date: 14-Nov-2016
+:version: 0.5
+:date: 15-Nov-2016
 
 
 Results
 -------
 
-With full AB and reasonable runtime (i.e. using aggressive blocking):
-    Total Match Fraction 92.5
+With full AB and reasonable runtime (i.e. using blocking):
+    Total Match Fraction 96.9 per cent
 """
 import pandas as pd
 import numpy as np
@@ -54,14 +54,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 import re
+import datetime
 
 
-def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-             verbose=False, plot=False):
+def loadData(filename='pp-monthly-update-Edited.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
+             earliestDate='2016-11-01', verbose=False, plot=False):
     """
-    Read in the Land Registry testing data.
+    Read in the Land Registry testing data. Note that the data should be preprocessed with a script
+    found in the DataScience/Analytics/data/ folder.
 
-    The data were downloaded from:
+    The data were originally downloaded from:
     https://data.gov.uk/dataset/land-registry-monthly-price-paid-data
     The header was grabbed from:
     https://www.gov.uk/guidance/about-the-price-paid-data#explanations-of-column-headers-in-the-ppd
@@ -70,6 +72,8 @@ def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/O
     :type filename: str
     :param path: location of the test data
     :type path: str
+    :param earliestDate: exclude all sales where the transfer data is more recent than the given data
+    :type earliestDate: str
     :param verbose: whether or not output information
     :type verbose: bool
     :param plot: simple plot showing the PDF of house prices
@@ -78,7 +82,7 @@ def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/O
     :return: pandas dataframe of the data (no UPRNs)
     :rtype: pandas.DataFrame
     """
-    df = pd.read_csv(path + filename, low_memory=False)
+    df = pd.read_csv(path + filename, low_memory=False, parse_dates=[2, ], infer_datetime_format=True)
 
     if plot:
         # plot the distribution of prices for fun :-)
@@ -91,6 +95,10 @@ def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/O
         plt.tight_layout()
         plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/figs/prices.png')
         plt.close()
+
+    # filter out those that are new and hence may to appear in AddressBase Epoch 39 (April)
+    msk = df['TransferDate'] < datetime.datetime.strptime(earliestDate, '%Y-%m-%d')
+    df = df.loc[msk]
 
     # drop unnecessary information
     df.drop(['Price', 'TransferDate', 'Type', 'New', 'Duration', 'PPD',
@@ -162,12 +170,8 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     # 23 SUNNINGDALE CLOSE  NORTHAMPTON NN2 7LR is found in NAG under PLOT 4.
     # Others e.g. 13 HOME RIDINGS HOUSE FLINTERGILL COURT HEELANDS MILTON KEYNES MK13 7QS does
     # not contain any building number as the 13 is part of building_name (parsed correctly)
-    # note: this is a rather bad fix and used only because using aggressive blocking. It should
-    # not be used in production system, which does not implement blocking.
     msk = df['BUILDING_NUMBER'].isnull()
     df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER']
-    msk = df['BUILDING_NUMBER'].isnull()
-    df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'SAO_START_NUMBER']
 
     # drop some that are not needed
     df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
@@ -217,46 +221,6 @@ def getPostcode(string):
             tmp = out + ' ' + inc
 
     return tmp
-
-
-def testIfIllformattedPostcode(string):
-    """
-    Test whether a postcode is correctly formatted. Valid postcodes will return True, while
-    invalid will return False. Can be used to validate postcode formats.
-
-    :param string: input string containing a postcode that is being tested for validity
-    :type string: str
-
-    :return: whether or not the input string contains a valid postcode
-    :rtype: bool
-    """
-    try:
-        tmp = \
-        re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]{1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
-                   string)[0]
-        return True
-    except:
-        return False
-
-
-def _fixBuildingNumber(row):
-    """
-
-    :param row:
-    :return:
-    """
-    if row['BuildingName'] is not None:
-        tmp = row['BuildingName'].split(' ')
-        if len(tmp) > 1:
-            try:
-                number = int(tmp[0])
-                return tmp[0]
-            except:
-                return None
-        else:
-            return None
-    else:
-        return None
 
 
 def _normalizeData(df, expandSynonyms=True):
@@ -446,21 +410,6 @@ def parseInputData(df, expandSynonyms=True):
             if len(parsed['BuildingSuffix']) > 2:
                 parsed['BuildingSuffix'] = None
 
-        # this hack is used because of building number is used for blocking in the matching, and should not
-        # be replicated in production. E.g. 13 HOME RIDINGS HOUSE FLINTERGILL COURT HEELANDS MILTON KEYNES MK13 7QS
-        # is correctly parsed by the probabilistic parser ('BuildingName', '13 HOME RIDINGS HOUSE'), the equivalent
-        # field in AB is BUILDING_NAME and this address does not have building number of PAO_START_NUMBER.
-        if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-            tmp = parsed['BuildingName'].split(' ')
-            try:
-                # if the first entity is integer then this is likely to be the building number
-                # take it and remove from building name
-                _ = int(tmp[0])
-                parsed['BuildingNumber'] = tmp[0]
-                parsed['BuildingName'] = parsed['BuildingName'].replace(tmp[0], '')
-            except:
-                pass
-
         # some addresses contain place CO place, where the CO is not part of the actual name - remove these
         # same is true for IN e.g. Road Marton IN Cleveland
         if parsed.get('Locality', None) is not None:
@@ -502,16 +451,10 @@ def parseInputData(df, expandSynonyms=True):
         df['postcode_in'] = None
         df['postcode_out'] = None
 
-    # if BuildingNumber is empty, sometimes the info is in BuildingName, try grabbing it
-    msk = df['BuildingNumber'].isnull()
-    df.loc[msk, 'BuildingNumber'] = df.loc[msk].apply(_fixBuildingNumber, axis=1)
-    msk = df['BuildingNumber'] == df['BuildingName']
-    df.loc[msk, 'BuildingName'] = None
-
     # # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
     df['FlatNumber'] = None
-    msk = df['BuildingName'].str.contains('flat|apartment', na=False, case=False)
-    df.loc[msk, 'FlatNumber'] = df.loc[msk, 'BuildingName']
+    msk = df['SubBuildingName'].str.contains('flat|apartment', na=False, case=False)
+    df.loc[msk, 'FlatNumber'] = df.loc[msk, 'SubBuildingName']
     df.loc[msk, 'FlatNumber'] = df.loc[msk].apply(lambda x:
                                                   x['FlatNumber'].strip().replace('FLAT', '').replace('APARTMENT', ''),
                                                   axis=1)
@@ -558,9 +501,9 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     if buildingNumberBlocking:
         print('Start matching those with postcode information, using postcode and building number blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
+        # print('Start matching those with postcode information, using postcode blocking...')
+        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
     else:
-        # print('Start matching those with postcode information, using postcode and building name blocking...')
-        # pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
         print('Start matching those with postcode information, using postcode blocking...')
         pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
 
@@ -582,6 +525,13 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
     compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
+    # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
+    # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
+    # This comparison should probably be numeric.
+    compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl')
+
+    # sometimes when there is no street name, the parser sets the building name to street name
+    compare.string('buildingName', 'StreetName', method='damerau_levenshtein', name='street_building_dl')
 
     # set rules for organisations such as care homes and similar type addresses
     compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
@@ -591,8 +541,10 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 5.
+    compare.vectors['sao_number_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.
+    compare.vectors['street_building_dl'] *= 3.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -607,11 +559,11 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # reset index
     matches = matches.reset_index()
 
-    # keep first if duplicate in the EC_Index column
-    matches = matches.drop_duplicates('EC_Index', keep='first')
+    # keep first if duplicate in the LR_Index column
+    matches = matches.drop_duplicates('LR_Index', keep='first')
 
-    # sort by EC_Index
-    matches = matches.sort_values(by='EC_Index')
+    # sort by LR_Index
+    matches = matches.sort_values(by='LR_Index')
 
     print('Found ', len(matches.index), 'matches...')
 
@@ -671,6 +623,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
 
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
+    compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
 
     # set rules for organisations such as care homes and similar type addresses
     compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
@@ -686,9 +639,10 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 5.
     compare.vectors['town_dl'] *= 7.
-    compare.vectors['organisation_dl'] *= 4.    # 5
+    compare.vectors['organisation_dl'] *= 4.
+    compare.vectors['sao_number_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
-    compare.vectors['building_name_dl'] *= 3.   # 4
+    compare.vectors['building_name_dl'] *= 3.
     compare.vectors['locality_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
@@ -704,11 +658,11 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
     # reset index
     matches = matches.reset_index()
 
-    # keep first if duplicate in the EC_Index column
-    matches = matches.drop_duplicates('EC_Index', keep='first')
+    # keep first if duplicate in the LR_Index column
+    matches = matches.drop_duplicates('LR_Index', keep='first')
 
-    # sort by EC_Index
-    matches = matches.sort_values(by='EC_Index')
+    # sort by LR_Index
+    matches = matches.sort_values(by='LR_Index')
 
     print('Found ', len(matches.index), 'matches...')
 
@@ -732,17 +686,18 @@ def mergeMatchedAndAB(matches, toMatch, AddressBase, dropColumns=False):
     """
     # merge to original information to the matched data
     toMatch = toMatch.reset_index()
-    data = pd.merge(matches, toMatch, how='left', on='EC_Index')
+    data = pd.merge(matches, toMatch, how='left', on='LR_Index')
     data = pd.merge(data, AddressBase, how='left', on='AB_Index')
 
     # drop unnecessary columns
     if dropColumns:
-        data.drop(['EC_Index', 'AB_Index'], axis=1, inplace=True)
+        data.drop(['LR_Index', 'AB_Index'], axis=1, inplace=True)
 
     return data
 
 
-def checkPerformance(df, linkedData, prefix='LandRegistry'):
+def checkPerformance(df, linkedData,
+                     prefix='LandRegistry', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
     """
     Check performance - calculate the match rate.
 
@@ -750,6 +705,10 @@ def checkPerformance(df, linkedData, prefix='LandRegistry'):
     :type df: pandas.DataFrame
     :param linkedData: input edge case data, used to identify e.g. those addresses not linked
     :type linkedData: pandas.DataFrame
+    :param prefix: prefix name for the output files
+    :type prefix: str
+    :param path: location where to store the output files
+    :type path: str
 
     :return: None
     """
@@ -762,13 +721,13 @@ def checkPerformance(df, linkedData, prefix='LandRegistry'):
     print('Total Match Fraction', round(nmatched / all * 100., 1), 'per cent')
 
     # save matched
-    df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched.csv', index=False)
+    df.to_csv(path + prefix + '_matched.csv', index=False)
 
     # find those without match
     IDs = df['TransactionID'].values
     missing_msk = ~linkedData['TransactionID'].isin(IDs)
     missing = linkedData.loc[missing_msk]
-    missing.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/' + prefix + '_matched_missing.csv', index=False)
+    missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
     print(len(missing.index), 'addresses were not linked...')
 
 
@@ -798,7 +757,7 @@ def runAll():
 
     # set index names - needed later for merging / duplicate removal
     ab.index.name = 'AB_Index'
-    parsedAddresses.index.name = 'EC_Index'
+    parsedAddresses.index.name = 'LR_Index'
 
     # split to those with full postcode and no postcode - use different matching strategies
     msk = parsedAddresses['Postcode'].isnull()
