@@ -7,13 +7,13 @@ resolvers ++= Seq(
 
 
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-compiler" % "2.10.6",
-  "org.scala-lang" % "scala-reflect" % "2.10.6",
-  "org.apache.spark" %% "spark-core" % "1.6.0",
-  "org.apache.spark" %% "spark-sql" % "1.6.0",
+  "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.apache.spark" %% "spark-core" % "1.6.3",
+  "org.apache.spark" %% "spark-sql" % "1.6.3",
   "com.databricks" %% "spark-csv" % "1.5.0",
   "com.typesafe" % "config" % "1.3.1",
-  "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0",
+  "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0"  excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.scalatest" %% "scalatest" % "3.0.0" % Test
 )
 
