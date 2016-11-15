@@ -43,7 +43,7 @@ Results
 -------
 
 With full AB and reasonable runtime (i.e. using blocking):
-    Total Match Fraction 96.9 per cent
+    Total Match Fraction 97.3 per cent
 """
 import pandas as pd
 import numpy as np
@@ -248,6 +248,11 @@ def _normalizeData(df, expandSynonyms=True):
 
     # remove backslash if present and replace with space
     df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace('\\', ' '), axis=1)
+
+    # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
+    # e.g. FLAT 15 191 - 193 NEWPORT ROAD  CARDIFF CF24 1AJ is parsed incorrectly if there
+    # is space around the hyphen
+    df['ADDRESS2'] = df.apply(lambda x: x['ADDRESS2'].replace(' - ', '-'), axis=1)
 
     # synonyms to expand - format is [(from, to), ]
     synonyms = [(' AVEN ', ' AVENUE '),
