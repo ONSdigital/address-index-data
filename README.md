@@ -26,6 +26,23 @@ To package the project in a runnable fat-jar:
 sbt assembly
 ```
 
+The resulting jar will be located in `batch/target/scala-2.10/ons-ai-batch-assembly-version.jar`
+
+To run the jar:
+
+```shell
+java -Dconfig.file=application.conf -jar batch/target/scala-2.10/ons-ai-batch-assembly-version.jar
+```
+
+The `application.conf` file may contain:
+
+```
+addressindex.elasticsearch.nodes="just-the-hostname.com"
+addressindex.elasticsearch.pass="password"
+```
+
+These will override the default configuration pointing to the localhost.
+
 ### Dependencies
 
 Top level project dependencies may be found in the build.sbt file.
