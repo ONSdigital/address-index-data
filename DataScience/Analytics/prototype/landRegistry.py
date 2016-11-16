@@ -35,15 +35,15 @@ Author
 Version
 -------
 
-:version: 0.5
-:date: 15-Nov-2016
+:version: 0.6
+:date: 16-Nov-2016
 
 
 Results
 -------
 
 With full AB and reasonable runtime (i.e. using blocking):
-    Total Match Fraction 97.3 per cent
+    Total Match Fraction 99.8 per cent
 """
 import pandas as pd
 import numpy as np
@@ -504,10 +504,8 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     if buildingNumberBlocking:
-        print('Start matching those with postcode information, using postcode and building number blocking...')
-        pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
-        # print('Start matching those with postcode information, using postcode blocking...')
-        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+        print('Start matching those with postcode information, using postcode blocking...')
+        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
     else:
         print('Start matching those with postcode information, using postcode blocking...')
         pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
