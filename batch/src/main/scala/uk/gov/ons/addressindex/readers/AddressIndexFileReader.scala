@@ -18,11 +18,16 @@ object AddressIndexFileReader {
     *
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(): DataFrame =
-    SparkProvider.sqlContext.read
+  def readDeliveryPointCSV(): DataFrame = SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
       .schema(CSVSchemas.postcodeAddressFileSchema)
       .option("header", "true") // Use first line of all files as header
-      .load(s"$pathToCsv")
+      .load(resolveAbsolutePath(pathToCsv))
 
+  private def resolveAbsolutePath(path: String) =
+    if (path.startsWith("hdfs://")) path
+    else {
+      val currentDirectory = new java.io.File(".").getCanonicalPath
+      s"file://$currentDirectory/$path"
+    }
 }

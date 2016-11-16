@@ -17,6 +17,9 @@ object SparkProvider {
   private val conf = new SparkConf().setAppName(appName).setMaster(master)
   conf.set("spark.serializer", config.getString("addressindex.spark.serializer"))
 
+  conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName)
+  conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName)
+
   conf.set("es.nodes", config.getString("addressindex.elasticsearch.nodes"))
   conf.set("es.port", config.getString("addressindex.elasticsearch.port"))
   conf.set("es.net.http.auth.user", config.getString("addressindex.elasticsearch.user"))
