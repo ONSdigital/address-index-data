@@ -1,19 +1,19 @@
-ONS AI - Data Science
-=====================
+Address Index - Data Science
+============================
 
 Content
 -------
 
 This package contains prototype codes written for ONS Address Index project.
 Note that these codes are not production ready. Also note that not all binaries
-are held in the repository. Please contact the ONS AI team to receive requires files.
+are held in the repository. Please contact the ONS AI team to receive necessary files.
 
 
 Prerequisites
 -------------
 
 * Python 3.5 or higher
-* Repository DataScience folder in PYTHONPATH (e.g. '''export PYTHONPATH="~/ONSAI/DataScience/:$PYTHONPATH"''')
+* Repository DataScience folder in PYTHONPATH (e.g. 'export PYTHONPATH="~/ONSAI/DataScience/:$PYTHONPATH"')
 
 
 Dependencies
@@ -29,15 +29,15 @@ Running
 Probabilistic Parser
 ....................
 
-After placing the Conditional Random Fields model file to the DataScience/data folder import
-the probabilistic parser:
+After placing the Conditional Random Fields model file to the DataScience/ProbabilisticParser/training/ folder import
+the probabilistic parser in a Python interpreter:
 
 .. code-block:: python
 
     from ProbabilisticParser import parser
 
 Assuming that the import executes without errors, run the parser or tagger using
-methods parser.parser or parser.tag:
+methods parser.parse or parser.tag:
 
 .. code-block:: python
 
@@ -56,8 +56,8 @@ Which returns::
 Address Linking Prototype
 .........................
 
-The various linking prototypes can be found Analytics/prototype folder.
-These can be run from command line simply using cPython interpreter::
+The various linking prototypes can be found from Analytics/prototype/ folder.
+These can be run from command line simply using CPython interpreter::
 
     python edgeCasesTest.py
 
