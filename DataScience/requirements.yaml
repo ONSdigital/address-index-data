@@ -1,0 +1,326 @@
+name: root
+channels: !!python/tuple
+- defaults
+- conda-forge
+dependencies:
+- _license=1.1=py35_1
+- _nb_ext_conf=0.3.0=py35_0
+- alabaster=0.7.9=py35_0
+- anaconda-client=1.5.5=py35_0
+- anaconda-navigator=1.3.2=py35_0
+- appnope=0.1.0=py35_0
+- appscript=1.0.1=py35_0
+- argcomplete=1.0.0=py35_1
+- astropy=1.2.1=np111py35_0
+- babel=2.3.4=py35_0
+- backports=1.0=py35_0
+- beautifulsoup4=4.5.1=py35_0
+- bitarray=0.8.1=py35_0
+- bokeh=0.12.3=py35_0
+- boto=2.43.0=py35_0
+- bottleneck=1.1.0=np111py35_0
+- cffi=1.8.3=py35_0
+- chardet=2.3.0=py35_0
+- chest=0.2.3=py35_0
+- click=6.6=py35_0
+- cloudpickle=0.2.1=py35_0
+- clyent=1.2.2=py35_0
+- colorama=0.3.7=py35_0
+- conda=4.2.12=py35_0
+- conda-build=2.0.10=py35_0
+- conda-env=2.6.0=0
+- conda-forge::basemap=1.0.8.dev0=np111py35_3
+- conda-forge::biggus=0.14.0=py35_1
+- conda-forge::cartopy=0.14.2=np111py35_1
+- conda-forge::cf_units=1.1.3=py35_0
+- conda-forge::feather-format=0.3.1=py35_1
+- conda-forge::iris=1.10.0=py35_0
+- conda-forge::libmo_unpack=3.0=1
+- conda-forge::mo_pack=0.2.0=np111py35_0
+- conda-forge::nc_time_axis=1.0.0=py35_0
+- conda-forge::owslib=0.13.0=py35_0
+- conda-forge::proj.4=4.9.2=0
+- conda-forge::pyepsg=0.3.1=py35_0
+- conda-forge::pyke=1.1.1=py35_0
+- conda-forge::pyshp=1.2.10=py35_0
+- conda-forge::python-crfsuite=0.8.4=py35_0
+- conda-forge::udunits2=2.2.20=1
+- conda-manager=0.4.0=py35_0
+- conda-verify=2.0.0=py35_0
+- configobj=5.0.6=py35_0
+- contextlib2=0.5.4=py35_0
+- cryptography=1.5.3=py35_0
+- curl=7.49.0=1
+- cvxopt=1.1.8=py35_3
+- cycler=0.10.0=py35_0
+- cython=0.25.1=py35_0
+- cytoolz=0.8.0=py35_0
+- datashape=0.5.2=py35_0
+- decorator=4.0.10=py35_0
+- dill=0.2.5=py35_0
+- docutils=0.12=py35_2
+- dynd-python=0.7.2=py35_0
+- entrypoints=0.2.2=py35_0
+- et_xmlfile=1.0.1=py35_0
+- expat=2.1.0=0
+- fastcache=1.0.2=py35_1
+- filelock=2.0.7=py35_0
+- flask=0.11.1=py35_0
+- flask-cors=2.1.2=py35_0
+- freetype=2.5.5=1
+- geos=3.5.0=0
+- get_terminal_size=1.0.0=py35_0
+- gevent=1.1.2=py35_0
+- greenlet=0.4.10=py35_0
+- h5py=2.6.0=np111py35_2
+- hdf4=4.2.12=0
+- hdf5=1.8.17=1
+- heapdict=1.0.0=py35_1
+- holoviews=1.6.2=py35_0
+- icu=54.1=0
+- idna=2.1=py35_0
+- imagesize=0.7.1=py35_0
+- ioam::geoviews=1.1.0=py35_0
+- ipykernel=4.5.1=py35_0
+- ipython=5.1.0=py35_1
+- ipython_genutils=0.1.0=py35_0
+- ipywidgets=5.2.2=py35_0
+- itsdangerous=0.24=py35_0
+- jbig=2.1=0
+- jdcal=1.3=py35_0
+- jedi=0.9.0=py35_1
+- jinja2=2.8=py35_1
+- jpeg=8d=2
+- jsonschema=2.5.1=py35_0
+- jupyter=1.0.0=py35_3
+- jupyter_client=4.4.0=py35_0
+- jupyter_console=5.0.0=py35_0
+- jupyter_core=4.2.0=py35_0
+- libdynd=0.7.2=0
+- libnetcdf=4.4.1=0
+- libpng=1.6.22=0
+- libpq=9.5.4=0
+- libtiff=4.0.6=2
+- libxml2=2.9.2=0
+- libxslt=1.1.28=2
+- llvmlite=0.14.0=py35_0
+- locket=0.2.0=py35_1
+- lxml=3.6.4=py35_0
+- markupsafe=0.23=py35_2
+- matplotlib=1.5.3=np111py35_1
+- mistune=0.7.3=py35_1
+- mkl=11.3.3=0
+- mkl-service=1.1.2=py35_2
+- mock=2.0.0=py35_0
+- mpmath=0.19=py35_1
+- multipledispatch=0.4.9=py35_0
+- nb_anacondacloud=1.2.0=py35_0
+- nb_conda=2.0.0=py35_0
+- nb_conda_kernels=2.0.0=py35_0
+- nbconvert=4.2.0=py35_0
+- nbformat=4.1.0=py35_0
+- nbpresent=3.0.2=py35_0
+- netcdf4=1.2.4=np111py35_1
+- networkx=1.11=py35_0
+- nltk=3.2.1=py35_0
+- nose=1.3.7=py35_1
+- notebook=4.2.3=py35_0
+- numba=0.29.0=np111py35_0
+- numexpr=2.6.1=np111py35_1
+- numpy=1.11.2=py35_0
+- odo=0.5.0=py35_1
+- openpyxl=2.4.0=py35_0
+- openssl=1.0.2j=0
+- pandas=0.19.1=np111py35_0
+- param=1.4.2=py35_0
+- partd=0.3.6=py35_0
+- path.py=8.2.1=py35_0
+- pathlib2=2.1.0=py35_0
+- patsy=0.4.1=py35_0
+- pbr=1.10.0=py35_0
+- pep8=1.7.0=py35_0
+- pexpect=4.0.1=py35_0
+- pickleshare=0.7.4=py35_0
+- pillow=3.4.2=py35_0
+- pip=9.0.1=py35_0
+- pkginfo=1.4.1=py35_0
+- ply=3.9=py35_0
+- proj4=4.9.2=0
+- prompt_toolkit=1.0.9=py35_0
+- psutil=5.0.0=py35_0
+- psycopg2=2.6.2=py35_0
+- ptyprocess=0.5.1=py35_0
+- py=1.4.31=py35_0
+- pyasn1=0.1.9=py35_0
+- pycosat=0.6.1=py35_1
+- pycparser=2.17=py35_0
+- pycrypto=2.6.1=py35_4
+- pycurl=7.43.0=py35_0
+- pyflakes=1.3.0=py35_0
+- pygments=2.1.3=py35_0
+- pymongo=3.3.0=py35_0
+- pyopenssl=16.2.0=py35_0
+- pyparsing=2.1.4=py35_0
+- pyproj=1.9.5.1=py35_0
+- pyqt=5.6.0=py35_0
+- pytables=3.3.0=np111py35_0
+- pytest=3.0.4=py35_0
+- python=3.5.2=0
+- python-dateutil=2.6.0=py35_0
+- python.app=1.2=py35_4
+- pytz=2016.7=py35_0
+- pyyaml=3.12=py35_0
+- pyzmq=16.0.1=py35_0
+- qt=5.6.0=0
+- qtawesome=0.3.3=py35_0
+- qtconsole=4.2.1=py35_1
+- qtpy=1.1.2=py35_0
+- readline=6.2=2
+- redis=3.2.0=0
+- redis-py=2.10.5=py35_0
+- requests=2.12.1=py35_0
+- rope=0.9.4=py35_1
+- ruamel_yaml=0.11.14=py35_0
+- scikit-image=0.12.3=np111py35_1
+- scikit-learn=0.18.1=np111py35_0
+- scipy=0.18.1=np111py35_0
+- seaborn=0.7.1=py35_0
+- setuptools=27.2.0=py35_0
+- shapely=1.5.16=py35_0
+- simplegeneric=0.8.1=py35_1
+- singledispatch=3.4.0.3=py35_0
+- sip=4.18=py35_0
+- six=1.10.0=py35_0
+- snowballstemmer=1.2.1=py35_0
+- sphinx=1.4.8=py35_0
+- sphinx_rtd_theme=0.1.9=py35_0
+- sqlalchemy=1.1.4=py35_0
+- sqlite=3.13.0=0
+- statsmodels=0.6.1=np111py35_1
+- sympy=1.0=py35_0
+- terminado=0.6=py35_0
+- tk=8.5.18=0
+- toolz=0.8.0=py35_0
+- tornado=4.4.2=py35_0
+- traitlets=4.3.1=py35_0
+- unicodecsv=0.14.1=py35_0
+- vincent=0.4.4=py35_0
+- wcwidth=0.1.7=py35_0
+- werkzeug=0.11.11=py35_0
+- wheel=0.29.0=py35_0
+- widgetsnbextension=1.2.6=py35_0
+- xarray=0.8.2=py35_0
+- xlrd=1.0.0=py35_0
+- xlsxwriter=0.9.3=py35_0
+- xlwings=0.10.0=py35_0
+- xlwt=1.1.2=py35_0
+- xz=5.2.2=0
+- yaml=0.1.6=0
+- zeromq=4.1.3=0
+- zlib=1.2.8=3
+- pip:
+  - ad3==2.0.2
+  - affinegap==1.10
+  - aniso8601==1.1.0
+  - autocomplete==0.0.104
+  - backports.shutil-get-terminal-size==1.0.0
+  - blosc==1.3.2
+  - bloscpack==0.10.0
+  - bottle==0.12.9
+  - branca==0.1.1
+  - btrees==4.3.1
+  - canonicalize==1.3
+  - castra==0.1.7
+  - categorical-distance==1.9
+  - cf-units==1.1.3
+  - colorlover==0.2.1
+  - cufflinks==0.8.2
+  - dask==0.11.1
+  - dedupe==1.4.15
+  - dedupe-hcluster==0.3.2
+  - distributed==1.13.3
+  - docopt==0.6.1
+  - doublemetaphone==0.1
+  - dynd==0.7.3.dev1
+  - et-xmlfile==1.0.1
+  - fastcluster==1.1.21
+  - fastkml==0.11
+  - flask-cache==0.13.1
+  - flask-compress==1.3.0
+  - flask-restful==0.3.5
+  - flask-sse==0.2.1
+  - folium==0.2.1
+  - future==0.15.2
+  - fuzzywuzzy==0.12.0
+  - gdal==1.11.5
+  - geopy==1.11.0
+  - get==0.0.11
+  - google-api-python-client==1.5.1
+  - google2pandas==0.1.0
+  - graphviz==0.4.10
+  - gunicorn==19.6.0
+  - haversine==0.4.5
+  - highered==0.2.1
+  - hmmlearn==0.2.0
+  - httplib2==0.9.2
+  - ipython-genutils==0.1.0
+  - jellyfish==0.5.6
+  - jupyter-client==4.4.0
+  - jupyter-console==5.0.0
+  - jupyter-core==4.2.0
+  - kafka-python==1.2.2
+  - kartograph.py==0.6.8
+  - metoffer==1.3.2
+  - mo-pack==0.2.0
+  - msgpack-python==0.4.8
+  - nb-anacondacloud==1.2.0
+  - nb-conda==2.0.0
+  - nb-conda-kernels==2.0.0
+  - nc-time-axis==1.0.0
+  - oauth2client==2.2.0
+  - ordereddict==1.1
+  - parserator==0.6.2
+  - persistent==4.2.1
+  - plotly==1.12.4
+  - post==0.0.8
+  - postal==0.3
+  - prompt-toolkit==1.0.9
+  - public==0.0.34
+  - py-stringmatching==0.2.1
+  - pyasn1-modules==0.0.8
+  - pyclustering==0.6.5
+  - pygeoif==0.6
+  - pyhacrf-datamade==0.2.0
+  - pykml==0.1.0
+  - pylbfgs==0.2.0.3
+  - pystruct==0.2.4
+  - python-levenshtein==0.12.0
+  - pyxley==0.0.9
+  - query-string==0.0.8
+  - raven==3.5.2
+  - recordlinkage==0.5
+  - request==0.0.8
+  - rlr==2.4
+  - rope-py3k==0.9.4.post1
+  - rsa==3.4.2
+  - ruamel-yaml-==VERSION
+  - ruamel.yaml==0.12.18
+  - simplecosine==1.1
+  - simplejson==3.8.2
+  - simpy==3.0.9
+  - sklearn==0.0
+  - sklearn-crfsuite==0.3.3
+  - spark-sklearn==0.1.2
+  - sphinx-rtd-theme==0.1.9
+  - tables==3.3.0
+  - tabulate==0.7.5
+  - tblib==1.3.0
+  - tinycss==0.3
+  - tornado-redis==2.4.2
+  - tqdm==4.8.1
+  - uritemplate==0.6
+  - zict==0.0.3
+  - zope.index==4.2.0
+  - zope.interface==4.3.2
+prefix: /Users/saminiemi/anaconda
+
