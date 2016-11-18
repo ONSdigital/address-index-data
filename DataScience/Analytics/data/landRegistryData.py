@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Land Registry Data
 ======================================
@@ -9,6 +10,14 @@ https://data.gov.uk/dataset/land-registry-monthly-price-paid-data
 Because the AddressBased used by the prototype is Epoch 39 (from April) it does not contain all
 new builds with new postcodes. This scripts allows to identify those postcodes that do not exist
 in the Epoch 39 AddressBase.
+
+
+Running
+-------
+
+The script can be run from command line using CPython::
+
+    python landRegistryData.py
 
 
 Requirements
@@ -33,6 +42,11 @@ Version
 """
 import pandas as pd
 import numpy as np
+import os
+
+
+if os.environ.get('LC_CTYPE', '') == 'UTF-8':
+    os.environ['LC_CTYPE'] = 'en_US.UTF-8'
 
 
 def loadData(filename='pp-monthly-update.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):

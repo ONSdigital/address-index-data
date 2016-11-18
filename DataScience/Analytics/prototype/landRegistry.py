@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Land Registry Testing
 =========================================
@@ -12,6 +13,14 @@ The code has been written for speed rather than accuracy, it therefore uses fair
 blocking. As the final solution will likely use ElasticSearch, the aim of this prototype is
 not the highest accuracy but to quickly test different ideas, which can inform the final
 ElasticSearch solution.
+
+
+Running
+-------
+
+The script can be run from command line using CPython::
+
+    python landRegistry.py
 
 
 Requirements
