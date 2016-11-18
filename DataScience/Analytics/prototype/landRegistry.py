@@ -35,8 +35,8 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 16-Nov-2016
+:version: 0.7
+:date: 18-Nov-2016
 
 
 Results
@@ -291,7 +291,17 @@ def _normalizeData(df, expandSynonyms=True):
                 (' GLOS(?:\s|\Z)', ' GLOUCESTERSHIRE '),
                 (' STOKE ON TRENT ', ' STOKE-ON-TRENT '),
                 (' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '),
-                (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA ')]
+                (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '),
+                (' ENGLAND(?:\s|\Z)', ' '),
+                (' UNITED KINGDOM(?:\s|\Z)', ' '),
+                (' 1ST ', ' FIRST '),
+                (' 2ND ', ' SECOND '),
+                (' 3RD ', ' THIRD '),
+                (' 4TH ', ' FOURTH '),
+                (' 5TH ', ' FIFTH '),
+                (' 6TH ', ' SIXTH '),
+                (' 7TH ', ' SEVENTH '),
+                (' 8TH ', ' EIGHT ')]
 
     # expand common synonyms to help with parsing
     if expandSynonyms:
@@ -323,6 +333,42 @@ def _normalizeData(df, expandSynonyms=True):
         df['ADDRESS2'] = df['ADDRESS2'].str.replace(county + addRegex, '', case=False)
 
     return df
+
+
+def _fixLondonBoroughs(parsed):
+    """
+    A method to address incorrectly parsed London boroughs.
+    If the street name contains London borough then move it to locality and remove from the street name.
+
+    :param parsed: a dictionary containing the address tokens that have been parsed
+    :type parsed: dict
+
+    :return:
+    """
+    # todo: should move to a file rather than have inside the code and get a complete list from AB
+    locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
+            'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
+            'FOREST HILL', 'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
+            'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
+            'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
+            'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
+            'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
+            'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
+            'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
+            'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
+            'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
+            'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
+            'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
+            'HOMERTON']
+
+    for loc in locs:
+        if parsed['StreetName'].strip().endswith(loc):
+            parsed['Locality'] = loc
+            # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
+            # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK (3 parts to remove)
+            parsed['StreetName'] = parsed['StreetName'].strip()[:-len(loc)].strip()
+
+    return parsed
 
 
 def parseInputData(df, expandSynonyms=True):
@@ -385,28 +431,7 @@ def parseInputData(df, expandSynonyms=True):
         # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
         if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
             if 'LONDON' in parsed['TownName']:
-                # todo: should move to a file rather than have inside the code and get a complete list from AB
-                locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
-                        'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
-                        'FOREST HILL',  'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
-                        'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
-                        'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
-                        'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
-                        'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
-                        'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
-                        'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
-                        'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
-                        'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
-                        'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
-                        'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
-                        'HOMERTON']
-
-                for loc in locs:
-                    if parsed['StreetName'].strip().endswith(loc):
-                        parsed['Locality'] = loc
-                        # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
-                        # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK
-                        parsed['StreetName'] = ' '.join(parsed['StreetName'].strip().split(' ')[:-len(loc.split(' '))])
+                parsed = _fixLondonBoroughs(parsed)
 
         # if BuildingName is e.g. 55A then should get the number and suffix separately
         if parsed.get('BuildingName', None) is not None:
@@ -504,10 +529,8 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     if buildingNumberBlocking:
-        # print('Start matching those with postcode information, using postcode blocking...')
-        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
-        print('Start matching those with postcode information, using postcode and building number blocking...')
-        pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
+        print('Start matching those with postcode information, using postcode blocking...')
+        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
     else:
         print('Start matching those with postcode information, using postcode blocking...')
         pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
