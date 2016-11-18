@@ -86,10 +86,10 @@ def loadData(filename='pp-monthly-update-Edited.csv', path='/Users/saminiemi/Pro
 
     if plot:
         # plot the distribution of prices for fun :-)
-        max = 2e6
+        maximum = 2e6
         plt.figure(figsize=(12, 10))
-        sns.distplot(df['Price'][df['Price'] <= max].values, bins=100)
-        plt.xlim(0, max)
+        sns.distplot(df['Price'][df['Price'] <= maximum].values, bins=100)
+        plt.xlim(0, maximum)
         plt.xlabel('House Price [Pounds]')
         plt.ylabel('PDF')
         plt.tight_layout()
@@ -210,7 +210,7 @@ def getPostcode(string):
     try:
         tmp = re.findall(regx, string)[0][0]
         tmp = tmp.lower().strip()
-    except:
+    except IndexError:
         tmp = None
 
     # above regex gives also those without space between, add if needed
@@ -504,8 +504,10 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     if buildingNumberBlocking:
-        print('Start matching those with postcode information, using postcode blocking...')
-        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+        # print('Start matching those with postcode information, using postcode blocking...')
+        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+        print('Start matching those with postcode information, using postcode and building number blocking...')
+        pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
         print('Start matching those with postcode information, using postcode blocking...')
         pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
@@ -717,11 +719,11 @@ def checkPerformance(df, linkedData,
     """
     # count the number of matches and number of edge cases
     nmatched = len(df.index)
-    all = len(linkedData.index)
+    ntotal = len(linkedData.index)
 
     # how many were matched
     print('\nMatched', nmatched, 'entries')
-    print('Total Match Fraction', round(nmatched / all * 100., 1), 'per cent')
+    print('Total Match Fraction', round(nmatched / ntotal * 100., 1), 'per cent')
 
     # save matched
     df.to_csv(path + prefix + '_matched.csv', index=False)
