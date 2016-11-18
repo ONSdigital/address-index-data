@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Land Registry Testing
 =========================================
@@ -12,6 +13,14 @@ The code has been written for speed rather than accuracy, it therefore uses fair
 blocking. As the final solution will likely use ElasticSearch, the aim of this prototype is
 not the highest accuracy but to quickly test different ideas, which can inform the final
 ElasticSearch solution.
+
+
+Running
+-------
+
+The script can be run from command line using CPython::
+
+    python landRegistry.py
 
 
 Requirements
@@ -35,8 +44,8 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 16-Nov-2016
+:version: 0.7
+:date: 18-Nov-2016
 
 
 Results
@@ -86,10 +95,10 @@ def loadData(filename='pp-monthly-update-Edited.csv', path='/Users/saminiemi/Pro
 
     if plot:
         # plot the distribution of prices for fun :-)
-        max = 2e6
+        maximum = 2e6
         plt.figure(figsize=(12, 10))
-        sns.distplot(df['Price'][df['Price'] <= max].values, bins=100)
-        plt.xlim(0, max)
+        sns.distplot(df['Price'][df['Price'] <= maximum].values, bins=100)
+        plt.xlim(0, maximum)
         plt.xlabel('House Price [Pounds]')
         plt.ylabel('PDF')
         plt.tight_layout()
@@ -210,7 +219,7 @@ def getPostcode(string):
     try:
         tmp = re.findall(regx, string)[0][0]
         tmp = tmp.lower().strip()
-    except:
+    except IndexError:
         tmp = None
 
     # above regex gives also those without space between, add if needed
@@ -291,7 +300,17 @@ def _normalizeData(df, expandSynonyms=True):
                 (' GLOS(?:\s|\Z)', ' GLOUCESTERSHIRE '),
                 (' STOKE ON TRENT ', ' STOKE-ON-TRENT '),
                 (' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '),
-                (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA ')]
+                (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '),
+                (' ENGLAND(?:\s|\Z)', ' '),
+                (' UNITED KINGDOM(?:\s|\Z)', ' '),
+                (' 1ST ', ' FIRST '),
+                (' 2ND ', ' SECOND '),
+                (' 3RD ', ' THIRD '),
+                (' 4TH ', ' FOURTH '),
+                (' 5TH ', ' FIFTH '),
+                (' 6TH ', ' SIXTH '),
+                (' 7TH ', ' SEVENTH '),
+                (' 8TH ', ' EIGHT ')]
 
     # expand common synonyms to help with parsing
     if expandSynonyms:
@@ -323,6 +342,42 @@ def _normalizeData(df, expandSynonyms=True):
         df['ADDRESS2'] = df['ADDRESS2'].str.replace(county + addRegex, '', case=False)
 
     return df
+
+
+def _fixLondonBoroughs(parsed):
+    """
+    A method to address incorrectly parsed London boroughs.
+    If the street name contains London borough then move it to locality and remove from the street name.
+
+    :param parsed: a dictionary containing the address tokens that have been parsed
+    :type parsed: dict
+
+    :return:
+    """
+    # todo: should move to a file rather than have inside the code and get a complete list from AB
+    locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
+            'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
+            'FOREST HILL', 'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
+            'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
+            'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
+            'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
+            'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
+            'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
+            'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
+            'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
+            'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
+            'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
+            'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
+            'HOMERTON']
+
+    for loc in locs:
+        if parsed['StreetName'].strip().endswith(loc):
+            parsed['Locality'] = loc
+            # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
+            # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK (3 parts to remove)
+            parsed['StreetName'] = parsed['StreetName'].strip()[:-len(loc)].strip()
+
+    return parsed
 
 
 def parseInputData(df, expandSynonyms=True):
@@ -385,28 +440,7 @@ def parseInputData(df, expandSynonyms=True):
         # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
         if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
             if 'LONDON' in parsed['TownName']:
-                # todo: should move to a file rather than have inside the code and get a complete list from AB
-                locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
-                        'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
-                        'FOREST HILL',  'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
-                        'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
-                        'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
-                        'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
-                        'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
-                        'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
-                        'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
-                        'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
-                        'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
-                        'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
-                        'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
-                        'HOMERTON']
-
-                for loc in locs:
-                    if parsed['StreetName'].strip().endswith(loc):
-                        parsed['Locality'] = loc
-                        # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
-                        # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK
-                        parsed['StreetName'] = ' '.join(parsed['StreetName'].strip().split(' ')[:-len(loc.split(' '))])
+                parsed = _fixLondonBoroughs(parsed)
 
         # if BuildingName is e.g. 55A then should get the number and suffix separately
         if parsed.get('BuildingName', None) is not None:
@@ -717,11 +751,11 @@ def checkPerformance(df, linkedData,
     """
     # count the number of matches and number of edge cases
     nmatched = len(df.index)
-    all = len(linkedData.index)
+    ntotal = len(linkedData.index)
 
     # how many were matched
     print('\nMatched', nmatched, 'entries')
-    print('Total Match Fraction', round(nmatched / all * 100., 1), 'per cent')
+    print('Total Match Fraction', round(nmatched / ntotal * 100., 1), 'per cent')
 
     # save matched
     df.to_csv(path + prefix + '_matched.csv', index=False)
