@@ -706,7 +706,7 @@ def checkPerformance(df, linkedData,
 
     :param df: data frame with linked addresses and similarity metrics
     :type df: pandas.DataFrame
-    :param linkedData: input edge case data, used to identify e.g. those addresses not linked
+    :param linkedData: input data, used to identify e.g. those addresses not linked
     :type linkedData: pandas.DataFrame
     :param prefix: prefix name for the output files
     :type prefix: str
@@ -734,10 +734,9 @@ def checkPerformance(df, linkedData,
     print(len(missing.index), 'addresses were not linked...')
 
     # find those with UPRN attached earlier and check which are the same and which are different
-    earlierUPRNs = df['UPRN_prev'].values
-    msk = linkedData['UPRN'].isin(earlierUPRNs)
-    matches = linkedData.loc[msk]
-    nonmatches = linkedData.loc[~msk]
+    msk = df['UPRN_prev'] == df['UPRN']
+    matches = df.loc[msk]
+    nonmatches = df.loc[~msk]
     matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
     nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
 
