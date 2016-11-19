@@ -84,10 +84,14 @@ def loadData(filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi
     # rename postcode to postcode_orig and locality to locality_orig
     df.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
 
+    # convert original UPRN to numeric
+    df['UPRN_prev'] = df['UPRN_prev'].convert_objects(convert_numeric=True)
+
     if verbose:
         print(df.info())
 
     print('Found', len(df.index), 'addresses...')
+    print(len(df.loc[df['UPRN_prev'].notnull()].index), 'with UPRN already attached...')
 
     return df
 
@@ -720,7 +724,7 @@ def checkPerformance(df, linkedData,
     total = len(linkedData.index)
 
     # how many were matched
-    print('\nMatched', nmatched, 'entries')
+    print('Matched', nmatched, 'entries')
     print('Total Match Fraction', round(nmatched / total * 100., 1), 'per cent')
 
     # save matched
@@ -733,15 +737,20 @@ def checkPerformance(df, linkedData,
     missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
     print(len(missing.index), 'addresses were not linked...')
 
-    # find those with UPRN attached earlier and check which are the same and which are different
+    nOldUPRNs = len(df['UPRN_prev'].nonull().index)
+    print('\n', nOldUPRNs, 'previous UPRNs in the matched data...')
+
+    # find those with UPRN attached earlier and check which are the same
     msk = df['UPRN_prev'] == df['UPRN']
     matches = df.loc[msk]
-    nonmatches = df.loc[~msk]
     matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
-    nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
+    print(len(matches.index), 'addresses have the same UPRN as earlier...')
 
-    print(len(matches.index), 'addresses have the same UPRN is earlier...')
-    print(len(nonmatches.index), 'addresses have a different UPRN is earlier...')
+    # find those that has a previous UPRN but does not mach a new one (filter out nulls)
+    notnulls = df['UPRN_prev'].notnull()
+    nonmatches = notnulls.loc[notnulls['UPRN_prev'] == notnulls['UPRN']]
+    nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
+    print(len(nonmatches.index), 'addresses have a different UPRN as earlier...')
 
 
 def runAll():
