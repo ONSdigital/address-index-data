@@ -3,7 +3,9 @@
 ONS Address Index - Welsh Addresses Test
 ========================================
 
-A simple script to attach UPRNs to Welsh test data.
+A simple script to attach UPRNs to Welsh test data. The data set contains UPRNs that were
+attached with another technique, so the comparison is carried out against those attached
+earlier.
 
 This is a prototype code aimed for experimentation and testing. There are not unit tests.
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
@@ -23,7 +25,6 @@ Requirements
 :requires: ProbabilisticParser (a CRF model specifically build for ONS)
 :requires: pandas
 :requires: numpy
-:requires: matplotlib
 :requires: tqdm (https://github.com/tqdm/tqdm)
 :requires: recordlinkage (https://pypi.python.org/pypi/recordlinkage/)
 
@@ -37,26 +38,23 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 18-Nov-2016
+:version: 0.2
+:date: 20-Nov-2016
 
 
 Results
 -------
 
 With full AB and reasonable runtime (i.e. using blocking):
-    Total Match Fraction
+    Total Match Fraction 99.3 per cent
 """
 import pandas as pd
 import numpy as np
 import recordlinkage
 from ProbabilisticParser import parser
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import seaborn as sns
 import time
 import re
-import datetime
 
 
 def loadData(filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
@@ -141,13 +139,6 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
 
     msk = df['LOCALITY'].isnull()
     df.loc[msk, 'LOCALITY'] = df.loc[msk, 'DEPENDENT_LOCALITY']
-
-    # some addresses might have PAO_START_NUMBER but not BUILDING_NUMBER, e.g.
-    # 23 SUNNINGDALE CLOSE  NORTHAMPTON NN2 7LR is found in NAG under PLOT 4.
-    # Others e.g. 13 HOME RIDINGS HOUSE FLINTERGILL COURT HEELANDS MILTON KEYNES MK13 7QS does
-    # not contain any building number as the 13 is part of building_name (parsed correctly)
-    msk = df['BUILDING_NUMBER'].isnull()
-    df.loc[msk, 'BUILDING_NUMBER'] = df.loc[msk, 'PAO_START_NUMBER']
 
     # drop some that are not needed
     df.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
@@ -737,7 +728,7 @@ def checkPerformance(df, linkedData,
     missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
     print(len(missing.index), 'addresses were not linked...')
 
-    nOldUPRNs = len(df['UPRN_prev'].nonull().index)
+    nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
     print('\n', nOldUPRNs, 'previous UPRNs in the matched data...')
 
     # find those with UPRN attached earlier and check which are the same
@@ -747,10 +738,16 @@ def checkPerformance(df, linkedData,
     print(len(matches.index), 'addresses have the same UPRN as earlier...')
 
     # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-    notnulls = df['UPRN_prev'].notnull()
-    nonmatches = notnulls.loc[notnulls['UPRN_prev'] == notnulls['UPRN']]
+    msk = df['UPRN_prev'].notnull()
+    notnulls = df.loc[msk]
+    nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
     nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
     print(len(nonmatches.index), 'addresses have a different UPRN as earlier...')
+
+    # find all newly linked
+    newUPRNs = df.loc[~msk]
+    newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
+    print(len(newUPRNs.index), 'more addresses with UPRN...')
 
 
 def runAll():
