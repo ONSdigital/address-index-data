@@ -117,8 +117,10 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
                                              'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str, 'PAO_START_NUMBER': str,
-                                             'SAO_TEXT': str, 'SAO_START_NUMBER': str, 'ORGANISATION': str,
-                                             'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str})
+                                             'PAO_START_SUFFIX': str, 'PAO_END_NUMBER': str, 'PAO_END_SUFFIX': str,
+                                             'SAO_TEXT': str, 'SAO_START_NUMBER': str, 'SAO_START_SUFFIX': str,
+                                             'ORGANISATION': str, 'STREET_DESCRIPTOR': str, 'TOWN_NAME': str,
+                                             'LOCALITY': str})
     print('Found', len(df.index), 'addresses from AddressBase...')
 
     # combine information - could be done differently, but for now using some of these for blocking
@@ -404,9 +406,10 @@ def parseInputData(df, expandSynonyms=True):
         # if BuildingName is e.g. 55A then should get the number and suffix separately
         if parsed.get('BuildingName', None) is not None:
             parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
-            # accept suffixes that are only maximum two chars
-            if len(parsed['BuildingSuffix']) > 2:
+            # accept suffixes that are only maximum two chars and if not hyphen
+            if len(parsed['BuildingSuffix']) > 2 and (parsed['BuildingSuffix'] != '-'):
                 parsed['BuildingSuffix'] = None
+            # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
 
         # some addresses contain place CO place, where the CO is not part of the actual name - remove these
         # same is true for IN e.g. Road Marton IN Cleveland
@@ -520,6 +523,9 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
     compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
 
+    # use to separate e.g. 55A from 55
+    compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
+
     # the following is good for flats and apartments than have been numbered
     compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
     compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
@@ -539,6 +545,7 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 5.
+    compare.vectors['pao_suffix_dl'] *= 5.
     compare.vectors['sao_number_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
     compare.vectors['building_name_dl'] *= 3.
