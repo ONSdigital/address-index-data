@@ -38,8 +38,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 20-Nov-2016
+:version: 0.3
+:date: 22-Nov-2016
 
 
 Results
@@ -58,7 +58,7 @@ import re
 
 
 def loadData(filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-             verbose=False):
+             verbose=False, test=False):
     """
     Read in the Welsh address test data.
 
@@ -68,10 +68,18 @@ def loadData(filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi
     :type path: str
     :param verbose: whether or not output information
     :type verbose: bool
+    :param test: whether or not to use test data
+    :type test: bool
 
     :return: pandas dataframe of the data
     :rtype: pandas.DataFrame
     """
+    if test:
+        print('\nReading in test Welsh Government data...')
+        filename = 'WelshTest.csv'
+    else:
+        print('\nReading in Welsh Government data...')
+
     df = pd.read_csv(path + filename, low_memory=False)
 
     # fill NaNs with empty strings so that we can form a single address string
@@ -94,7 +102,8 @@ def loadData(filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi
     return df
 
 
-def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/'):
+def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                        test=False):
     """
     Load a compressed version of the full AddressBase file. The information being used
     has been processed from a AB Epoch 39 files provided by ONS.
@@ -109,10 +118,17 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     :type filename: str
     :param path: location of the AddressBase combined data file
     :type path: str
+    :param test: whether or not to use test data
+    :type test: bool
 
     :return: pandas dataframe of the requested information
     :rtype: pandas.DataFrame
     """
+    if test:
+        print('\nReading in Address Base Test Data...')
+        filename = 'ABtest.csv'
+    else:
+        print('\nReading in Address Base Data...')
     df = pd.read_csv(path + filename, dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION_NAME': str,
                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
@@ -156,7 +172,7 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
                        'POSTCODE': 'postcode',
                        'PAO_TEXT': 'pao_text',
                        'LOCALITY': 'locality',
-                       'BUILDING_NAME': 'buildingName'}, inplace=True)
+                       'BUILDING_NAME': 'BuildingName'}, inplace=True)
 
     # # if SubBuildingName, pao_text, or organisation name is empty add dummy
     # msk = df['SUB_BUILDING_NAME'].isnull()
@@ -165,8 +181,8 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
     # df.loc[msk, 'ORGANISATION_NAME'] = 'N/A'
     # msk = df['pao_text'].isnull()
     # df.loc[msk, 'pao_text'] = 'N/A'
-    # msk = df['buildingName'].isnull()
-    # df.loc[msk, 'buildingName'] = 'N/A'
+    # msk = df['BuildingName'].isnull()
+    # df.loc[msk, 'BuildingName'] = 'N/A'
 
     return df
 
@@ -479,7 +495,7 @@ def parseInputData(df, expandSynonyms=True):
     # msk = df['BuildingName'].isnull()
     # df.loc[msk, 'BuildingName'] = 'N/A'
 
-    #df.fillna('', inplace=True)
+    df[['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']].fillna('', inplace=True)
 
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv', index=False)
@@ -523,10 +539,10 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
         print('Start matching those with postcode information, using postcode and building number blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
-        print('Start matching those with postcode information, using postcode and building name blocking...')
-        pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
-        # print('Start matching those with postcode information, using postcode blocking...')
-        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+        # print('Start matching those with postcode information, using postcode and building name blocking...')
+        # pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'BuildingName'])
+        print('Start matching those with postcode information, using postcode blocking...')
+        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
@@ -535,31 +551,27 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     compare = recordlinkage.Compare(pairs, AddressBase, toMatch, batch=True)
 
     # set rules for standard residential addresses
-    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
-    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
-    if buildingNumberBlocking:
-        compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
-    compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
+    compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl', missing_value=0.6)
+    compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl', missing_value=0.6)
+    compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl', missing_value=0.5)
+    compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl', missing_value=0.5)
     compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
-    compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
+    compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl', missing_value=0.5)
 
     # use to separate e.g. 55A from 55
-    compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl')
+    compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl', missing_value=0.5)
 
     # the following is good for flats and apartments than have been numbered
-    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
-    compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
+    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl', missing_value=0.6)
+    compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl', missing_value=0.6)
     # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
     # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
     # This comparison should probably be numeric.
     compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl')
 
-    # sometimes when there is no street name, the parser sets the building name to street name
-    compare.string('buildingName', 'StreetName', method='damerau_levenshtein', name='street_building_dl')
-
     # set rules for organisations such as care homes and similar type addresses
-    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
+    compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl', missing_value=0.5)
 
     # execute the comparison model
     compare.run()
@@ -568,8 +580,7 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     compare.vectors['pao_dl'] *= 5.
     compare.vectors['sao_number_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
-    if buildingNumberBlocking: compare.vectors['building_name_dl'] *= 3.
-    compare.vectors['street_building_dl'] *= 3.
+    compare.vectors['building_name_dl'] *= 3.
     compare.vectors['pao_suffix_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
@@ -628,7 +639,7 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
         pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
     else:
         print('Start matching those without postcode information, using building name and street name blocking...')
-        pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['buildingName', 'StreetName'])
+        pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['BuildingName', 'StreetName'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
@@ -638,8 +649,8 @@ def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=
 
     compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
-    if ~buildingNumberBlocking:
-        compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    if buildingNumberBlocking:
+        compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
     compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
@@ -754,10 +765,10 @@ def checkPerformance(df, linkedData,
     missing_msk = ~linkedData['ID'].isin(IDs)
     missing = linkedData.loc[missing_msk]
     missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
-    print(len(missing.index), 'addresses were not linked...')
+    print(len(missing.index), 'addresses were not linked...\n')
 
     nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
-    print('\n', nOldUPRNs, 'previous UPRNs in the matched data...')
+    print(nOldUPRNs, 'previous UPRNs in the matched data...')
 
     # find those with UPRN attached earlier and check which are the same
     msk = df['UPRN_prev'] == df['UPRN']
@@ -778,21 +789,19 @@ def checkPerformance(df, linkedData,
     print(len(newUPRNs.index), 'more addresses with UPRN...')
 
 
-def runAll():
+def runAll(test=False):
     """
     Run all required steps.
 
     :return: None
     """
-    print('\nReading in Address Base Data...')
     start = time.clock()
-    ab = loadAddressBaseData()
+    ab = loadAddressBaseData(test=test)
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
-    print('\nReading in Welsh Government data...')
     start = time.clock()
-    testData = loadData()
+    testData = loadData(test=test)
     stop = time.clock()
     print('finished in', round((stop - start), 1), 'seconds...')
 
@@ -887,4 +896,5 @@ def runAll():
 
 
 if __name__ == "__main__":
+    # runAll(test=True)
     runAll()
