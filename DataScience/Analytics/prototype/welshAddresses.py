@@ -158,6 +158,16 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
                        'LOCALITY': 'locality',
                        'BUILDING_NAME': 'buildingName'}, inplace=True)
 
+    # # if SubBuildingName, pao_text, or organisation name is empty add dummy
+    # msk = df['SUB_BUILDING_NAME'].isnull()
+    # df.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
+    # msk = df['ORGANISATION_NAME'].isnull()
+    # df.loc[msk, 'ORGANISATION_NAME'] = 'N/A'
+    # msk = df['pao_text'].isnull()
+    # df.loc[msk, 'pao_text'] = 'N/A'
+    # msk = df['buildingName'].isnull()
+    # df.loc[msk, 'buildingName'] = 'N/A'
+
     return df
 
 
@@ -461,6 +471,16 @@ def parseInputData(df, expandSynonyms=True):
                                                   axis=1)
     df['FlatNumber'] = pd.to_numeric(df['FlatNumber'], errors='coerce')
 
+    # if SubBuilding name or organisation name is empty add dummy
+    # msk = df['SubBuildingName'].isnull()
+    # df.loc[msk, 'SubBuildingName'] = 'N/A'
+    # msk = df['OrganisationName'].isnull()
+    # df.loc[msk, 'OrganisationName'] = 'N/A'
+    # msk = df['BuildingName'].isnull()
+    # df.loc[msk, 'BuildingName'] = 'N/A'
+
+    #df.fillna('', inplace=True)
+
     # save for inspection
     df.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv', index=False)
 
@@ -500,13 +520,13 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
     # block on both postcode and house number, street name can have typos and therefore is not great for blocking
     if buildingNumberBlocking:
-        # print('Start matching those with postcode information, using postcode blocking...')
-        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
         print('Start matching those with postcode information, using postcode and building number blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
-        print('Start matching those with postcode information, using postcode blocking...')
-        pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+        print('Start matching those with postcode information, using postcode and building name blocking...')
+        pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'buildingName'])
+        # print('Start matching those with postcode information, using postcode blocking...')
+        # pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
 
     print('Need to test', len(pairs), 'pairs for', len(toMatch.index), 'addresses...')
 
@@ -517,7 +537,8 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # set rules for standard residential addresses
     compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
     compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
-    compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
+    if buildingNumberBlocking:
+        compare.string('buildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
     compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
     compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
     compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
@@ -545,11 +566,11 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
 
     # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
     compare.vectors['pao_dl'] *= 5.
-    compare.vectors['pao_suffix_dl'] *= 5.
     compare.vectors['sao_number_dl'] *= 4.
     compare.vectors['flat_dl'] *= 3.
-    compare.vectors['building_name_dl'] *= 3.
+    if buildingNumberBlocking: compare.vectors['building_name_dl'] *= 3.
     compare.vectors['street_building_dl'] *= 3.
+    compare.vectors['pao_suffix_dl'] *= 2.
 
     # add sum of the components to the comparison vectors dataframe
     compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
