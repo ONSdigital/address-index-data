@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Data
 ========================
@@ -11,6 +12,7 @@ Requirements
 :requires: numpy
 :requires: pandas
 :requires: sqlalchemy
+:requires: tqdm (https://github.com/tqdm/tqdm)
 
 
 Author
@@ -22,14 +24,20 @@ Author
 Version
 -------
 
-:version: 0.7
-:date: 27-Oct-2016
+:version: 0.8
+:date: 21-Nov-2016
 """
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
+from tqdm import tqdm
 import re
 import glob
+import sqlite3
+import os
+
+if os.environ.get('LC_CTYPE', '') == 'UTF-8':
+    os.environ['LC_CTYPE'] = 'en_US.UTF-8'
 
 
 def queryDB(sql, connection='postgresql://postgres@localhost/ONSAI'):
@@ -172,25 +180,28 @@ def combineMiniABtestingData():
     data.to_csv(path + 'ABmini.csv', index=0)
 
 
-def combineAddressBaseData(filename='AB.csv'):
+def combineAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                           filename='AB.csv'):
     """
     Read in all the Address Base Epoch 39 CSV files and combine to a single CSV file.
     Only relevant information is retained to compress the AB for easier handling.
 
+    :param path: location of the AddressBase CSV files
+    :type path: str
     :param filename: name of the output file
     :type filename: str
 
     :return: None
     """
-    path = '/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/'
     files = glob.glob(path + 'ABP_E39_*.csv')
 
-    for file in files:
-        if 'CLASSIFICATION' in file or 'SREET.csv' in file:
+    for file in tqdm(files):
+
+        # skip a few addresses not used
+        if 'CLASSIFICATION' in file or 'STREET.csv' in file:
             pass
 
-        print('Reading in', files)
-
+        print('Reading in', file)
         tmp = pd.read_csv(file, dtype=str)
 
         if 'BLPU' in file:
@@ -202,7 +213,9 @@ def combineAddressBaseData(filename='AB.csv'):
                       'POST_TOWN', 'POSTCODE']]
 
         if 'LPI' in file:
-            LPI = tmp[['UPRN', 'USRN', 'PAO_TEXT', 'PAO_START_NUMBER', 'SAO_TEXT', 'SAO_START_NUMBER', 'LANGUAGE']]
+            LPI = tmp[['UPRN', 'USRN', 'LANGUAGE',
+                       'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX', 'PAO_END_NUMBER', 'PAO_END_SUFFIX',
+                       'SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX']]
 
         if 'STREET_DESC' in file:
             ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']]
@@ -282,10 +295,30 @@ def modifyEdgeCasesData():
     print(df.info())
 
 
+def convertCSVtoSQLite(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/', csvFile='AB.csv'):
+    """
+    Converts a AddressBase CSV file to SQLite3 database.
+
+    :param path: location of the AddressBase file
+    :type path: str
+    :param csvFile: name of the CSV file containing a subset of AB data
+    :type csvFile: str
+
+    :return: None
+    """
+    df = pd.read_csv(path + csvFile)
+    print(df.info())
+
+    connection = path + csvFile.replace('.csv', '.sqlite')
+    with sqlite3.connect(connection) as cnx:
+        df.to_sql('ab', cnx, index=False, if_exists='replace')
+
+
 if __name__ == "__main__":
     # _simpleTest()
     # testParsing()
     # processPostcodeFile()
     # combineMiniABtestingData()
-    combineAddressBaseData()
+    # combineAddressBaseData()
     # modifyEdgeCasesData()
+    convertCSVtoSQLite()
