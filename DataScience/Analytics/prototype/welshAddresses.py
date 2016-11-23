@@ -17,7 +17,10 @@ ElasticSearch solution.
 Running
 -------
 
-TODO
+After all requirements are satisfied, the script can be invoked using CPython interpreter::
+
+    python welshAddresses.py
+
 
 Requirements
 ------------
@@ -38,15 +41,20 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 22-Nov-2016
+:version: 0.4
+:date: 23-Nov-2016
 
 
 Results
 -------
 
-With full AB and reasonable runtime (i.e. using blocking):
-    Total Match Fraction 99.3 per cent
+With full AB and a reasonable runtime (aggressive blocking):
+    Total Match Fraction 99.9 per cent
+
+    96029 previous UPRNs in the matched data
+    95666 addresses have the same UPRN as earlier
+    363 addresses have a different UPRN as earlier
+    34955 more addresses with UPRN
 """
 import pandas as pd
 import numpy as np
@@ -174,15 +182,9 @@ def loadAddressBaseData(filename='AB.csv', path='/Users/saminiemi/Projects/ONS/A
                        'LOCALITY': 'locality',
                        'BUILDING_NAME': 'BuildingName'}, inplace=True)
 
-    # # if SubBuildingName, pao_text, or organisation name is empty add dummy
-    # msk = df['SUB_BUILDING_NAME'].isnull()
-    # df.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
-    # msk = df['ORGANISATION_NAME'].isnull()
-    # df.loc[msk, 'ORGANISATION_NAME'] = 'N/A'
-    # msk = df['pao_text'].isnull()
-    # df.loc[msk, 'pao_text'] = 'N/A'
-    # msk = df['BuildingName'].isnull()
-    # df.loc[msk, 'BuildingName'] = 'N/A'
+    # # # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
+    msk = df['SUB_BUILDING_NAME'].isnull()
+    df.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
 
     return df
 
@@ -445,6 +447,16 @@ def parseInputData(df, expandSynonyms=True):
             if parsed['Locality'].strip().endswith(' IN'):
                 parsed['Locality'] = parsed['Locality'].replace(' IN', '')
 
+        # sometimes building number gets placed at building name, take it and add to building name
+        if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
+            tmp = parsed['BuildingName'].split(' ')
+            if len(tmp) > 1:
+                try:
+                    _ = int(tmp[0])
+                    parsed['BuildingNumber'] = tmp[0]
+                except ValueError:
+                    pass
+
         # store the parsed information to separate lists
         organisation.append(parsed.get('OrganisationName', None))
         department.append(parsed.get('DepartmentName', None))
@@ -488,13 +500,10 @@ def parseInputData(df, expandSynonyms=True):
     df['FlatNumber'] = pd.to_numeric(df['FlatNumber'], errors='coerce')
 
     # if SubBuilding name or organisation name is empty add dummy
-    # msk = df['SubBuildingName'].isnull()
-    # df.loc[msk, 'SubBuildingName'] = 'N/A'
-    # msk = df['OrganisationName'].isnull()
-    # df.loc[msk, 'OrganisationName'] = 'N/A'
-    # msk = df['BuildingName'].isnull()
-    # df.loc[msk, 'BuildingName'] = 'N/A'
+    msk = df['SubBuildingName'].isnull()
+    df.loc[msk, 'SubBuildingName'] = 'N/A'
 
+    # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
     df[['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']].fillna('', inplace=True)
 
     # save for inspection
@@ -539,8 +548,6 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
         print('Start matching those with postcode information, using postcode and building number blocking...')
         pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
     else:
-        # print('Start matching those with postcode information, using postcode and building name blocking...')
-        # pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'BuildingName'])
         print('Start matching those with postcode information, using postcode blocking...')
         pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
 
@@ -563,7 +570,7 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl', missing_value=0.5)
 
     # the following is good for flats and apartments than have been numbered
-    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl', missing_value=0.6)
+    compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl', missing_value=0.5)
     compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl', missing_value=0.6)
     # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
     # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
@@ -602,9 +609,17 @@ def matchDataWithPostcode(AddressBase, toMatch, limit=0.1, buildingNumberBlockin
     # sort by WG_Index
     matches = matches.sort_values(by='WG_Index')
 
-    print('Found ', len(matches.index), 'matches...')
+    # matched IDs
+    matchedIndex = matches['WG_Index'].values
 
-    return matches
+    # missing ones
+    missingIndex = toMatch.index.difference(matchedIndex)
+    missing = toMatch.loc[missingIndex]
+
+    print('Found ', len(matches.index), 'matches...')
+    print('Failed to found', len(missing.index), 'matches...')
+
+    return matches, missing
 
 
 def matchDataNoPostcode(AddressBase, toMatch, limit=0.7, buildingNumberBlocking=True):
@@ -828,10 +843,13 @@ def runAll(test=False):
         withPCnoHouseNumber = withPC.loc[msk]
         withPCHouseNumber = withPC.loc[~msk]
         if len(withPCHouseNumber) > 0:
-            matches1a = matchDataWithPostcode(ab, withPCHouseNumber, buildingNumberBlocking=True)
+            matches1a, missing1a = matchDataWithPostcode(ab, withPCHouseNumber, buildingNumberBlocking=True)
             m1a = True
         if len(withPCnoHouseNumber) > 0:
-            matches1b = matchDataWithPostcode(ab, withPCnoHouseNumber, buildingNumberBlocking=False)
+            if len(missing1a.index) > 0:
+                # todo: fix this - should test that missing1a actually exists (complete rewrite needed when refactoring)
+                withPCnoHouseNumber = withPCnoHouseNumber.append(missing1a)
+            matches1b, missing1b = matchDataWithPostcode(ab, withPCnoHouseNumber, buildingNumberBlocking=False)
             m1b = True
         ms1 = True
     if len(noPC.index) > 0:
