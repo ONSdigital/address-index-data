@@ -3,6 +3,8 @@ ONS Address Index - Probabilistic Parser
 ========================================
 
 This file defines the calling mechanism for a trained probabilistic parser model.
+It also implements a simple test. Note that the results are model dependent, so
+the assertions will fail if a new model is trained.
 
 
 Requirements
@@ -20,24 +22,22 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 20-Oct-2016
+:version: 0.2
+:date: 25-Nov-2016
 """
-import ProbabilisticParser.common.tokens as t
+import ProbabilisticParser.common.tokens as tok
 import pycrfsuite
 from collections import OrderedDict
 import sys
-import warnings
 import os
 
 
 try:
     TAGGER = pycrfsuite.Tagger()
-    TAGGER.open(t.MODEL_PATH + t.MODEL_FILE)
-    print('Using model from', t.MODEL_PATH + t.MODEL_FILE)
+    TAGGER.open(tok.MODEL_PATH + tok.MODEL_FILE)
+    print('Using model from', tok.MODEL_PATH + tok.MODEL_FILE)
 except IOError:
-    TAGGER = None
-    warnings.warn('You must train the model to create the %s file before you can use the parse and tag methods' % t.MODEL_FILE)
+    print('ERROR: cannot find the CRF model file', tok.MODEL_FILE, 'from', tok.MODEL_PATH)
     sys.exit(-9)
 
 
@@ -51,12 +51,11 @@ def parse(raw_string):
     :return: a list of tokens and labels
     :rtype: list
     """
-
-    tokens = t.tokenize(raw_string)
+    tokens = tok.tokenize(raw_string)
     if not tokens:
         return []
 
-    features = t.tokens2features(tokens)
+    features = tok.tokens2features(tokens)
 
     tags = TAGGER.tag(features)
 
@@ -88,30 +87,47 @@ def tag(raw_string):
     return tagged
 
 
-def debugging(raw_string='LTD'):
+def test(raw_string='ONS LIMITED FLAT 1 12 OXFORD STREET STREET ST1 2FW', verbose=False):
+    """
+    A simple test to check that the calling mechanism from Python gives the same
+    results as if CRFsuite were called directly from the command line. Requires
+    a compiled version of the CRFsuite.
 
+    :param raw_string: input string to test
+    :type raw_string: str
+    :param verbose: additional debugging output
+    :type verbose: bool
+
+    :return: None
+    """
     print('Input string:', raw_string)
-    tokens = t.tokenize(raw_string)
-    features = t.tokens2features(tokens)
-    # print('features:', features)
     print('Python Results:', tag(raw_string))
+
+    tokens = tok.tokenize(raw_string)
+    features = tok.tokens2features(tokens)
+
+    if verbose:
+        print('features:', features)
 
     tags = TAGGER.tag(features)
     print('Inferred tags:', tags)
 
     print('Probability of the sequence:', round(TAGGER.probability(tags), 6))
+    assert round(TAGGER.probability(tags), 6) == 0.956658, 'Sequence probability not correct'
+
+    results = [0.999988, 0.999987, 0.998692, 0.956739, 0.999973, 0.999999, 0.999963, 0.999990, 1., 1.]
     for i, tg in enumerate(tags):
-        print('Marginal probability of', tg, 'in position', i, 'is', round(TAGGER.marginal(tg, i), 6))
+        prob = round(TAGGER.marginal(tg, i), 6)
+        print('Marginal probability of', tg, 'in position', i, 'is', prob)
+        assert prob == results[i], 'Marginal Probability of a Label not correct'
 
-    # print(TAGGER.info().transitions)
-    # print(TAGGER.info().state_features)
-    # print(TAGGER.info().attributes)
+    if verbose:
+        print(TAGGER.info().transitions)
+        print(TAGGER.info().state_features)
+        print(TAGGER.info().attributes)
 
+    # store the ItemSequence temporarily
     tmp = pycrfsuite.ItemSequence(features)
-    items = tmp.items()[0]
-    # print(items)
-
-    print('\nCRFsuite call results:')
 
     # write to a text file
     fh = open('training/test.txt', 'w')
@@ -125,9 +141,9 @@ def debugging(raw_string='LTD'):
     fh.close()
 
     # command line call to the C code to test the output
+    print('\nCRFsuite call results:')
     os.system('crfsuite tag -pit -m training/addressCRF.crfsuite training/test.txt')
 
 
 if __name__ == "__main__":
-    # debugging()
-    debugging('ONS LIMITED FLAT 1 12 OXFORD STREET STREET ST1 2FW')
+    test()
