@@ -97,9 +97,9 @@ def debugging(raw_string='LTD'):
     tags = TAGGER.tag(features)
     print('Inferred tags:', tags)
 
-    print('Probability of the sequence:', TAGGER.probability(tags))
+    print('Probability of the sequence:', round(TAGGER.probability(tags), 6))
     for i, tag in enumerate(tags):
-        print('Marginal probability of', tag, 'in position',i, 'is', TAGGER.marginal(tag, i))
+        print('Marginal probability of', tag, 'in position',i, 'is', round(TAGGER.marginal(tag, i), 6))
 
     # print(TAGGER.info().transitions)
     # print(TAGGER.info().state_features)
@@ -117,23 +117,8 @@ def debugging(raw_string='LTD'):
         fh.write(tag + '\t')
         items = tmp.items()[i]
         for item in sorted(items):
-            if 'next' in item or 'previous' in item:
-                itemtext = item.replace('next:', 'next\:').replace('previous:', 'previous\:')
-            else:
-                itemtext = item
-
-            if 'digits' in item or 'length' in item:
-                if 'length' in item:
-                    fh.write(str(itemtext.replace('w:', 'w\:').replace('d:', 'd\:')) + '=' + str(items[item]) + '\t')
-                else:
-                    fh.write(str(itemtext) + '=' + str(items[item]) + '\t')
-            elif 'word' in item:
-                if items[item] > 0.:
-                    fh.write(str(itemtext) + '=' + str(items[item]) + '\t')
-                else:
-                    fh.write(str(itemtext) + ':' + str(items[item]) + '\t')
-            else:
-                fh.write(str(itemtext) + ':' + str(items[item]) + '\t')
+            itemtext = str(item)
+            fh.write(itemtext.replace(':', '\:') + ':' + str(items[item]) + '\t')
         fh.write('\n')
     fh.close()
 
@@ -143,4 +128,4 @@ def debugging(raw_string='LTD'):
 
 if __name__ == "__main__":
     # debugging()
-    debugging(raw_string='232 CANALSIDE REDHILL RH1 2FW')
+    debugging('ONS LIMITED FLAT 1 12 OXFORD STREET STREET ST1 2FW')
