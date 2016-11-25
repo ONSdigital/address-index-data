@@ -99,7 +99,7 @@ def debugging(raw_string='LTD'):
 
     print('Probability of the sequence:', round(TAGGER.probability(tags), 6))
     for i, tag in enumerate(tags):
-        print('Marginal probability of', tag, 'in position',i, 'is', round(TAGGER.marginal(tag, i), 6))
+        print('Marginal probability of', tag, 'in position', i, 'is', round(TAGGER.marginal(tag, i), 6))
 
     # print(TAGGER.info().transitions)
     # print(TAGGER.info().state_features)
