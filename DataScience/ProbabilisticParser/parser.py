@@ -95,10 +95,11 @@ def debugging(raw_string='LTD'):
     # print('features:', features)
 
     tags = TAGGER.tag(features)
-    print('tags:', tags)
+    print('Inferred tags:', tags)
 
-    print(TAGGER.probability(tags))
-    print(TAGGER.marginal(tags[0], 0))
+    print('Probability of the sequence:', TAGGER.probability(tags))
+    for i, tag in enumerate(tags):
+        print('Marginal probability of', tag, 'in position',i, 'is', TAGGER.marginal(tag, i))
 
     # print(TAGGER.info().transitions)
     # print(TAGGER.info().state_features)
@@ -106,17 +107,21 @@ def debugging(raw_string='LTD'):
 
     tmp = pycrfsuite.ItemSequence(features)
     items = tmp.items()[0]
-    print(items)
+    # print(items)
+
+    print('\nCRFsuite call results:')
 
     # write to a text file
     fh = open('training/test.txt', 'w')
-    fh.write(tags[0] + '\t')
-    for item in sorted(items):
-        if 'digits' in item or 'length' in item or 'word' in item:
-            fh.write(str(item) + '=' + str(items[item]) + '\t')
-        else:
-            fh.write(str(item) + ':' + str(items[item]) + '\t')
-    fh.write('\n')
+    for i, tag in enumerate(tags):
+        fh.write(tag + '\t')
+        items = tmp.items()[i]
+        for item in sorted(items):
+            if 'digits' in item or 'length' in item or 'word' in item:
+                fh.write(str(item) + '=' + str(items[item]) + '\t')
+            else:
+                fh.write(str(item) + ':' + str(items[item]) + '\t')
+        fh.write('\n')
     fh.close()
 
     # command line call to the C code to test the output
@@ -124,6 +129,6 @@ def debugging(raw_string='LTD'):
 
 
 if __name__ == "__main__":
-    debugging()
+    # debugging()
 
-    # debugging(raw_string='ARBITRARY')
+    debugging(raw_string='DOES NOT WORK')
