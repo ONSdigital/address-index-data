@@ -118,7 +118,10 @@ def debugging(raw_string='LTD'):
         items = tmp.items()[i]
         for item in sorted(items):
             if 'digits' in item or 'length' in item or 'word' in item:
-                fh.write(str(item) + '=' + str(items[item]) + '\t')
+                if 'length' in item:
+                    fh.write(str(item.replace('w:', '\:').replace('d:', '\:')) + '=' + str(items[item]) + '\t')
+                else:
+                    fh.write(str(item) + '=' + str(items[item]) + '\t')
             else:
                 fh.write(str(item) + ':' + str(items[item]) + '\t')
         fh.write('\n')
@@ -130,5 +133,4 @@ def debugging(raw_string='LTD'):
 
 if __name__ == "__main__":
     # debugging()
-
-    debugging(raw_string='DOES NOT WORK')
+    debugging(raw_string='232 CANALSIDE REDHILL RH1 2FW')
