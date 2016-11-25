@@ -117,13 +117,23 @@ def debugging(raw_string='LTD'):
         fh.write(tag + '\t')
         items = tmp.items()[i]
         for item in sorted(items):
-            if 'digits' in item or 'length' in item or 'word' in item:
-                if 'length' in item:
-                    fh.write(str(item.replace('w:', '\:').replace('d:', '\:')) + '=' + str(items[item]) + '\t')
-                else:
-                    fh.write(str(item) + '=' + str(items[item]) + '\t')
+            if 'next' in item or 'previous' in item:
+                itemtext = item.replace('next:', 'next\:').replace('previous:', 'previous\:')
             else:
-                fh.write(str(item) + ':' + str(items[item]) + '\t')
+                itemtext = item
+
+            if 'digits' in item or 'length' in item:
+                if 'length' in item:
+                    fh.write(str(itemtext.replace('w:', 'w\:').replace('d:', 'd\:')) + '=' + str(items[item]) + '\t')
+                else:
+                    fh.write(str(itemtext) + '=' + str(items[item]) + '\t')
+            elif 'word' in item:
+                if items[item] > 0.:
+                    fh.write(str(itemtext) + '=' + str(items[item]) + '\t')
+                else:
+                    fh.write(str(itemtext) + ':' + str(items[item]) + '\t')
+            else:
+                fh.write(str(itemtext) + ':' + str(items[item]) + '\t')
         fh.write('\n')
     fh.close()
 
