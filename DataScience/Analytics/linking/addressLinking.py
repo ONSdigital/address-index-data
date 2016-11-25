@@ -34,16 +34,17 @@ Version
 :version: 0.1
 :date: 25-Nov-2016
 """
-from ProbabilisticParser import parser
-import logger
-import pandas as pd
-import numpy as np
-import recordlinkage
-from tqdm import tqdm
-import time
-import re
 import datetime
+import re
+import time
 import warnings
+
+import logger
+import numpy as np
+import pandas as pd
+import recordlinkage
+from ProbabilisticParser import parser
+from tqdm import tqdm
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
@@ -68,6 +69,7 @@ class Linker(object):
     :type inputPath: str
 
     """
+
     def __init__(self, **kwargs):
         """
 
@@ -197,11 +199,11 @@ class Linker(object):
 
         # rename some columns (sorted windowing requires column names to match)
         self.addressBase.rename(columns={'THROUGHFARE': 'StreetName',
-                           'POST_TOWN': 'townName',
-                           'POSTCODE': 'postcode',
-                           'PAO_TEXT': 'pao_text',
-                           'LOCALITY': 'locality',
-                           'BUILDING_NAME': 'BuildingName'}, inplace=True)
+                                         'POST_TOWN': 'townName',
+                                         'POSTCODE': 'postcode',
+                                         'PAO_TEXT': 'pao_text',
+                                         'LOCALITY': 'locality',
+                                         'BUILDING_NAME': 'BuildingName'}, inplace=True)
 
         # # # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
         msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
@@ -210,7 +212,8 @@ class Linker(object):
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
 
-    def _extract_postcode(self, string):
+    @staticmethod
+    def _extract_postcode(string):
         """
         Extract a postcode from address string. Uses rather loose regular expression, so
         may get some strings that are not completely valid postcodes.
@@ -323,8 +326,10 @@ class Linker(object):
 
         # parsing gets really confused if region or county is in the line
         counties = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'W SUSSEX',
-                    'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', ' ESSEX', 'SURREY', 'SUFFOLK',
-                    'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE', 'LINCOLNSHIRE',
+                    'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', ' ESSEX', 'SURREY',
+                    'SUFFOLK',
+                    'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE',
+                    'LINCOLNSHIRE',
                     'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
                     'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
                     'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', 'CUMBRIA', 'FLINTSHIRE', 'GLOUCESTERSHIRE', 'WILTSHIRE',
@@ -345,7 +350,8 @@ class Linker(object):
             self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData['ADDRESS2'].str.replace(county + addRegex, '',
                                                                                                 case=False)
 
-    def _fixLondonBoroughs(self, parsed):
+    @staticmethod
+    def _fix_london_boroughs(parsed):
         """
         A method to address incorrectly parsed London boroughs.
         If the street name contains London borough then move it to locality and remove from the street name.
@@ -405,8 +411,8 @@ class Linker(object):
 
         # loop over addresses - quite inefficient, should avoid a loop
         for address in tqdm(addresses):
-            parsed = parser.tag(address.upper())    # probabilistic parser
-            pcode = self._extract_postcode(address)            # regular expression extraction
+            parsed = parser.tag(address.upper())  # probabilistic parser
+            pcode = self._extract_postcode(address)  # regular expression extraction
 
             # if both parsers found postcode then check that they are the same
             if parsed.get('Postcode', None) is not None and pcode is not None:
@@ -432,7 +438,7 @@ class Linker(object):
             # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
             if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
                 if 'LONDON' in parsed['TownName']:
-                    parsed = self._fixLondonBoroughs(parsed)
+                    parsed = self._fix_london_boroughs(parsed)
 
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
@@ -440,7 +446,7 @@ class Linker(object):
                 # accept suffixes that are only maximum two chars and if not hyphen
                 if len(parsed['BuildingSuffix']) > 2 and (parsed['BuildingSuffix'] != '-'):
                     parsed['BuildingSuffix'] = None
-                # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
+                    # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
 
             # some addresses contain place CO place, where the CO is not part of the actual name - remove these
             # same is true for IN e.g. Road Marton IN Cleveland
@@ -497,9 +503,9 @@ class Linker(object):
         self.toLinkAddressData['FlatNumber'] = None
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment', na=False, case=False)
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk].apply(lambda x:
-                                                      x['FlatNumber'].strip().replace('FLAT', '').replace('APARTMENT', ''),
-                                                      axis=1)
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
+            self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
+                                                  replace('FLAT', '').replace('APARTMENT', ''), axis=1)
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
 
         # if SubBuilding name or organisation name is empty add dummy
@@ -507,16 +513,17 @@ class Linker(object):
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
-        self.toLinkAddressData[['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']].fillna('', inplace=True)
+        columnsToAddEmptyStrings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
+        self.toLinkAddressData[columnsToAddEmptyStrings].fillna('', inplace=True)
 
         # save for inspection
-        self.toLinkAddressData.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv', index=False)
+        self.toLinkAddressData.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv',
+                                      index=False)
 
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS2', ], axis=1, inplace=True)
 
-
-    def matchDataWithPostcode(self, toMatch, limit=0.1, buildingNumberBlocking=True):
+    def link_addresses_with_postcode(self, toMatch, limit=0.1, buildingNumberBlocking=True):
         """
         Link toMatch data to the AddressBase source information.
 
@@ -544,7 +551,8 @@ class Linker(object):
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         if buildingNumberBlocking:
-            self.log.info('Start matching those with postcode information, using postcode and building number blocking...')
+            self.log.info(
+                'Start matching those with postcode information, using postcode and building number blocking...')
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
         else:
             self.log.info('Start matching those with postcode information, using postcode blocking...')
@@ -559,25 +567,31 @@ class Linker(object):
         # set rules for standard residential addresses
         compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl', missing_value=0.6)
         compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl', missing_value=0.6)
-        compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl', missing_value=0.5)
-        compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl', missing_value=0.5)
+        compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl',
+                       missing_value=0.5)
+        compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl',
+                       missing_value=0.5)
         compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
         compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
         compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl', missing_value=0.5)
 
         # use to separate e.g. 55A from 55
-        compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl', missing_value=0.5)
+        compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl',
+                       missing_value=0.5)
 
         # the following is good for flats and apartments than have been numbered
-        compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl', missing_value=0.5)
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl', missing_value=0.6)
+        compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl',
+                       missing_value=0.5)
+        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl',
+                       missing_value=0.6)
         # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
         # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
         # This comparison should probably be numeric.
         compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl')
 
         # set rules for organisations such as care homes and similar type addresses
-        compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl', missing_value=0.5)
+        compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
+                       missing_value=0.5)
 
         # execute the comparison model
         compare.run()
@@ -620,8 +634,7 @@ class Linker(object):
 
         return matches, missing
 
-
-    def matchDataNoPostcode(self, toMatch, limit=0.7, buildingNumberBlocking=True):
+    def link_addresses_without_postcode(self, toMatch, limit=0.7, buildingNumberBlocking=True):
         """
         Link toMatch data to the AddressBase source information.
         Uses blocking to speed up the matching.
@@ -647,10 +660,12 @@ class Linker(object):
 
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         if buildingNumberBlocking:
-            self.log.info('Start matching those without postcode information, using building number and street name blocking...')
+            self.log.info(
+                'Start matching those without postcode information, using building number and street name blocking...')
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
         else:
-            self.log.info('Start matching those without postcode information, using building name and street name blocking...')
+            self.log.info(
+                'Start matching those without postcode information, using building name and street name blocking...')
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['BuildingName', 'StreetName'])
 
         self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(toMatch.index)))
@@ -717,8 +732,7 @@ class Linker(object):
 
         return matches
 
-
-    def mergeMatchedAndAB(self, matches):
+    def merge_linked_data_and_address_base_information(self, matches):
         """
         Merge address base information to the identified matches.
         Outputs the merged information to a CSV file for later inspection.
@@ -740,9 +754,8 @@ class Linker(object):
 
         return data
 
-
-    def checkPerformance(self, df,
-                         prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
+    def check_performance(self, df,
+                          prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
         """
         Check performance - calculate the match rate.
 
@@ -825,13 +838,13 @@ class Linker(object):
             withPCnoHouseNumber = withPC.loc[msk]
             withPCHouseNumber = withPC.loc[~msk]
             if len(withPCHouseNumber) > 0:
-                matches1a, missing1a = self.matchDataWithPostcode(withPCHouseNumber, buildingNumberBlocking=True)
+                matches1a, missing1a = self.link_addresses_with_postcode(withPCHouseNumber, buildingNumberBlocking=True)
                 m1a = True
             if len(withPCnoHouseNumber) > 0:
                 if len(missing1a.index) > 0:
                     # todo: fix this - should test that missing1a actually exists (complete rewrite needed when refactoring)
                     withPCnoHouseNumber = withPCnoHouseNumber.append(missing1a)
-                matches1b, missing1b = self.matchDataWithPostcode(withPCnoHouseNumber, buildingNumberBlocking=False)
+                matches1b, missing1b = self.link_addresses_with_postcode(withPCnoHouseNumber, buildingNumberBlocking=False)
                 m1b = True
             ms1 = True
         if len(noPC.index) > 0:
@@ -839,10 +852,10 @@ class Linker(object):
             noPCnoHouseNumber = noPC.loc[msk]
             noPCHouseNumber = noPC.loc[~msk]
             if len(noPCnoHouseNumber) > 0:
-                matches2a = self.matchDataNoPostcode(noPCHouseNumber, buildingNumberBlocking=True)
+                matches2a = self.link_addresses_without_postcode(noPCHouseNumber, buildingNumberBlocking=True)
                 m2a = True
             if len(noPCHouseNumber) > 0:
-                matches2b = self.matchDataNoPostcode(noPCnoHouseNumber, buildingNumberBlocking=False)
+                matches2b = self.link_addresses_without_postcode(noPCnoHouseNumber, buildingNumberBlocking=False)
                 m2b = True
             ms2 = True
         stop = time.clock()
@@ -856,15 +869,15 @@ class Linker(object):
         m1 = m2 = False
         if ms1:
             if m1a:
-                matched1a = self.mergeMatchedAndAB(matches1a)
+                matched1a = self.merge_linked_data_and_address_base_information(matches1a)
             if m1b:
-                matched1b = self.mergeMatchedAndAB(matches1b)
+                matched1b = self.merge_linked_data_and_address_base_information(matches1b)
             m1 = True
         if ms2:
             if m2a:
-                matched2a = self.mergeMatchedAndAB(matches2a)
+                matched2a = self.merge_linked_data_and_address_base_information(matches2a)
             if m2b:
-                matched2b = self.mergeMatchedAndAB(matches2b)
+                matched2b = self.merge_linked_data_and_address_base_information(matches2b)
             m2 = True
 
         if m1a & m1b:
@@ -892,7 +905,7 @@ class Linker(object):
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         self.log.info('Checking Performance...')
-        self.checkPerformance(matched)
+        self.check_performance(matched)
         print('Finished running')
 
 
