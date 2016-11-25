@@ -85,3 +85,45 @@ def tag(raw_string):
         tagged[token] = component
 
     return tagged
+
+
+def debugging(raw_string='LTD'):
+    import os
+
+    tokens = t.tokenize(raw_string)
+    features = t.tokens2features(tokens)
+    # print('features:', features)
+
+    tags = TAGGER.tag(features)
+    print('tags:', tags)
+
+    print(TAGGER.probability(tags))
+    print(TAGGER.marginal(tags[0], 0))
+
+    # print(TAGGER.info().transitions)
+    # print(TAGGER.info().state_features)
+    # print(TAGGER.info().attributes)
+
+    tmp = pycrfsuite.ItemSequence(features)
+    items = tmp.items()[0]
+    print(items)
+
+    # write to a text file
+    fh = open('training/test.txt', 'w')
+    fh.write(tags[0] + '\t')
+    for item in sorted(items):
+        if 'digits' in item or 'length' in item or 'word' in item:
+            fh.write(str(item) + '=' + str(items[item]) + '\t')
+        else:
+            fh.write(str(item) + ':' + str(items[item]) + '\t')
+    fh.write('\n')
+    fh.close()
+
+    # command line call to the C code to test the output
+    os.system('crfsuite tag -pit -m training/addressCRF.crfsuite training/test.txt')
+
+
+if __name__ == "__main__":
+    debugging()
+
+    # debugging(raw_string='ARBITRARY')

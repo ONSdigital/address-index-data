@@ -1,0 +1,5 @@
+OrganisationName	business:0.0	company:1.0		digits:no_digits=1.0	directional:0.0	endsinpunc:0.0	flat:0.0	has.vowels:0.0	hyphenations:0=1.0	length:w:3=1.0	locational:0.0	ordinal:0.0	outcode:0.0	posttown:0.0	residential:0.0	road:0.0	singleton:1.0	word:LTD=1.0
+
+OrganisationName	business:1.0	company:0.0		digits:no_digits=1.0	directional:0.0	endsinpunc:0.0	flat:0.0	has.vowels:1.0	hyphenations:0=1.0	length:w:8=1.0	locational:0.0	ordinal:0.0	outcode:0.0	posttown:0.0	residential:0.0	road:0.0	singleton:1.0	word:HOSPITAL=1.0
+
+BuildingNumber	business:0.0	company:0.0	digits:all_digits=1.0	directional:0.0	endsinpunc:0.0	flat:0.0	has.vowels:0.0	hyphenations:0.0	length:d:3=1.0	locational:0.0	ordinal:0.0	outcode:0.0	posttown:0.0	residential:0.0	road:0.0	singleton:1.0	word:0.0
