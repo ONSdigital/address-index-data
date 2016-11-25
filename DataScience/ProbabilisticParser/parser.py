@@ -28,6 +28,7 @@ import pycrfsuite
 from collections import OrderedDict
 import sys
 import warnings
+import os
 
 
 try:
@@ -88,18 +89,19 @@ def tag(raw_string):
 
 
 def debugging(raw_string='LTD'):
-    import os
 
+    print('Input string:', raw_string)
     tokens = t.tokenize(raw_string)
     features = t.tokens2features(tokens)
     # print('features:', features)
+    print('Python Results:', tag(raw_string))
 
     tags = TAGGER.tag(features)
     print('Inferred tags:', tags)
 
     print('Probability of the sequence:', round(TAGGER.probability(tags), 6))
-    for i, tag in enumerate(tags):
-        print('Marginal probability of', tag, 'in position', i, 'is', round(TAGGER.marginal(tag, i), 6))
+    for i, tg in enumerate(tags):
+        print('Marginal probability of', tg, 'in position', i, 'is', round(TAGGER.marginal(tg, i), 6))
 
     # print(TAGGER.info().transitions)
     # print(TAGGER.info().state_features)
@@ -113,8 +115,8 @@ def debugging(raw_string='LTD'):
 
     # write to a text file
     fh = open('training/test.txt', 'w')
-    for i, tag in enumerate(tags):
-        fh.write(tag + '\t')
+    for i, tg in enumerate(tags):
+        fh.write(tg + '\t')
         items = tmp.items()[i]
         for item in sorted(items):
             itemtext = str(item)
