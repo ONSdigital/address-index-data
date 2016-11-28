@@ -19,7 +19,7 @@ Requirements
 :requires: pandas ( 0.19.1)
 :requires: numpy (1.11.2)
 :requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
-:requires: recordlinkage (0.5: https://pypi.python.org/pypi/recordlinkage/)
+:requires: recordlinkage (0.6.0: https://pypi.python.org/pypi/recordlinkage/)
 
 
 Author
@@ -123,8 +123,9 @@ class AddressLinker:
             self.log.info('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
         else:
-            self.log.info('ERROR - should overwrite the method to be suitable for the actual data...')
-            raise NotImplementedError
+            self.log.info('Reading Input...')
+            # self.log.info('ERROR - should overwrite the method to be suitable for the actual data...')
+            # raise NotImplementedError
 
         self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
                                              low_memory=False)
@@ -873,5 +874,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True))
+    linker = AddressLinker(**dict(test=False))
     linker.run_all()

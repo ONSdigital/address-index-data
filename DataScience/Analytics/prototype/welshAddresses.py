@@ -63,8 +63,7 @@ import pandas as pd
 class WelshAddressLinker(addressLinking.AddressLinker):
 
     def load_data(self,
-                 filename='WelshGovernmentData21Nov2016.csv', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-                 verbose=False, test=False):
+                 inputFilename='WelshGovernmentData21Nov2016.csv', inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',):
         """
         Read in the Welsh address test data.
 
@@ -72,40 +71,35 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         :type filename: str
         :param path: location of the test data
         :type path: str
-        :param verbose: whether or not output information
-        :type verbose: bool
-        :param test: whether or not to use test data
-        :type test: bool
-
-        :return: pandas dataframe of the data
-        :rtype: pandas.DataFrame
         """
-        if test:
-            print('\nReading in test Welsh Government data...')
-            filename = 'WelshTest.csv'
-        else:
-            print('\nReading in Welsh Government data...')
-
-        df = pd.read_csv(path + filename, low_memory=False)
+        self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
+                                             low_memory=False)
 
         # fill NaNs with empty strings so that we can form a single address string
-        df.fillna('', inplace=True)
-        df['ADDRESS'] = df['Building'] + ' ' + df['Street'] + ' ' + df['Locality'] + ' ' + df['Town'] +\
-                        ' ' + df['County'] + ' ' + df['Postcode']
+        self.toLinkAddressData.fillna('', inplace=True)
+        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Building'] + ' ' + \
+                                            self.toLinkAddressData['Street'] + ' ' + \
+                                            self.toLinkAddressData['Locality'] + ' ' + \
+                                            self.toLinkAddressData['Town'] + ' ' + \
+                                            self.toLinkAddressData['County'] + ' ' + \
+                                            self.toLinkAddressData['Postcode']
 
         # rename postcode to postcode_orig and locality to locality_orig
-        df.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
+        self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
 
         # convert original UPRN to numeric
-        df['UPRN_prev'] = df['UPRN_prev'].convert_objects(convert_numeric=True)
+        self.toLinkAddressData['UPRN_prev'] = self.toLinkAddressData['UPRN_prev'].convert_objects(convert_numeric=True)
 
-        if verbose:
-            print(df.info())
+        if self.settings['verbose']:
+            self.log.info(self.toLinkAddressData.info())
 
-        print('Found', len(df.index), 'addresses...')
-        print(len(df.loc[df['UPRN_prev'].notnull()].index), 'with UPRN already attached...')
+        self.log.info('Found {} addresses...'.format(len(self.toLinkAddressData.index)))
+        self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_prev'].notnull()].index)
+        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
 
-        return df
+        # set index name - needed later for merging / duplicate removal
+        self.toLinkAddressData.index.name = 'TestData_Index'
+
 
     def check_performance(self, df, linkedData,
                          prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
@@ -162,5 +156,8 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
         print(len(newUPRNs.index), 'more addresses with UPRN...')
 
+
 if __name__ == "__main__":
-    runAll()
+    linker = WelshAddressLinker(**dict(test=False))
+    linker.run_all()
+
