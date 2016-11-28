@@ -16,10 +16,10 @@ Requirements
 ------------
 
 :requires: ProbabilisticParser (a CRF model specifically build for ONS)
-:requires: pandas
-:requires: numpy
-:requires: tqdm (https://github.com/tqdm/tqdm)
-:requires: recordlinkage (https://pypi.python.org/pypi/recordlinkage/)
+:requires: pandas ( 0.19.1)
+:requires: numpy (1.11.2)
+:requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
+:requires: recordlinkage (0.7.2: https://pypi.python.org/pypi/recordlinkage/)
 
 
 Author
@@ -32,16 +32,17 @@ Version
 -------
 
 :version: 0.1
-:date: 25-Nov-2016
+:date: 28-Nov-2016
 """
 import datetime
 import re
 import time
+import os
 import warnings
-
 import logger
 import numpy as np
 import pandas as pd
+import pandas.util.testing as pdt
 import recordlinkage
 from ProbabilisticParser import parser
 from tqdm import tqdm
@@ -88,6 +89,9 @@ class Linker(object):
                              verbose=False)
         self.settings.update(kwargs)
 
+        # relative path when referring to data files
+        self.currentDirectory = os.path.dirname(__file__)  # for relative path definitions
+
         # define containers
         self.nExistingUPRN = 0
         self.toLinkAddressData = None
@@ -109,8 +113,8 @@ class Linker(object):
         Read in the data that need to be linked.
         """
         if self.settings['test']:
-            self.log.info('Reading in test Welsh Government data...')
-            self.settings['inputFilename'] = 'WelshTest.csv'
+            self.log.info('Reading in test data...')
+            self.settings['inputFilename'] = 'testData.csv'
         else:
             self.log.info('Reading in data that need to be linked...')
 
@@ -250,92 +254,39 @@ class Linker(object):
         as the an early version of the probabilistic parser was not trained to parser counties.
         """
         # make a copy of the actual address field and run the parsing against it
-        self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData['ADDRESS'].copy()
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS'].copy()
 
         # remove white spaces if present
-        self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData['ADDRESS2'].str.strip()
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.strip()
 
         # remove commas and apostrophes and insert space
-        self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData.apply(lambda x: x['ADDRESS2'].replace(',', ' '),
-                                                                          axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
+                                                                              x['ADDRESS_norm'].replace(',', ' '),
+                                                                              axis=1)
 
         # remove backslash if present and replace with space
-        self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData.apply(lambda x: x['ADDRESS2'].replace('\\', ' '),
-                                                                          axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
+                                                                              x['ADDRESS_norm'].replace('\\', ' '),
+                                                                              axis=1)
 
         # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
         # e.g. FLAT 15 191 - 193 NEWPORT ROAD  CARDIFF CF24 1AJ is parsed incorrectly if there
         # is space around the hyphen
-        self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData.apply(lambda x: x['ADDRESS2'].replace(' - ', '-'),
-                                                                          axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
+                                                                              x['ADDRESS_norm'].replace(' - ', '-'),
+                                                                              axis=1)
 
-        # synonyms to expand - format is [(from, to), ]
-        synonyms = [(' AVEN ', ' AVENUE '),
-                    (' AVE ', ' AVENUE '),
-                    (' AV ', ' AVENUE '),
-                    (' LN ', ' LANE '),
-                    (' APPTS ', ' APARTMENT '),
-                    (' APPT ', ' APARTMENT '),
-                    (' APTS ', ' APARTMENT '),
-                    (' APT ', ' APARTMENT '),
-                    (' BLK ', ' BLOCK '),
-                    (' BVLD ', ' BOULEVARD '),
-                    (' DR ', ' DRIVE '),
-                    (' RD ', ' ROAD '),
-                    (' PK ', ' PARK '),
-                    (' STR ', ' STREET '),
-                    (' NOS ', ' NUMBER '),
-                    (' NO ', ' NUMBER '),
-                    (' HSE ', ' HOUSE '),
-                    (' BERKS(?:\s|\Z)', ' BERKSHIRE '),
-                    (' WARKS(?:\s|\Z)', ' WARWICKSHIRE '),
-                    (' BUCKS(?:\s|\Z)', ' BUCKINGHAMSHIRE '),
-                    (' HANTS(?:\s|\Z)', ' HAMPSHIRE '),
-                    (' LEICS(?:\s|\Z)', ' LEICESTERSHIRE '),
-                    (' LINCS(?:\s|\Z)', ' LINCOLNSHIRE '),
-                    (' LANCS(?:\s|\Z)', ' LANCASHIRE '),
-                    (' MIDDX(?:\s|\Z)', ' MIDDLESEX '),
-                    (' STAFFS(?:\s|\Z)', ' STAFFORDSHIRE '),
-                    (' WORCS(?:\s|\Z)', ' WORCESTERSHIRE '),
-                    (' WILTS(?:\s|\Z)', ' WILTSHIRE '),
-                    (' HERTS(?:\s|\Z)', ' HERTFORDSHIRE '),
-                    (' CAMBS(?:\s|\Z)', ' CAMBRIDGESHIRE '),
-                    (' OXON(?:\s|\Z)', ' OXFORDSHIRE '),
-                    (' HFDS(?:\s|\Z)', ' HERTFORDSHIRE '),
-                    (' BEDS(?:\s|\Z)', ' BEDFORDSHIRE '),
-                    (' GLOS(?:\s|\Z)', ' GLOUCESTERSHIRE '),
-                    (' STOKE ON TRENT ', ' STOKE-ON-TRENT '),
-                    (' SOUTHEND ON SEA ', ' SOUTHEND-ON-SEA '),
-                    (' WESTCLIFF ON SEA ', ' WESTCLIFF-ON-SEA '),
-                    (' ENGLAND(?:\s|\Z)', ' '),
-                    (' UNITED KINGDOM(?:\s|\Z)', ' '),
-                    (' 1ST ', ' FIRST '),
-                    (' 2ND ', ' SECOND '),
-                    (' 3RD ', ' THIRD '),
-                    (' 4TH ', ' FOURTH '),
-                    (' 5TH ', ' FIFTH '),
-                    (' 6TH ', ' SIXTH '),
-                    (' 7TH ', ' SEVENTH '),
-                    (' 8TH ', ' EIGHT ')]
+        # synonyms to expand - read from a file with format (from, to)
+        synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values
 
         # expand common synonyms to help with parsing
         if self.settings['expandSynonyms']:
             self.log.info('Expanding synonyms as a part of normalisation...')
             for fro, to in synonyms:
-                self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData['ADDRESS2'].str.replace(fro, to)
+                self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(fro, to)
 
-        # parsing gets really confused if region or county is in the line
-        counties = ('WEST MIDLANDS', 'WEST YORKSHIRE', 'S YORKSHIRE', 'N YORKSHIRE', 'W YORKSHIRE', 'W SUSSEX',
-                    'E SUSSEX', 'KENT', 'SOUTH GLAMORGAN', 'MID GLAMORGAN', 'WEST GLAMORGAN', ' ESSEX', 'SURREY',
-                    'SUFFOLK',
-                    'CHESHIRE', 'CARMARTHENSHIRE', 'DERBYSHIRE', 'BERKSHIRE', 'YORKSHIRE', 'HEREFORDSHIRE',
-                    'LINCOLNSHIRE',
-                    'NOTTINGHAMSHIRE', 'OXFORDSHIRE', 'BUCKINGHAMSHIRE', 'SHROPSHIRE', 'DORSET', 'DEVON', 'SOMERSET',
-                    'CORNWALL', 'CLEVELAND', 'NORFOLK', 'STAFFORDSHIRE', 'MIDDLESEX', 'MERSEYSIDE', 'NORTH HUMBERSIDE',
-                    'SOUTH HUMBERSIDE', 'ISLE OF WIGHT', 'CUMBRIA', 'FLINTSHIRE', 'GLOUCESTERSHIRE', 'WILTSHIRE',
-                    'DENBIGHSHIRE', 'TYNE AND WEAR', 'NORTHUMBERLAND', 'NORTHAMPTONSHIRE', 'WARWICKSHIRE', 'HAMPSHIRE',
-                    'GWENT', 'NORFOLK', 'CHESHIRE', 'POWYS', 'LEICESTERSHIRE', 'NORTHAMPTONSHIRE', 'NORTHANTS',
-                    'WORCESTERSHIRE', 'HERTFORDSHIRE', 'CAMBRIDGESHIRE', 'BEDFORDSHIRE', 'LANCASHIRE')
+        # parsing gets really confused if region or county is in the line - get known counties from a file
+        counties = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'counties.csv')['county']
 
         # use this for the counties so that e.g. ESSEX ROAD does not become just ROAD...
         # todo: the regex is getting ridiculous, maybe do other way around i.e. country must be followed by postcode or
@@ -345,13 +296,13 @@ class Linker(object):
         # remove county from address but add a column for it
         self.toLinkAddressData['County'] = None
         for county in counties:
-            msk = self.toLinkAddressData['ADDRESS2'].str.contains(county + addRegex, regex=True, na=False)
+            msk = self.toLinkAddressData['ADDRESS_norm'].str.contains(county + addRegex, regex=True, na=False)
             self.toLinkAddressData.loc[msk, 'County'] = county
-            self.toLinkAddressData['ADDRESS2'] = self.toLinkAddressData['ADDRESS2'].str.replace(county + addRegex, '',
-                                                                                                case=False)
+            self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(county +
+                                                                                                        addRegex, '',
+                                                                                                        case=False)
 
-    @staticmethod
-    def _fix_london_boroughs(parsed):
+    def _fix_london_boroughs(self, parsed):
         """
         A method to address incorrectly parsed London boroughs.
         If the street name contains London borough then move it to locality and remove from the street name.
@@ -361,28 +312,14 @@ class Linker(object):
 
         :return:
         """
-        # todo: should move to a file rather than have inside the code and get a complete list from AB
-        locs = ['HACKNEY', 'ISLINGTON', 'STRATFORD', 'EAST HAM', 'WOOD GREEN', 'FINCLEY', 'HORNSEY', 'HENDON',
-                'TOTTENHAM', 'BLACKHEATH', 'BAYSWATER', 'CHISWICK VILLAGE', 'CHISWICK', 'COLINDALE', 'LEWISHAM',
-                'FOREST HILL', 'NORBURY', 'MANOR PARK', 'PLAISTOW', 'ABBEY WOOD', 'SOUTH NORWOOD', 'CHARLTON',
-                'MOTTINGHAM', 'NEW ELTHAM', 'BATTERSEA', 'PUTNEY', 'TOOTING', 'RAYNES PARK', 'MORTLAKE',
-                'WEST KENSINGTON', 'KENSINGTON', 'ACTON', 'HAMMERSMITH', 'HANWELL', 'NEW SOUTHGATE',
-                'GREEN LANES', 'STREATHAM HILL', 'CATFORD', 'LEWISHAM', 'BALHAM', 'OLYMPIC PARK', 'CHINGFORD',
-                'STREATHAM', 'LEYTONSTONE', 'BROCKLEY', 'SOUTH WALTHAMSTOW', 'WALTHAMSTOW', 'MAIDA VALE',
-                'HOLLAND PARK', 'FULHAM', 'PARK ROYAL', 'LEYTON', 'TULSE HILL', 'SILVERTOWN', 'WOODFORD',
-                'ROYAL VICTORIA DOCK', 'CROUCH END', 'EDMONTON', 'PLUMSTEAD', 'ELTHAM', 'EAST DULWICH',
-                'MUSWELL HILL', 'EALING', 'WANSTEAD', 'WIMBLEDON', 'UPPER NORWOOD', 'CAMBERWELL', 'SYDENHAM',
-                'SOUTHFIELDS', 'COLLIERS WOOD', 'THAMESMEAD', 'WILLESDEN', 'HAMPSTEAD', 'KILBURN',
-                'KENTISH TOWN', 'HARLESDEN', 'FULHAM', 'WEST DULWICH', 'LONDON', 'PALMERS GREEN', 'MARYLEBONE',
-                'CLAPHAM', 'WANDSWORTH', 'WOOLWICH', 'BELLINGHAM', 'GREENWICH', 'NEW CROSS', 'KIDBROOKE',
-                'HOMERTON']
+        LondonLocalities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'localities.csv')['locality']
 
-        for loc in locs:
-            if parsed['StreetName'].strip().endswith(loc):
-                parsed['Locality'] = loc
+        for LondonLocality in LondonLocalities:
+            if parsed['StreetName'].strip().endswith(LondonLocality):
+                parsed['LondonLocalityality'] = LondonLocality
                 # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
                 # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK (3 parts to remove)
-                parsed['StreetName'] = parsed['StreetName'].strip()[:-len(loc)].strip()
+                parsed['StreetName'] = parsed['StreetName'].strip()[:-len(LondonLocality)].strip()
 
         return parsed
 
@@ -394,7 +331,7 @@ class Linker(object):
         self._normalize_input_data()
 
         # get addresses and store separately as an vector
-        addresses = self.toLinkAddressData['ADDRESS2'].values
+        addresses = self.toLinkAddressData['ADDRESS_norm'].values
         self.log.info('Parsing {} addresses...'.format(len(addresses)))
 
         # temp data storage lists
@@ -521,7 +458,7 @@ class Linker(object):
                                       index=False)
 
         # drop the temp info
-        self.toLinkAddressData.drop(['ADDRESS2', ], axis=1, inplace=True)
+        self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
 
     def link_addresses_with_postcode(self, toMatch, limit=0.1, buildingNumberBlocking=True):
         """
@@ -754,6 +691,28 @@ class Linker(object):
 
         return data
 
+    def confirm_results(self, df):
+        """
+
+        :param df:
+        :return:
+        """
+        # find those without match
+        IDs = df['ID'].values
+        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
+        missing = self.toLinkAddressData.loc[missing_msk]
+        self.log.info('{} addresses were not linked...'.format(len(missing.index)))
+
+        nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
+        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
+
+        # find those with UPRN attached earlier and check which are the same
+        msk = df['UPRN_prev'] == df['UPRN']
+        matches = df.loc[msk]
+        self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
+        pdt.assert_series_equal(df['UPRN_prev'], df['UPRN'])
+
+
     def check_performance(self, df,
                           prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
         """
@@ -904,8 +863,12 @@ class Linker(object):
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
-        self.log.info('Checking Performance...')
-        self.check_performance(matched)
+        if self.settings['test']:
+            self.confirm_results(matched)
+        else:
+            self.log.info('Checking Performance...')
+            self.check_performance(matched)
+
         print('Finished running')
 
 
