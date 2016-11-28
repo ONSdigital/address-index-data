@@ -39,11 +39,11 @@ import re
 import time
 import os
 import warnings
-import logger
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
 import recordlinkage
+from Analytics.linking import logger
 from ProbabilisticParser import parser
 from tqdm import tqdm
 
@@ -51,7 +51,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
 
-class Linker(object):
+class AddressLinker:
     """
 
     :param verbose: whether or not output information
@@ -68,6 +68,10 @@ class Linker(object):
     :type inputFilename: str
     :param inputPath: location of the test data
     :type inputPath: str
+    :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
+                  Affects for example the false positive rate.
+    :type limit: float
+
 
     """
 
@@ -77,12 +81,15 @@ class Linker(object):
         :param kwargs:
         :type kwargs: dict
         """
-        # set up and update settings
+        # set up and update settings - controls the flow
         self.settings = dict(inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                              inputFilename='WelshGovernmentData21Nov2016.csv',
                              ABpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
                              ABfilename='AB.csv',
                              log='ALP',
+                             limit=0.1,
+                             outname='DataLinking',
+                             outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
                              dropColumns=False,
                              expandSynonyms=True,
                              test=False,
@@ -92,7 +99,7 @@ class Linker(object):
         # relative path when referring to data files
         self.currentDirectory = os.path.dirname(__file__)  # for relative path definitions
 
-        # define containers
+        # define data containers within the object
         self.nExistingUPRN = 0
         self.toLinkAddressData = None
 
@@ -116,7 +123,8 @@ class Linker(object):
             self.log.info('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
         else:
-            self.log.info('Reading in data that need to be linked...')
+            self.log.info('ERROR - should overwrite the method to be suitable for the actual data...')
+            raise NotImplementedError
 
         self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
                                              low_memory=False)
@@ -209,9 +217,9 @@ class Linker(object):
                                          'LOCALITY': 'locality',
                                          'BUILDING_NAME': 'BuildingName'}, inplace=True)
 
-        # # # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
-        msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
-        self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
+        # # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
+        # msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
+        # self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
@@ -312,11 +320,12 @@ class Linker(object):
 
         :return:
         """
-        LondonLocalities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'localities.csv')['locality']
+        LondonLocalities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'localities.csv')[
+            'locality']
 
         for LondonLocality in LondonLocalities:
             if parsed['StreetName'].strip().endswith(LondonLocality):
-                parsed['LondonLocalityality'] = LondonLocality
+                parsed['Locality'] = LondonLocality
                 # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
                 # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK (3 parts to remove)
                 parsed['StreetName'] = parsed['StreetName'].strip()[:-len(LondonLocality)].strip()
@@ -445,22 +454,22 @@ class Linker(object):
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
 
-        # if SubBuilding name or organisation name is empty add dummy
-        msk = self.toLinkAddressData['SubBuildingName'].isnull()
-        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
+        # # if SubBuilding name or organisation name is empty add dummy
+        # msk = self.toLinkAddressData['SubBuildingName'].isnull()
+        # self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
         columnsToAddEmptyStrings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
         self.toLinkAddressData[columnsToAddEmptyStrings].fillna('', inplace=True)
 
         # save for inspection
-        self.toLinkAddressData.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/ParsedAddresses.csv',
+        self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
                                       index=False)
 
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
 
-    def link_addresses_with_postcode(self, toMatch, limit=0.1, buildingNumberBlocking=True):
+    def link_addresses_with_postcode(self, toMatch, buildingNumberBlocking=True):
         """
         Link toMatch data to the AddressBase source information.
 
@@ -473,9 +482,6 @@ class Linker(object):
 
         :param toMatch: dataframe holding the address information that is to be matched against a source
         :type toMatch: pandas.DataFrame
-        :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
-                      Affects for example the false positive rate.
-        :type limit: float
         :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
         :type buildingNumberBlocking: bool
 
@@ -502,7 +508,7 @@ class Linker(object):
         compare = recordlinkage.Compare(pairs, self.addressBase, toMatch, batch=True)
 
         # set rules for standard residential addresses
-        compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl', missing_value=0.6)
+        # compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl', missing_value=0.6)
         compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl', missing_value=0.6)
         compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl',
                        missing_value=0.5)
@@ -536,7 +542,7 @@ class Linker(object):
         # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
         compare.vectors['pao_dl'] *= 5.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flat_dl'] *= 3.
+        compare.vectors['flatw_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['pao_suffix_dl'] *= 2.
 
@@ -544,7 +550,7 @@ class Linker(object):
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
 
         # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
-        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > limit]
+        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
@@ -571,7 +577,7 @@ class Linker(object):
 
         return matches, missing
 
-    def link_addresses_without_postcode(self, toMatch, limit=0.7, buildingNumberBlocking=True):
+    def link_addresses_without_postcode(self, toMatch, buildingNumberBlocking=True):
         """
         Link toMatch data to the AddressBase source information.
         Uses blocking to speed up the matching.
@@ -583,9 +589,6 @@ class Linker(object):
 
         :param toMatch: dataframe holding the address information that is to be matched against a source
         :type toMatch: pandas.DataFrame
-        :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
-                      Affects for example the false positive rate.
-        :type limit: float
         :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
         :type buildingNumberBlocking: bool
 
@@ -627,7 +630,7 @@ class Linker(object):
         compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
 
         # set rules for organisations such as care homes and similar type addresses
-        compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
+        # compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
         compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
         compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl')
         compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
@@ -642,7 +645,7 @@ class Linker(object):
         compare.vectors['town_dl'] *= 7.
         compare.vectors['organisation_dl'] *= 4.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flat_dl'] *= 3.
+        compare.vectors['flatw_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['locality_dl'] *= 2.
 
@@ -650,7 +653,7 @@ class Linker(object):
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
 
         # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
-        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > limit]
+        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
@@ -691,44 +694,32 @@ class Linker(object):
 
         return data
 
-    def confirm_results(self, df):
+    def _run_test(self):
         """
 
         :param df:
         :return:
         """
-        # find those without match
-        IDs = df['ID'].values
-        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
-        missing = self.toLinkAddressData.loc[missing_msk]
-        self.log.info('{} addresses were not linked...'.format(len(missing.index)))
+        # pandas test whether the UPRNs are the same, ignore type and names, but require exact match
+        pdt.assert_series_equal(self.matched['UPRN_prev'], self.matched['UPRN'],
+                                check_dtype=False, check_exact=True, check_names=False)
 
-        nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
-        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
-
-        # find those with UPRN attached earlier and check which are the same
-        msk = df['UPRN_prev'] == df['UPRN']
-        matches = df.loc[msk]
-        self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
-        pdt.assert_series_equal(df['UPRN_prev'], df['UPRN'])
-
-
-    def check_performance(self, df,
-                          prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
+    def check_performance(self):
         """
         Check performance - calculate the match rate.
 
         :param df: data frame with linked addresses and similarity metrics
         :type df: pandas.DataFrame
-        :param prefix: prefix name for the output files
-        :type prefix: str
         :param path: location where to store the output files
         :type path: str
 
         :return: None
         """
+        prefix = self.settings['outname']
+        path = self.settings['outpath']
+
         # count the number of matches and number of edge cases
-        nmatched = len(df.index)
+        nmatched = len(self.matched.index)
         total = len(self.toLinkAddressData.index)
 
         # how many were matched
@@ -736,37 +727,37 @@ class Linker(object):
         self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
 
         # save matched
-        df.to_csv(path + prefix + '_matched.csv', index=False)
+        self.matched.to_csv(path + prefix + '_matched.csv', index=False)
 
         # find those without match
-        IDs = df['ID'].values
+        IDs = self.matched['ID'].values
         missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
         missing = self.toLinkAddressData.loc[missing_msk]
         missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
         self.log.info('{} addresses were not linked...'.format(len(missing.index)))
 
-        nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
+        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
         self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
 
         # find those with UPRN attached earlier and check which are the same
-        msk = df['UPRN_prev'] == df['UPRN']
-        matches = df.loc[msk]
+        msk = self.matched['UPRN_prev'] == self.matched['UPRN']
+        matches = self.matched.loc[msk]
         matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
         self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
 
         # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = df['UPRN_prev'].notnull()
-        notnulls = df.loc[msk]
+        msk = self.matched['UPRN_prev'].notnull()
+        notnulls = self.matched.loc[msk]
         nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
         nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
         self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
 
         # find all newly linked
-        newUPRNs = df.loc[~msk]
+        newUPRNs = self.matched.loc[~msk]
         newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
         self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
 
-    def run_test(self):
+    def run_all(self):
         """
         Run all required steps.
 
@@ -803,7 +794,8 @@ class Linker(object):
                 if len(missing1a.index) > 0:
                     # todo: fix this - should test that missing1a actually exists (complete rewrite needed when refactoring)
                     withPCnoHouseNumber = withPCnoHouseNumber.append(missing1a)
-                matches1b, missing1b = self.link_addresses_with_postcode(withPCnoHouseNumber, buildingNumberBlocking=False)
+                matches1b, missing1b = self.link_addresses_with_postcode(withPCnoHouseNumber,
+                                                                         buildingNumberBlocking=False)
                 m1b = True
             ms1 = True
         if len(noPC.index) > 0:
@@ -860,18 +852,21 @@ class Linker(object):
         elif m2:
             matched = matched2
 
+        self.matched = matched
+
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
+        self.log.info('Checking Performance...')
+        self.check_performance()
+
         if self.settings['test']:
-            self.confirm_results(matched)
-        else:
-            self.log.info('Checking Performance...')
-            self.check_performance(matched)
+            self.log.info('Running test...')
+            self._run_test()
 
         print('Finished running')
 
 
 if __name__ == "__main__":
-    linker = Linker(**dict(test=True))
-    linker.run_test()
+    linker = AddressLinker(**dict(test=True))
+    linker.run_all()
