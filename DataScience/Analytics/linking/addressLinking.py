@@ -19,7 +19,7 @@ Requirements
 :requires: pandas ( 0.19.1)
 :requires: numpy (1.11.2)
 :requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
-:requires: recordlinkage (0.7.2: https://pypi.python.org/pypi/recordlinkage/)
+:requires: recordlinkage (0.5: https://pypi.python.org/pypi/recordlinkage/)
 
 
 Author
@@ -42,7 +42,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
-import recordlinkage
+import recordlinkage as rl
 from Analytics.linking import logger
 from ProbabilisticParser import parser
 from tqdm import tqdm
@@ -204,7 +204,7 @@ class AddressLinker:
         # drop some that are not needed
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
 
-        # split postcode to in and outcode, useful in different ways of performing blocking
+        # split postcode to in and outcode - useful for doing blocking in different ways
         pcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
         pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
         self.addressBase = pd.concat([self.addressBase, pcodes], axis=1)
@@ -217,9 +217,9 @@ class AddressLinker:
                                          'LOCALITY': 'locality',
                                          'BUILDING_NAME': 'BuildingName'}, inplace=True)
 
-        # # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
-        # msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
-        # self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
+        # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
+        msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
+        self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
@@ -454,13 +454,13 @@ class AddressLinker:
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
 
-        # # if SubBuilding name or organisation name is empty add dummy
-        # msk = self.toLinkAddressData['SubBuildingName'].isnull()
-        # self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
+        # if SubBuilding name or organisation name is empty add dummy
+        msk = self.toLinkAddressData['SubBuildingName'].isnull()
+        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
-        columnsToAddEmptyStrings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
-        self.toLinkAddressData[columnsToAddEmptyStrings].fillna('', inplace=True)
+        columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
+        self.toLinkAddressData[columns_to_add_empty_strings].fillna('', inplace=True)
 
         # save for inspection
         self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
@@ -489,7 +489,7 @@ class AddressLinker:
         :rtype: pandas.DataFrame
         """
         # create pairs
-        pcl = recordlinkage.Pairs(toMatch, self.addressBase)
+        pcl = rl.Pairs(toMatch, self.addressBase)
 
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
@@ -505,18 +505,23 @@ class AddressLinker:
 
         # compare the two data sets
         # the idea is to build evidence to support linking, hence some fields are compared multiple times
-        compare = recordlinkage.Compare(pairs, self.addressBase, toMatch, batch=True)
+        compare = rl.Compare(pairs, self.addressBase, toMatch, batch=True)
 
         # set rules for standard residential addresses
-        # compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl', missing_value=0.6)
-        compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl', missing_value=0.6)
+        compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl',
+                       missing_value=0.6)
+        compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl',
+                       missing_value=0.6)
         compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl',
                        missing_value=0.5)
         compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl',
                        missing_value=0.5)
-        compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
-        compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
-        compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl', missing_value=0.5)
+        compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl',
+                       missing_value=0.1)
+        compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl',
+                       missing_value=0.2)
+        compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl',
+                       missing_value=0.5)
 
         # use to separate e.g. 55A from 55
         compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl',
@@ -542,7 +547,7 @@ class AddressLinker:
         # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
         compare.vectors['pao_dl'] *= 5.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flatw_dl'] *= 3.
+        compare.vectors['flat_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['pao_suffix_dl'] *= 2.
 
@@ -596,7 +601,7 @@ class AddressLinker:
         :rtype: pandas.DataFrame
         """
         # create pairs
-        pcl = recordlinkage.Pairs(toMatch, self.addressBase)
+        pcl = rl.Pairs(toMatch, self.addressBase)
 
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         if buildingNumberBlocking:
@@ -612,7 +617,7 @@ class AddressLinker:
 
         # compare the two data sets - use different metrics for the comparison
         # the idea is to build evidence to support linking, hence some fields are compared multiple times
-        compare = recordlinkage.Compare(pairs, self.addressBase, toMatch, batch=True)
+        compare = rl.Compare(pairs, self.addressBase, toMatch, batch=True)
 
         compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
         compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
@@ -645,7 +650,7 @@ class AddressLinker:
         compare.vectors['town_dl'] *= 7.
         compare.vectors['organisation_dl'] *= 4.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flatw_dl'] *= 3.
+        compare.vectors['flat_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['locality_dl'] *= 2.
 
