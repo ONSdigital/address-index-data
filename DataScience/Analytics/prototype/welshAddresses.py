@@ -25,11 +25,8 @@ After all requirements are satisfied, the script can be invoked using CPython in
 Requirements
 ------------
 
-:requires: ProbabilisticParser (a CRF model specifically build for ONS)
 :requires: pandas
-:requires: numpy
-:requires: tqdm (https://github.com/tqdm/tqdm)
-:requires: recordlinkage (https://pypi.python.org/pypi/recordlinkage/)
+:requires: addressLinking (and all the requirements within it)
 
 
 Author
@@ -41,8 +38,8 @@ Author
 Version
 -------
 
-:version: 0.4
-:date: 23-Nov-2016
+:version: 0.1
+:date: 29-Nov-2016
 
 
 Results
@@ -62,15 +59,9 @@ import pandas as pd
 
 class WelshAddressLinker(addressLinking.AddressLinker):
 
-    def load_data(self,
-                 inputFilename='WelshGovernmentData21Nov2016.csv', inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',):
+    def load_data(self):
         """
-        Read in the Welsh address test data.
-
-        :param filename: name of the CSV file holding the data
-        :type filename: str
-        :param path: location of the test data
-        :type path: str
+        Read in the Welsh address test data. Overwrites the method in the AddressLinker.
         """
         self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
                                              low_memory=False)
@@ -100,64 +91,59 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         # set index name - needed later for merging / duplicate removal
         self.toLinkAddressData.index.name = 'TestData_Index'
 
-
-    def check_performance(self, df, linkedData,
-                         prefix='WelshGov', path='/Users/saminiemi/Projects/ONS/AddressIndex/data/'):
+    def check_performance(self):
         """
-        Check performance - calculate the match rate.
-
-        :param df: data frame with linked addresses and similarity metrics
-        :type df: pandas.DataFrame
-        :param linkedData: input data, used to identify e.g. those addresses not linked
-        :type linkedData: pandas.DataFrame
-        :param prefix: prefix name for the output files
-        :type prefix: str
-        :param path: location where to store the output files
-        :type path: str
-
-        :return: None
+        Check performance - calculate the match rate using the existing UPRNs. Write the results to a file.
         """
+        prefix = self.settings['outname']
+        path = self.settings['outpath']
+
         # count the number of matches and number of edge cases
-        nmatched = len(df.index)
-        total = len(linkedData.index)
+        nmatched = len(self.matched.index)
+        total = len(self.toLinkAddressData.index)
 
         # how many were matched
-        print('Matched', nmatched, 'entries')
-        print('Total Match Fraction', round(nmatched / total * 100., 1), 'per cent')
+        self.log.info('Matched {} entries'.format(nmatched))
+        self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
 
         # save matched
-        df.to_csv(path + prefix + '_matched.csv', index=False)
+        self.matched.to_csv(path + prefix + '_matched.csv', index=False)
 
         # find those without match
-        IDs = df['ID'].values
-        missing_msk = ~linkedData['ID'].isin(IDs)
-        missing = linkedData.loc[missing_msk]
+        IDs = self.matched['ID'].values
+        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
+        missing = self.toLinkAddressData.loc[missing_msk]
         missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
-        print(len(missing.index), 'addresses were not linked...\n')
+        self.log.info('{} addresses were not linked...'.format(len(missing.index)))
 
-        nOldUPRNs = len(df.loc[df['UPRN_prev'].notnull()].index)
-        print(nOldUPRNs, 'previous UPRNs in the matched data...')
+        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
+        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
 
         # find those with UPRN attached earlier and check which are the same
-        msk = df['UPRN_prev'] == df['UPRN']
-        matches = df.loc[msk]
+        msk = self.matched['UPRN_prev'] == self.matched['UPRN']
+        matches = self.matched.loc[msk]
         matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
-        print(len(matches.index), 'addresses have the same UPRN as earlier...')
+        self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
 
         # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = df['UPRN_prev'].notnull()
-        notnulls = df.loc[msk]
+        msk = self.matched['UPRN_prev'].notnull()
+        notnulls = self.matched.loc[msk]
         nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
         nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
-        print(len(nonmatches.index), 'addresses have a different UPRN as earlier...')
+        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
 
         # find all newly linked
-        newUPRNs = df.loc[~msk]
+        newUPRNs = self.matched.loc[~msk]
         newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
-        print(len(newUPRNs.index), 'more addresses with UPRN...')
+        self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
 
 
 if __name__ == "__main__":
-    linker = WelshAddressLinker(**dict(test=False))
+    settings = dict(inputFilename='WelshGovernmentData21Nov2016.csv',
+                    inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
+                    outname='WelshGov',
+                    outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/')
+
+    linker = WelshAddressLinker(**settings)
     linker.run_all()
 

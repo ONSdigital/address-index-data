@@ -32,7 +32,7 @@ Version
 -------
 
 :version: 0.1
-:date: 28-Nov-2016
+:date: 29-Nov-2016
 """
 import datetime
 import re
@@ -53,33 +53,50 @@ pd.options.mode.chained_assignment = None
 
 class AddressLinker:
     """
+    This class forms the backbone of the Address Linking prototype developed for ONS
+    as a part of the Address Index project.
 
-    :param verbose: whether or not output information
-    :type verbose: bool
-    :param test: whether or not to use test data
-    :type test: bool
-    :param expandSynonyms: whether to expand common synonyms or not
-    :type expandSynonyms: bool
-    :param ABpath: location of the AddressBase combined data file
-    :type ABpath: str
-    :param ABfilename: name of the file containing modified AddressBase
-    :type ABfilename: str
-    :param inputFilename: name of the CSV file holding the data
-    :type inputFilename: str
-    :param inputPath: location of the test data
-    :type inputPath: str
-    :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
-                  Affects for example the false positive rate.
-    :type limit: float
-
-
+    The class implements methods to read in AddressBase, to normalise and parse address strings,
+    link input data against AddressBase, and finally to merge the test data with the AddressBase
+    information. It should be noted that the load_data method should be overwritten and made
+    appropriate for each input test file which maybe be in different formats. In addition, the
+    check_performance method should also be overwritten because some datasets may or may not
+    contain already attached UPRNs and different confidences may have been attached to these UPRNs.
     """
 
     def __init__(self, **kwargs):
         """
+        Class constructor.
 
-        :param kwargs:
+        :param kwargs: arguments to control the program flow and set paths and filenames.
         :type kwargs: dict
+
+        :Keyword Arguments:
+            * :param inputPath: location of the test data
+            * :type inputPath: str
+            * :param inputFilename: name of the CSV file holding the data
+            * :type inputFilename: str
+            * :param ABpath: location of the AddressBase combined data file
+            * :type ABpath: str
+            * :param ABfilename: name of the file containing modified AddressBase
+            * :type ABfilename: str
+            * :param log: name of the log file
+            * :type log: str
+            * :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
+                          Affects for example the false positive rate.
+            * :type limit: float
+            * :param outname: a string that is prepended to the output data
+            * :type outname: str
+            * :param outpath: location to which to store the output data
+            * :type outpath: str
+            * :param dropColumns: whether or not to drop extra columns that are created during the linking
+            * :type dropColumns: bool
+            * :param expandSynonyms: whether to expand common synonyms or not
+            * :type expandSynonyms: bool
+            * :param verbose: whether or not output information
+            * :type verbose: bool
+            * :param test: whether or not to use test data
+            * :type test: bool
         """
         # set up and update settings - controls the flow
         self.settings = dict(inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
@@ -109,51 +126,50 @@ class AddressLinker:
         self.log.info('A new Linking Run Started with the following settings')
         self.log.info(self.settings)
 
-        # read in AddressBase
-        start = time.clock()
-        self._load_addressbase()
-        stop = time.clock()
-        self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
-
     def load_data(self):
         """
-        Read in the data that need to be linked.
+        Read in the data that need to be linked. This method implements only the test file reading and raises
+        NotImplementedError otherwise. It is assumed that each input file will require slightly different reading
+        method and therefore this method is overwritten after inheritance.
+
+        The implemented load_data method needs to create a Pandas DataFrame self.toLinkAddressData with at least
+        one column named ADDRESS. The index of this DataFrame should be called 'TestData_Index' as it is used
+        in the class to join the information with AddressBase information.
         """
         if self.settings['test']:
             self.log.info('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
+
+            self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
+                                                 low_memory=False)
+
+            # fill NaNs with empty strings so that we can form a single address string
+            self.toLinkAddressData.fillna('', inplace=True)
+            self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Building'] + ' ' + \
+                                                self.toLinkAddressData['Street'] + ' ' + \
+                                                self.toLinkAddressData['Locality'] + ' ' + \
+                                                self.toLinkAddressData['Town'] + ' ' + \
+                                                self.toLinkAddressData['County'] + ' ' + \
+                                                self.toLinkAddressData['Postcode']
+
+            # rename postcode to postcode_orig and locality to locality_orig
+            self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
+
+            # convert original UPRN to numeric
+            self.toLinkAddressData['UPRN_prev'] = self.toLinkAddressData['UPRN_prev'].convert_objects(convert_numeric=True)
+
+            if self.settings['verbose']:
+                self.log.info(self.toLinkAddressData.info())
+
+            self.log.info('Found {} addresses...'.format(len(self.toLinkAddressData.index)))
+            self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_prev'].notnull()].index)
+            self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
+
+            # set index name - needed later for merging / duplicate removal
+            self.toLinkAddressData.index.name = 'TestData_Index'
         else:
-            self.log.info('Reading Input...')
-            # self.log.info('ERROR - should overwrite the method to be suitable for the actual data...')
-            # raise NotImplementedError
-
-        self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
-                                             low_memory=False)
-
-        # fill NaNs with empty strings so that we can form a single address string
-        self.toLinkAddressData.fillna('', inplace=True)
-        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Building'] + ' ' + \
-                                            self.toLinkAddressData['Street'] + ' ' + \
-                                            self.toLinkAddressData['Locality'] + ' ' + \
-                                            self.toLinkAddressData['Town'] + ' ' + \
-                                            self.toLinkAddressData['County'] + ' ' + \
-                                            self.toLinkAddressData['Postcode']
-
-        # rename postcode to postcode_orig and locality to locality_orig
-        self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
-
-        # convert original UPRN to numeric
-        self.toLinkAddressData['UPRN_prev'] = self.toLinkAddressData['UPRN_prev'].convert_objects(convert_numeric=True)
-
-        if self.settings['verbose']:
-            self.log.info(self.toLinkAddressData.info())
-
-        self.log.info('Found {} addresses...'.format(len(self.toLinkAddressData.index)))
-        self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_prev'].notnull()].index)
-        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
-
-        # set index name - needed later for merging / duplicate removal
-        self.toLinkAddressData.index.name = 'TestData_Index'
+            self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
+            raise NotImplementedError
 
     def _load_addressbase(self):
         """
@@ -228,10 +244,11 @@ class AddressLinker:
     @staticmethod
     def _extract_postcode(string):
         """
-        Extract a postcode from address string. Uses rather loose regular expression, so
-        may get some strings that are not completely valid postcodes.
+        Extract a postcode from address string. Uses a rather loose regular expression, so
+        may get some strings that are not completely valid postcodes. Should not be used to validate
+        whether a postcode conforms to the UK postcode standards.
 
-        The regular expression is taken from:
+        The regular expression was taken from:
         http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
 
         :param string: string to be parsed
@@ -319,12 +336,13 @@ class AddressLinker:
         :param parsed: a dictionary containing the address tokens that have been parsed
         :type parsed: dict
 
-        :return:
+        :return: a dictionary containing the address tokens with updated information
+        :rtype: dict
         """
-        LondonLocalities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'localities.csv')[
-            'locality']
+        london_localities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') +
+                                       'localities.csv')['locality']
 
-        for LondonLocality in LondonLocalities:
+        for LondonLocality in london_localities:
             if parsed['StreetName'].strip().endswith(LondonLocality):
                 parsed['Locality'] = LondonLocality
                 # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
@@ -335,7 +353,9 @@ class AddressLinker:
 
     def parse_input_addresses_to_tokens(self):
         """
-        Parses the address information from the input data.
+        Parses the address information from the input data. Uses a combination of a probabilistic Conditional
+        Random Fields model trained on PAF data and some rules. Can perform address string normalisation i.e.
+        remove punctuation and e.g. expand synonyms.
         """
         # normalise data so that the parser has the best possible chance of getting things right
         self._normalize_input_data()
@@ -382,7 +402,7 @@ class AddressLinker:
                 parsed['Postcode'] = parsed['Postcode'].upper()
 
             # if Hackney etc. in StreetName then remove and move to locality if town name contains London
-            # todo: probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
+            # Probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
             if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
                 if 'LONDON' in parsed['TownName']:
                     parsed = self._fix_london_boroughs(parsed)
@@ -702,9 +722,9 @@ class AddressLinker:
 
     def _run_test(self):
         """
-
-        :param df:
-        :return:
+        Run a simple test with a few address that are matched against a mini version of AddressBase. Exercises
+        the complete chain from reading in, normalising, parsing, and finally linking. Asserts that the linked
+        addresses were correctly linked to counterparts in the mini version of AB.
         """
         # pandas test whether the UPRNs are the same, ignore type and names, but require exact match
         pdt.assert_series_equal(self.matched['UPRN_prev'], self.matched['UPRN'],
@@ -712,56 +732,56 @@ class AddressLinker:
 
     def check_performance(self):
         """
-        Check performance - calculate the match rate.
-
-        :param df: data frame with linked addresses and similarity metrics
-        :type df: pandas.DataFrame
-        :param path: location where to store the output files
-        :type path: str
-
-        :return: None
+        Check performance. Note that the method is only applicable to the test data. It is expected that
+        the load_data method is tailored for each test data separately and therefore the check_performance
+        method must also be overwritten to be applicable to the data. This is necessary as some datasets
+        do not contain UPRNs i.e. the truth.
         """
-        prefix = self.settings['outname']
-        path = self.settings['outpath']
+        if self.settings['test']:
+            prefix = self.settings['outname']
+            path = self.settings['outpath']
 
-        # count the number of matches and number of edge cases
-        nmatched = len(self.matched.index)
-        total = len(self.toLinkAddressData.index)
+            # count the number of matches and number of edge cases
+            nmatched = len(self.matched.index)
+            total = len(self.toLinkAddressData.index)
 
-        # how many were matched
-        self.log.info('Matched {} entries'.format(nmatched))
-        self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
+            # how many were matched
+            self.log.info('Matched {} entries'.format(nmatched))
+            self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
 
-        # save matched
-        self.matched.to_csv(path + prefix + '_matched.csv', index=False)
+            # save matched
+            self.matched.to_csv(path + prefix + '_matched.csv', index=False)
 
-        # find those without match
-        IDs = self.matched['ID'].values
-        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
-        missing = self.toLinkAddressData.loc[missing_msk]
-        missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
-        self.log.info('{} addresses were not linked...'.format(len(missing.index)))
+            # find those without match
+            IDs = self.matched['ID'].values
+            missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
+            missing = self.toLinkAddressData.loc[missing_msk]
+            missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
+            self.log.info('{} addresses were not linked...'.format(len(missing.index)))
 
-        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
-        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
+            nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
+            self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
 
-        # find those with UPRN attached earlier and check which are the same
-        msk = self.matched['UPRN_prev'] == self.matched['UPRN']
-        matches = self.matched.loc[msk]
-        matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
-        self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
+            # find those with UPRN attached earlier and check which are the same
+            msk = self.matched['UPRN_prev'] == self.matched['UPRN']
+            matches = self.matched.loc[msk]
+            matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
+            self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
 
-        # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = self.matched['UPRN_prev'].notnull()
-        notnulls = self.matched.loc[msk]
-        nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
-        nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
-        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
+            # find those that has a previous UPRN but does not mach a new one (filter out nulls)
+            msk = self.matched['UPRN_prev'].notnull()
+            notnulls = self.matched.loc[msk]
+            nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
+            nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
+            self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
 
-        # find all newly linked
-        newUPRNs = self.matched.loc[~msk]
-        newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
-        self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+            # find all newly linked
+            newUPRNs = self.matched.loc[~msk]
+            newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
+            self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+        else:
+            self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
+            raise NotImplementedError
 
     def run_all(self):
         """
@@ -769,9 +789,15 @@ class AddressLinker:
 
         :return: None
         """
-
+        # start bu reading in the test data
         start = time.clock()
         self.load_data()
+        stop = time.clock()
+        self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
+
+        # read in AddressBase
+        start = time.clock()
+        self._load_addressbase()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
@@ -874,5 +900,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=False))
+    linker = AddressLinker(**dict(test=True))
     linker.run_all()
