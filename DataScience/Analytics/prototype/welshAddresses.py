@@ -58,7 +58,9 @@ import pandas as pd
 
 
 class WelshAddressLinker(addressLinking.AddressLinker):
-
+    """
+    Address Linker for Welsh Test data. Inherits the AddressLinker and overwrites the load_data method.
+    """
     def load_data(self):
         """
         Read in the Welsh address test data. Overwrites the method in the AddressLinker.
@@ -76,66 +78,10 @@ class WelshAddressLinker(addressLinking.AddressLinker):
                                             self.toLinkAddressData['Postcode']
 
         # rename postcode to postcode_orig and locality to locality_orig
-        self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
+        self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_old'}, inplace=True)
 
         # convert original UPRN to numeric
-        self.toLinkAddressData['UPRN_prev'] = self.toLinkAddressData['UPRN_prev'].convert_objects(convert_numeric=True)
-
-        if self.settings['verbose']:
-            self.log.info(self.toLinkAddressData.info())
-
-        self.log.info('Found {} addresses...'.format(len(self.toLinkAddressData.index)))
-        self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_prev'].notnull()].index)
-        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
-
-        # set index name - needed later for merging / duplicate removal
-        self.toLinkAddressData.index.name = 'TestData_Index'
-
-    def check_performance(self):
-        """
-        Check performance - calculate the match rate using the existing UPRNs. Write the results to a file.
-        """
-        prefix = self.settings['outname']
-        path = self.settings['outpath']
-
-        # count the number of matches and number of edge cases
-        nmatched = len(self.matched.index)
-        total = len(self.toLinkAddressData.index)
-
-        # how many were matched
-        self.log.info('Matched {} entries'.format(nmatched))
-        self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
-
-        # save matched
-        self.matched.to_csv(path + prefix + '_matched.csv', index=False)
-
-        # find those without match
-        IDs = self.matched['ID'].values
-        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
-        missing = self.toLinkAddressData.loc[missing_msk]
-        missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
-        self.log.info('{} addresses were not linked...'.format(len(missing.index)))
-
-        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
-        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
-
-        # find those with UPRN attached earlier and check which are the same
-        msk = self.matched['UPRN_prev'] == self.matched['UPRN']
-        matches = self.matched.loc[msk]
-        matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
-        self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
-
-        # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = self.matched['UPRN_prev'].notnull()
-        notnulls = self.matched.loc[msk]
-        nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
-        nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
-        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
-
-        # find all newly linked
-        newUPRNs = self.matched.loc[~msk]
-        newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
-        self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+        self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(convert_numeric=True)
 
 
 if __name__ == "__main__":

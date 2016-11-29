@@ -183,6 +183,7 @@ class AddressLinker:
         if self.settings['test']:
             self.log.info('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
+            self.settings['outname'] = 'DataLinkingTest'
 
             # update results so that can be filtered out from the database
             self.results['name'] = 'TEST'
@@ -839,7 +840,7 @@ class AddressLinker:
         mne = []
         matchf = []
         fpf = []
-        # print out results for each class separately if possible
+        # check results for each class separately if possible
         if 'Category' in self.matched.columns:
             for category in sorted(set(self.matched['Category'].values)):
                 msk = (self.matched['UPRN'] == self.matched['UPRN_old']) & (self.matched['Category'] == category)
@@ -1002,8 +1003,6 @@ class AddressLinker:
 
         self.log.info('Checking Performance...')
         self.check_performance()
-
-        print(self.results)
 
         self.log.info('Storing the results...')
         self.store_results()
