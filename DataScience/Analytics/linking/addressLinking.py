@@ -917,7 +917,7 @@ class AddressLinker:
                 fp = len(self.matched.loc[(self.matched['UPRN'] != self.matched['UPRN_old']) &
                                           (self.matched['Category'] == category)].index)
 
-                self.log.ifo('Results for category {}'.format(category))
+                self.log.info('Results for category {}'.format(category))
                 self.log.info('Correctly Matched: {}'.format(nmatched))
                 self.log.info('Match Fraction: {}'.format(nmatched / outof * 100.))
                 self.log.info('False Positives: {}'.format(fp))
