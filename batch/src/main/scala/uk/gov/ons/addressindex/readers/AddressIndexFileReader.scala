@@ -2,6 +2,7 @@ package uk.gov.ons.addressindex.readers
 
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types.StructType
 import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.utils.SparkProvider
 
@@ -26,110 +27,83 @@ object AddressIndexFileReader {
     *
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.postcodeAddressFileSchema)
-    .option("header", "true") // Use first line of all files as header
-    .load(resolveAbsolutePath(pathToCsv))
+  def readDeliveryPointCSV(): DataFrame = getDataFrame(pathToCsv, CSVSchemas.postcodeAddressFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the blpu data from CSV
     */
-  def readBlpuCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.blpuFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToBlpuCSV))
+  def readBlpuCSV(): DataFrame = getDataFrame(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the classification data from CSV
     */
-  def readClassificationCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.classificationFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToClassificationCSV))
+  def readClassificationCSV(): DataFrame = getDataFrame(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the crossref data from CSV
     */
-  def readCrossrefCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.crossrefFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToCrossrefCSV))
+  def readCrossrefCSV(): DataFrame = getDataFrame(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the lpi data from CSV
     */
-  def readLpiCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.lpiFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToLpiCSV))
+  def readLpiCSV(): DataFrame = getDataFrame(pathToLpiCSV, CSVSchemas.lpiFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the organisation data from CSV
     */
-  def readOrganisationCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.organisationFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToOrganisationCSV))
+  def readOrganisationCSV(): DataFrame = getDataFrame(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street data from CSV
     */
-  def readStreetCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.streetFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToStreetCSV))
+  def readStreetCSV(): DataFrame = getDataFrame(pathToStreetCSV, CSVSchemas.streetFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street-descriptor data from CSV
     */
-  def readStreetDescriptorCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.streetDescriptorFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToStreetDescriptorCSV))
+  def readStreetDescriptorCSV(): DataFrame = getDataFrame(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the successor data from CSV
     */
-  def readSuccessorCSV(): DataFrame = SparkProvider.sqlContext.read
-    .format("com.databricks.spark.csv")
-    .schema(CSVSchemas.successorFileSchema)
-    .option("header", "true")
-    .load(resolveAbsolutePath(pathToSuccessorCSV))
+  def readSuccessorCSV(): DataFrame = getDataFrame(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
 
-  private def resolveAbsolutePath(path: String) =
+  private def getDataFrame(path: String, schema: StructType) =
+    SparkProvider.sqlContext.read
+      .format("com.databricks.spark.csv")
+      .schema(schema)
+      .option("header", "true")
+      .load(resolveAbsolutePath(path))
+
+  private def resolveAbsolutePath(path: String) = {
+
+    val currentDirectory = new java.io.File(".").getCanonicalPath
+
     if (path.startsWith("hdfs://")) path
     else {
       if (System.getProperty("os.name").toLowerCase.startsWith("windows")) {
-        val currentDirectory = new java.io.File(".").getCanonicalPath
-        s"$currentDirectory/$path"
+        currentDirectory.concat(s"/$path")
       }
       else {
-        val currentDirectory = new java.io.File(".").getCanonicalPath
-        s"file://$currentDirectory/$path"
+        currentDirectory.concat(s"file://$path")
       }
     }
+  }
 }
