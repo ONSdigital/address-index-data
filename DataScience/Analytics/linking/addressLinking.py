@@ -20,6 +20,7 @@ Requirements
 :requires: numpy (1.11.2)
 :requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
 :requires: recordlinkage (0.6.0: https://pypi.python.org/pypi/recordlinkage/)
+:requires: matplotlib (1.5.3)
 
 
 Author
@@ -39,9 +40,11 @@ import re
 import time
 import os
 import warnings
+import sqlite3
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
+import matplotlib.pyplot as plt
 import recordlinkage as rl
 from Analytics.linking import logger
 from ProbabilisticParser import parser
@@ -120,11 +123,52 @@ class AddressLinker:
         self.nExistingUPRN = 0
         self.toLinkAddressData = None
 
+        # dictionary container for results - need updating during the processing, mostly in the check_performance
+        self.results = dict(date=datetime.datetime.now().strftime("%Y-%m-%d %H%M%S"),
+                            name=self.settings['outname'],
+                            dataset=self.settings['inputFilename'],
+                            addresses=-1,
+                            linked=-1,
+                            withUPRN=-1,
+                            not_linked=-1,
+                            correct=-1,
+                            fp=-1)
+
         # set up a logger, use date and time as filename
         start_date = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.log = logger.set_up_logger(self.settings['log'] + start_date + '.log')
         self.log.info('A new Linking Run Started with the following settings')
         self.log.info(self.settings)
+
+    def _check_loaded_data(self):
+        """
+        A simple private method to check what the loaded data contains.
+
+        Computes the number of addresses and those with UPRNs attached. Assumes that
+        the old UPRNs are found in UPRN_old column of the dataframe.
+        """
+        if self.settings['verbose']:
+            self.log.info(self.toLinkAddressData.info())
+
+        # count the number of addresses using the index
+        naddresses = len(self.toLinkAddressData.index)
+
+        self.log.info('Found {} addresses...'.format(naddresses))
+        if 'UPRN_old' in self.toLinkAddressData.columns:
+            self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
+        else:
+            self.nExistingUPRN = 0
+
+        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
+
+        self.results['addresses'] = naddresses
+        self.results['withUPRN'] = self.nExistingUPRN
+
+        # set index name - needed later for merging / duplicate removal
+        self.toLinkAddressData.index.name = 'TestData_Index'
+
+        self.results['addresses'] = naddresses
+        self.results['withUPRN'] = self.nExistingUPRN
 
     def load_data(self):
         """
@@ -153,20 +197,10 @@ class AddressLinker:
                                                 self.toLinkAddressData['Postcode']
 
             # rename postcode to postcode_orig and locality to locality_orig
-            self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_prev'}, inplace=True)
+            self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_old'}, inplace=True)
 
             # convert original UPRN to numeric
-            self.toLinkAddressData['UPRN_prev'] = self.toLinkAddressData['UPRN_prev'].convert_objects(convert_numeric=True)
-
-            if self.settings['verbose']:
-                self.log.info(self.toLinkAddressData.info())
-
-            self.log.info('Found {} addresses...'.format(len(self.toLinkAddressData.index)))
-            self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_prev'].notnull()].index)
-            self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
-
-            # set index name - needed later for merging / duplicate removal
-            self.toLinkAddressData.index.name = 'TestData_Index'
+            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(convert_numeric=True)
         else:
             self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
             raise NotImplementedError
@@ -483,6 +517,14 @@ class AddressLinker:
         columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
         self.toLinkAddressData[columns_to_add_empty_strings].fillna('', inplace=True)
 
+        # some funky postcodes, remove these
+        msk = self.toLinkAddressData['postcode_in'] == 'Z1'
+        self.toLinkAddressData.loc[msk, 'postcode_in'] = None
+        self.toLinkAddressData.loc[msk, 'Postcode'] = None
+        msk = self.toLinkAddressData['postcode_in'] == 'Z11'
+        self.toLinkAddressData.loc[msk, 'postcode_in'] = None
+        self.toLinkAddressData.loc[msk, 'Postcode'] = None
+
         # save for inspection
         self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
                                       index=False)
@@ -727,61 +769,124 @@ class AddressLinker:
         addresses were correctly linked to counterparts in the mini version of AB.
         """
         # pandas test whether the UPRNs are the same, ignore type and names, but require exact match
-        pdt.assert_series_equal(self.matched['UPRN_prev'], self.matched['UPRN'],
+        pdt.assert_series_equal(self.matched['UPRN_old'], self.matched['UPRN'],
                                 check_dtype=False, check_exact=True, check_names=False)
 
     def check_performance(self):
         """
-        Check performance. Note that the method is only applicable to the test data. It is expected that
-        the load_data method is tailored for each test data separately and therefore the check_performance
-        method must also be overwritten to be applicable to the data. This is necessary as some datasets
-        do not contain UPRNs i.e. the truth.
+        Check performance.
         """
-        if self.settings['test']:
-            prefix = self.settings['outname']
-            path = self.settings['outpath']
+        prefix = self.settings['outname']
+        path = self.settings['outpath']
 
-            # count the number of matches and number of edge cases
-            nmatched = len(self.matched.index)
-            total = len(self.toLinkAddressData.index)
+        # count the number of matches and number of edge cases
+        nmatched = len(self.matched.index)
+        total = len(self.toLinkAddressData.index)
 
-            # how many were matched
-            self.log.info('Matched {} entries'.format(nmatched))
-            self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
+        # how many were matched
+        self.log.info('Matched {} entries'.format(nmatched))
+        self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
 
-            # save matched
-            self.matched.to_csv(path + prefix + '_matched.csv', index=False)
+        # save matched
+        self.matched.to_csv(path + prefix + '_matched.csv', index=False)
 
-            # find those without match
-            IDs = self.matched['ID'].values
-            missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
-            missing = self.toLinkAddressData.loc[missing_msk]
-            missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
-            self.log.info('{} addresses were not linked...'.format(len(missing.index)))
+        # find those without match
+        IDs = self.matched['ID'].values
+        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
+        missing = self.toLinkAddressData.loc[missing_msk]
+        not_found = len(missing.index)
+        missing.to_csv(path + prefix + '_matched_missing.csv', index=False)
+        self.log.info('{} addresses were not linked...'.format(not_found))
 
-            nOldUPRNs = len(self.matched.loc[self.matched['UPRN_prev'].notnull()].index)
-            self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
+        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_old'].notnull()].index)
+        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
 
-            # find those with UPRN attached earlier and check which are the same
-            msk = self.matched['UPRN_prev'] == self.matched['UPRN']
-            matches = self.matched.loc[msk]
-            matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
-            self.log.info('{} addresses have the same UPRN as earlier...'.format(len(matches.index)))
+        # find those with UPRN attached earlier and check which are the same
+        msk = self.matched['UPRN_old'] == self.matched['UPRN']
+        matches = self.matched.loc[msk]
+        sameUPRNs = len(matches.index)
+        fp = len(self.matched.loc[~msk].index)
+        matches.to_csv(path + prefix + '_sameUPRN.csv', index=False)
+        self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
 
-            # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-            msk = self.matched['UPRN_prev'].notnull()
-            notnulls = self.matched.loc[msk]
-            nonmatches = notnulls.loc[notnulls['UPRN_prev'] != notnulls['UPRN']]
-            nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
-            self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
+        self.log.info('Correctly Matched {}'.format(sameUPRNs))
+        self.log.info('Correctly Matched Fraction {}'.format(round(sameUPRNs / total * 100., 1)))
 
-            # find all newly linked
-            newUPRNs = self.matched.loc[~msk]
-            newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
-            self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+        self.log.info('False Positives {}'.format(fp))
+        self.log.info('False Positive Rate {}'.format(round(fp / total * 100., 1)))
+
+        # find those that has a previous UPRN but does not mach a new one (filter out nulls)
+        msk = self.matched['UPRN_old'].notnull()
+        notnulls = self.matched.loc[msk]
+        nonmatches = notnulls.loc[notnulls['UPRN_old'] != notnulls['UPRN']]
+        nonmatches.to_csv(path + prefix + '_differentUPRN.csv', index=False)
+        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
+
+        # find all newly linked
+        newUPRNs = self.matched.loc[~msk]
+        newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
+        self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+
+        self.settings['linked'] = nmatched
+        self.settings['not_linked'] = not_found
+        self.settings['correct'] = sameUPRNs
+        self.settings['fp'] = fp
+
+        mne = []
+        matchf = []
+        fpf = []
+        # print out results for each class separately if possible
+        if 'Category' in self.matched.columns:
+            for category in sorted(set(self.matched['Category'].values)):
+                msk = (self.matched['UPRN'] == self.matched['UPRN_old']) & (self.matched['Category'] == category)
+                correct = self.matched.loc[msk]
+                nmatched = len(correct.index)
+                outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
+                fp = len(self.matched.loc[(self.matched['UPRN'] != self.matched['UPRN_old']) &
+                                          (self.matched['Category'] == category)].index)
+
+                self.log.ifo('Results for category {}'.format(category))
+                self.log.info('Correctly Matched: {}'.format(nmatched))
+                self.log.info('Match Fraction: {}'.format(nmatched / outof * 100.))
+                self.log.info('False Positives: {}'.format(fp))
+                self.log.info('False Positive Rate: {}'.format(fp / outof * 100., 1))
+
+                mne.append(category)
+                matchf.append((nmatched / outof * 100.))
+                fpf.append(fp / outof * 100.)
         else:
-            self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
-            raise NotImplementedError
+            mne = [self.settings['outname'], ]
+            matchf = [sameUPRNs / total * 100., ]
+            fpf = [fp / total * 100., ]
+
+        # make a simple visualisation
+        x = np.arange(len(mne))
+        plt.figure(figsize=(12, 10))
+
+        width = 0.35
+        p1 = plt.bar(x, matchf, width, color='g')
+        p2 = plt.bar(x + width, fpf, width, color='r')
+        plt.ylabel('Fraction of the Sample')
+        plt.title('Prototype Linking')
+        plt.xticks(x + width, mne, rotation=45)
+        plt.ylim(0, 101)
+        plt.tight_layout()
+        plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
+        plt.close()
+
+    def store_results(self, table='results'):
+        """
+        Stores the results to a SQLite3 database. Appends to the file if it exists.
+
+        :param table: name of the table
+        :type table: str
+
+        :return: None
+        """
+        results = pd.DataFrame.from_records([self.results])
+        connection = self.settings['outpath'] + 'AddressLinkingResults.sqlite'
+        with sqlite3.connect(connection) as cnx:
+            results.to_sql(table, cnx, index=False, if_exists='append')
 
     def run_all(self):
         """
@@ -794,6 +899,8 @@ class AddressLinker:
         self.load_data()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
+
+        self._check_loaded_data()
 
         # read in AddressBase
         start = time.clock()
@@ -891,6 +998,9 @@ class AddressLinker:
 
         self.log.info('Checking Performance...')
         self.check_performance()
+
+        self.log.info('Storing the results...')
+        self.store_results()
 
         if self.settings['test']:
             self.log.info('Running test...')

@@ -1,12 +1,23 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Edge Case Testing
 =====================================
 
 A simple script to test parsing and matching of edge cases - 5k dataset of different types of addresses.
+
 This is a prototype code aimed for experimentation and testing. There are not unit tests.
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
 blocking. As the final solution will likely use ElasticSearch, the aim of this prototype is
-not the highest accuracy but to quickly test different ideas.
+not the highest accuracy but to quickly test different ideas, which can inform the final
+ElasticSearch solution.
+
+
+Running
+-------
+
+After all requirements are satisfied, the script can be invoked using CPython interpreter::
+
+    python edgeCaseAddresses.py
 
 
 Requirements
