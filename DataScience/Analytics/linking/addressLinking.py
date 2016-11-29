@@ -615,7 +615,7 @@ class AddressLinker:
         # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
         compare.vectors['pao_dl'] *= 5.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flat_dl'] *= 3.
+        compare.vectors['flatw_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['pao_suffix_dl'] *= 2.
 
@@ -718,7 +718,7 @@ class AddressLinker:
         compare.vectors['town_dl'] *= 7.
         compare.vectors['organisation_dl'] *= 4.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flat_dl'] *= 3.
+        compare.vectors['flatw_dl'] *= 3.
         compare.vectors['building_name_dl'] *= 3.
         compare.vectors['locality_dl'] *= 2.
 
