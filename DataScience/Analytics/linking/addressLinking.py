@@ -210,14 +210,15 @@ class AddressLinker:
             self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_old'}, inplace=True)
 
             # convert original UPRN to numeric
-            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(convert_numeric=True)
+            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(
+                convert_numeric=True)
         else:
             self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
             raise NotImplementedError
 
     def _load_addressbase(self):
         """
-        Load a compressed version of the full AddressBase file. The information being used
+        A private method to load a compressed version of the full AddressBase file. The information being used
         has been processed from a AB Epoch 39 files provided by ONS.
 
         .. Note: this function modifies the original AB information by e.g. combining different tables. Such
@@ -288,9 +289,10 @@ class AddressLinker:
     @staticmethod
     def _extract_postcode(string):
         """
-        Extract a postcode from address string. Uses a rather loose regular expression, so
-        may get some strings that are not completely valid postcodes. Should not be used to validate
-        whether a postcode conforms to the UK postcode standards.
+        A static private method to extract a postcode from address string.
+
+        Uses a rather loose regular expression, so  may get some strings that are not completely valid postcodes.
+        Should not be used to validate whether a postcode conforms to the UK postcode standards.
 
         The regular expression was taken from:
         http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
@@ -319,9 +321,11 @@ class AddressLinker:
 
     def _normalize_input_data(self):
         """
-        Normalize the address information. Removes white spaces, commas, and backslashes.
-        Can be used to expand common synonyms such as RD or BERKS. Finally parses counties
-        as the an early version of the probabilistic parser was not trained to parser counties.
+        A private method to normalize address information.
+
+        Removes white spaces, commas, and backslashes. Can also be used to expand common synonyms such
+        as RD or BERKS. Finally parses counties as the an early version of the probabilistic parser was
+        not trained to parse counties.
         """
         self.log.info('Normalising input addresses')
 
@@ -376,7 +380,8 @@ class AddressLinker:
 
     def _fix_london_boroughs(self, parsed):
         """
-        A method to address incorrectly parsed London boroughs.
+        A private method to address incorrectly parsed London boroughs.
+
         If the street name contains London borough then move it to locality and remove from the street name.
 
         :param parsed: a dictionary containing the address tokens that have been parsed
@@ -386,7 +391,7 @@ class AddressLinker:
         :rtype: dict
         """
         london_localities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') +
-                                       'localities.csv')['locality']
+                                        'localities.csv')['locality']
 
         for LondonLocality in london_localities:
             if parsed['StreetName'].strip().endswith(LondonLocality):
@@ -399,9 +404,10 @@ class AddressLinker:
 
     def parse_input_addresses_to_tokens(self):
         """
-        Parses the address information from the input data. Uses a combination of a probabilistic Conditional
-        Random Fields model trained on PAF data and some rules. Can perform address string normalisation i.e.
-        remove punctuation and e.g. expand synonyms.
+        Parses the address information from the input data.
+
+        Uses a combination of a probabilistic Conditional Random Fields model trained on PAF data and some rules.
+        Can perform address string normalisation i.e. remove punctuation and e.g. expand synonyms.
         """
         self.log.info('Start parsing address data...')
 
@@ -556,7 +562,6 @@ class AddressLinker:
         postcode_exists = self.toLinkAddressData.loc[~msk]
         no_postcode = self.toLinkAddressData.loc[msk]
 
-
         if len(postcode_exists.index) > 0:
             msk = postcode_exists['BuildingNumber'].isnull()
             postcode_no_building_number = postcode_exists.loc[msk]
@@ -593,7 +598,7 @@ class AddressLinker:
 
     def _link_addresses_with_postcode(self, toMatch, buildingNumberBlocking=True):
         """
-        Link toMatch data to the AddressBase source information.
+        A private method to link toMatch data to the AddressBase source information.
 
         Uses blocking to speed up the matching. This is dangerous for postcodes that have been misspelled
         and will potentially lead to false positives.
@@ -706,7 +711,7 @@ class AddressLinker:
 
     def _link_addresses_without_postcode(self, toMatch, buildingNumberBlocking=True):
         """
-        Link toMatch data to the AddressBase source information.
+        A private method to link toMatch data to the AddressBase source information.
         Uses blocking to speed up the matching.
 
         .. note: the aggressive blocking that uses street name rules out any addresses with a typo in the street name.
@@ -824,9 +829,10 @@ class AddressLinker:
 
     def _run_test(self):
         """
-        Run a simple test with a few address that are matched against a mini version of AddressBase. Exercises
-        the complete chain from reading in, normalising, parsing, and finally linking. Asserts that the linked
-        addresses were correctly linked to counterparts in the mini version of AB.
+        Run a simple test with a few address that are matched against a mini version of AddressBase.
+
+        Exercises the complete chain from reading in, normalising, parsing, and finally linking.
+        Asserts that the linked addresses were correctly linked to counterparts in the mini version of AB.
         """
         self.log.info('Running test...')
 
@@ -837,6 +843,11 @@ class AddressLinker:
     def check_performance(self):
         """
         Check performance.
+
+        Computes the number of linked addresses. If UPRN exists, then calculates the number of
+        false positives and those that were not found by the prototype. Splits the numbers based
+        on category if present in the data. Finally visualises the results using a simple bar
+        chart.
         """
         self.log.info('Checking Performance...')
 
@@ -955,7 +966,7 @@ class AddressLinker:
 
     def run_all(self):
         """
-        Run all required steps.
+        Run all required steps to perform parsing and linking using the prototype.
 
         :return: None
         """
