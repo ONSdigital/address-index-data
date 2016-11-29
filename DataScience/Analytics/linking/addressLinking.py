@@ -719,7 +719,8 @@ class AddressLinker:
         compare.vectors['organisation_dl'] *= 4.
         compare.vectors['sao_number_dl'] *= 4.
         compare.vectors['flatw_dl'] *= 3.
-        compare.vectors['building_name_dl'] *= 3.
+        if buildingNumberBlocking:
+            compare.vectors['building_name_dl'] *= 3.
         compare.vectors['locality_dl'] *= 2.
 
         # add sum of the components to the comparison vectors dataframe
@@ -946,10 +947,10 @@ class AddressLinker:
             msk = noPC['BuildingNumber'].isnull()
             noPCnoHouseNumber = noPC.loc[msk]
             noPCHouseNumber = noPC.loc[~msk]
-            if len(noPCnoHouseNumber) > 0:
+            if len(noPCHouseNumber.index) > 0:
                 matches2a = self.link_addresses_without_postcode(noPCHouseNumber, buildingNumberBlocking=True)
                 m2a = True
-            if len(noPCHouseNumber) > 0:
+            if len(noPCnoHouseNumber.index) > 0:
                 matches2b = self.link_addresses_without_postcode(noPCnoHouseNumber, buildingNumberBlocking=False)
                 m2b = True
             ms2 = True
