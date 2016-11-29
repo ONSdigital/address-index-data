@@ -184,6 +184,10 @@ class AddressLinker:
             self.log.info('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
 
+            # update results so that can be filtered out from the database
+            self.results['name'] = 'TEST'
+            self.results['dataset'] = 'testData.csv'
+
             self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
                                                  low_memory=False)
 
@@ -827,10 +831,10 @@ class AddressLinker:
         newUPRNs.to_csv(path + prefix + '_newUPRN.csv', index=False)
         self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
 
-        self.settings['linked'] = nmatched
-        self.settings['not_linked'] = not_found
-        self.settings['correct'] = sameUPRNs
-        self.settings['fp'] = fp
+        self.results['linked'] = nmatched
+        self.results['not_linked'] = not_found
+        self.results['correct'] = sameUPRNs
+        self.results['fp'] = fp
 
         mne = []
         matchf = []
@@ -998,6 +1002,8 @@ class AddressLinker:
 
         self.log.info('Checking Performance...')
         self.check_performance()
+
+        print(self.results)
 
         self.log.info('Storing the results...')
         self.store_results()
