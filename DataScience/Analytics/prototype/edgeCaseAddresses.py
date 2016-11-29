@@ -67,6 +67,7 @@ class EdgeCaseLinker(addressLinking.AddressLinker):
     """
     Address Linker for Edge Cases test data. Inherits the AddressLinker and overwrites the load_data method.
     """
+
     def load_data(self):
         """
         Read in the test data. Overwrites the method in the AddressLinker.

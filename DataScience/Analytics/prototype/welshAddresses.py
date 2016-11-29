@@ -61,6 +61,7 @@ class WelshAddressLinker(addressLinking.AddressLinker):
     """
     Address Linker for Welsh Test data. Inherits the AddressLinker and overwrites the load_data method.
     """
+
     def load_data(self):
         """
         Read in the Welsh address test data. Overwrites the method in the AddressLinker.
@@ -92,4 +93,3 @@ if __name__ == "__main__":
 
     linker = WelshAddressLinker(**settings)
     linker.run_all()
-

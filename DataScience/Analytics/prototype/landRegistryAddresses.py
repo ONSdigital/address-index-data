@@ -57,6 +57,7 @@ class LandRegistryLinker(addressLinking.AddressLinker):
     """
     Address Linker for Land Registry test data. Inherits the AddressLinker and overwrites the load_data method.
     """
+
     def load_data(self):
         """
         Read in the Land Registry testing data. Note that the data should be preprocessed with a script
@@ -77,11 +78,11 @@ class LandRegistryLinker(addressLinking.AddressLinker):
 
         # fill NaNs with empty strings so that we can form a single address string
         self.toLinkAddressData.fillna('', inplace=True)
-        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['SAO'] + ' ' +\
-                                            self.toLinkAddressData['PAO'] + ' ' +\
-                                            self.toLinkAddressData['Street'] + ' ' +\
-                                            self.toLinkAddressData['Locality'] + ' ' +\
-                                            self.toLinkAddressData['Town'] + ' ' +\
+        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['SAO'] + ' ' + \
+                                            self.toLinkAddressData['PAO'] + ' ' + \
+                                            self.toLinkAddressData['Street'] + ' ' + \
+                                            self.toLinkAddressData['Locality'] + ' ' + \
+                                            self.toLinkAddressData['Town'] + ' ' + \
                                             self.toLinkAddressData['Postcode']
 
         # rename postcode to postcode_orig and locality to locality_orig
