@@ -742,31 +742,30 @@ class AddressLinker:
         # sort by WG_Index
         matches = matches.sort_values(by='TestData_Index')
 
+        # matched IDs
+        matchedIndex = matches['TestData_Index'].values
+
+        # missing ones
+        missingIndex = toMatch.index.difference(matchedIndex)
+        missing = toMatch.loc[missingIndex]
+
         self.log.info('Found {} matches...'.format(len(matches.index)))
+        self.log.info('Failed to found {} matches...'.format(len(missing.index)))
 
-        return matches
+        return matches, missing
 
-    def merge_linked_data_and_address_base_information(self, matches):
+    def merge_linked_data_and_address_base_information(self):
         """
         Merge address base information to the identified matches.
-        Outputs the merged information to a CSV file for later inspection.
-
-        :param matches: found matches
-        :type matches: pandas.DataFrame
-
-        :return: merged dataframe
-        :rtype: pandas.DataFrame
         """
         # merge to original information to the matched data
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
-        data = pd.merge(matches, self.toLinkAddressData, how='left', on='TestData_Index')
-        data = pd.merge(data, self.addressBase, how='left', on='AddressBase_Index')
+        self.matched = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index')
+        self.matched = pd.merge(self.matched, self.addressBase, how='left', on='AddressBase_Index')
 
         # drop unnecessary columns
         if self.settings['dropColumns']:
-            data.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
-
-        return data
+            self.matched.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
 
     def _run_test(self):
         """
@@ -922,38 +921,45 @@ class AddressLinker:
 
         # split to those with full postcode and no postcode - use different matching strategies
         msk = self.toLinkAddressData['Postcode'].isnull()
-        withPC = self.toLinkAddressData.loc[~msk]
-        noPC = self.toLinkAddressData.loc[msk]
+        postcode_exists = self.toLinkAddressData.loc[~msk]
+        no_postcode = self.toLinkAddressData.loc[msk]
 
         self.log.info('Matching addresses against Address Base data...')
         start = time.clock()
-        ms1 = ms2 = m1a = m1b = m2a = m2b = False
-        if len(withPC.index) > 0:
-            msk = withPC['BuildingNumber'].isnull()
-            withPCnoHouseNumber = withPC.loc[msk]
-            withPCHouseNumber = withPC.loc[~msk]
-            if len(withPCHouseNumber) > 0:
-                matches1a, missing1a = self.link_addresses_with_postcode(withPCHouseNumber, buildingNumberBlocking=True)
-                m1a = True
-            if len(withPCnoHouseNumber) > 0:
-                if len(missing1a.index) > 0:
-                    # todo: fix this - should test that missing1a actually exists (complete rewrite needed when refactoring)
-                    withPCnoHouseNumber = withPCnoHouseNumber.append(missing1a)
-                matches1b, missing1b = self.link_addresses_with_postcode(withPCnoHouseNumber,
+        if len(postcode_exists.index) > 0:
+            msk = postcode_exists['BuildingNumber'].isnull()
+            postcode_no_building_number = postcode_exists.loc[msk]
+            postcode_building_number = postcode_exists.loc[~msk]
+
+            if len(postcode_building_number) > 0:
+                self.matches, missing = self.link_addresses_with_postcode(postcode_building_number)
+            if len(postcode_no_building_number) > 0:
+                if len(missing.index) > 0:
+                    postcode_no_building_number = postcode_no_building_number.append(missing)
+                matches_new, missing = self.link_addresses_with_postcode(postcode_no_building_number,
                                                                          buildingNumberBlocking=False)
-                m1b = True
-            ms1 = True
-        if len(noPC.index) > 0:
-            msk = noPC['BuildingNumber'].isnull()
-            noPCnoHouseNumber = noPC.loc[msk]
-            noPCHouseNumber = noPC.loc[~msk]
-            if len(noPCHouseNumber.index) > 0:
-                matches2a = self.link_addresses_without_postcode(noPCHouseNumber, buildingNumberBlocking=True)
-                m2a = True
-            if len(noPCnoHouseNumber.index) > 0:
-                matches2b = self.link_addresses_without_postcode(noPCnoHouseNumber, buildingNumberBlocking=False)
-                m2b = True
-            ms2 = True
+
+            # add those without building number to already found addresses
+            self.matches = self.matches.append(matches_new)
+            # add those that were not matched to those without postcode
+            no_postcode = no_postcode.append(missing)
+
+        if len(no_postcode.index) > 0:
+            msk = no_postcode['BuildingNumber'].isnull()
+            no_postcode_no_building_number = no_postcode.loc[msk]
+            no_postcode_building_number = no_postcode.loc[~msk]
+
+            if len(no_postcode_building_number.index) > 0:
+                matches_new, missing = self.link_addresses_without_postcode(no_postcode_building_number)
+                self.matches = self.matches.append(matches_new)
+
+            if len(no_postcode_no_building_number.index) > 0:
+                if len(missing.index) > 0:
+                    no_postcode_no_building_number.append(missing)
+                matches_new, missing = self.link_addresses_without_postcode(no_postcode_no_building_number,
+                                                                            buildingNumberBlocking=False)
+                self.matches = self.matches.append(matches_new)
+
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
@@ -961,43 +967,8 @@ class AddressLinker:
         start = time.clock()
         self.addressBase = self.addressBase.reset_index()
 
-        # most horrifying code ever... todo: complete rewrite required
-        m1 = m2 = False
-        if ms1:
-            if m1a:
-                matched1a = self.merge_linked_data_and_address_base_information(matches1a)
-            if m1b:
-                matched1b = self.merge_linked_data_and_address_base_information(matches1b)
-            m1 = True
-        if ms2:
-            if m2a:
-                matched2a = self.merge_linked_data_and_address_base_information(matches2a)
-            if m2b:
-                matched2b = self.merge_linked_data_and_address_base_information(matches2b)
-            m2 = True
-
-        if m1a & m1b:
-            matched1 = matched1a.append(matched1b)
-        elif m1a:
-            matched1 = matched1a
-        elif m1b:
-            matched1 = matched1b
-
-        if m2a & m2b:
-            matched2 = matched2a.append(matched2b)
-        elif m2a:
-            matched2 = matched2a
-        elif m2b:
-            matched2 = matched2b
-
-        if m2 & m1:
-            matched = matched1.append(matched2)
-        elif m1:
-            matched = matched1
-        elif m2:
-            matched = matched2
-
-        self.matched = matched
+        # merge back the matches
+        self.merge_linked_data_and_address_base_information()
 
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
