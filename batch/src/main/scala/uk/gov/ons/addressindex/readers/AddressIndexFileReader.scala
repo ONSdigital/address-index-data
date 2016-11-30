@@ -93,16 +93,15 @@ object AddressIndexFileReader {
       .load(resolveAbsolutePath(path))
 
   private def resolveAbsolutePath(path: String) = {
-
     val currentDirectory = new java.io.File(".").getCanonicalPath
 
     if (path.startsWith("hdfs://")) path
     else {
       if (System.getProperty("os.name").toLowerCase.startsWith("windows")) {
-        currentDirectory.concat(s"/$path")
+        s"$currentDirectory/$path"
       }
       else {
-        currentDirectory.concat(s"file://$path")
+        s"file://$currentDirectory/$path"
       }
     }
   }
