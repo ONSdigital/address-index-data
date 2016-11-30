@@ -98,6 +98,8 @@ class AddressLinker:
             * :type dropColumns: bool
             * :param expandSynonyms: whether to expand common synonyms or not
             * :type expandSynonyms: bool
+            * :param expandPostcode: whether to expand a postcode to in and out codes or not
+            * :type expandPostcode: bool
             * :param verbose: whether or not output information
             * :type verbose: bool
             * :param test: whether or not to use test data
@@ -114,6 +116,7 @@ class AddressLinker:
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
                              dropColumns=False,
                              expandSynonyms=True,
+                             expandPostcode=False,
                              test=False,
                              verbose=False)
         self.settings.update(kwargs)
@@ -121,12 +124,12 @@ class AddressLinker:
         # relative path when referring to data files
         self.currentDirectory = os.path.dirname(__file__)  # for relative path definitions
 
-        # define data containers within the object
+        # define data containers within the object, should be instantiated in __init__
         self.nExistingUPRN = 0
-        self.toLinkAddressData = None
-        self.matches = None
-        self.addressBase = None
-        self.matched_addresses = None
+        self.toLinkAddressData = pd.DataFrame()
+        self.matches = pd.DataFrame()
+        self.addressBase = pd.DataFrame()
+        self.matched_addresses = pd.DataFrame()
 
         # dictionary container for results - need updating during the processing, mostly in the check_performance
         self.results = dict(date=datetime.datetime.now().strftime("%Y-%m-%d %H%M%S"),
@@ -145,40 +148,6 @@ class AddressLinker:
         self.log = logger.set_up_logger(self.settings['log'] + start_date + '.log')
         self.log.info('A new Linking Run Started with the following settings')
         self.log.debug(self.settings)
-
-    def _check_loaded_data(self):
-        """
-        A simple private method to check what the loaded data contains.
-
-        Computes the number of addresses and those with UPRNs attached. Assumes that
-        the old UPRNs are found in UPRN_old column of the dataframe.
-        """
-        self.log.info('Checking the loaded data...')
-
-        if self.settings['verbose']:
-            self.log.info(self.toLinkAddressData.info())
-
-        # count the number of addresses using the index
-        n_addresses = len(self.toLinkAddressData.index)
-
-        self.log.info('Found {} addresses...'.format(n_addresses))
-        if 'UPRN_old' in self.toLinkAddressData.columns:
-            self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
-        else:
-            self.log.warning('No existing UPRNs found')
-            self.nExistingUPRN = 0
-
-        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
-
-        self.results['addresses'] = n_addresses
-        self.results['withUPRN'] = self.nExistingUPRN
-
-        # set index name - needed later for merging / duplicate removal
-        self.toLinkAddressData.index.name = 'TestData_Index'
-
-        # update the results dictionary with the number of addresse
-        self.results['addresses'] = n_addresses
-        self.results['withUPRN'] = self.nExistingUPRN
 
     def load_data(self):
         """
@@ -218,8 +187,43 @@ class AddressLinker:
             self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(
                 convert_numeric=True)
         else:
-            self.log.info('ERROR - please overwrite the method and make it relevant for the actual data...')
+            self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
             raise NotImplementedError
+
+    def _check_loaded_data(self):
+        """
+        A simple private method to check what the loaded data contains.
+
+        Computes the number of addresses and those with UPRNs attached. Assumes that
+        the old UPRNs are found in UPRN_old column of the dataframe.
+        """
+        self.log.info('Checking the loaded data...')
+
+        if self.settings['verbose']:
+            self.log.info(self.toLinkAddressData.info())
+
+        # count the number of addresses using the index
+        n_addresses = len(self.toLinkAddressData.index)
+
+        self.log.info('Found {} addresses...'.format(n_addresses))
+
+        if 'UPRN_old' in self.toLinkAddressData.columns:
+            self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
+        else:
+            self.log.warning('No existing UPRNs found')
+            self.nExistingUPRN = 0
+
+        self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
+
+        self.results['addresses'] = n_addresses
+        self.results['withUPRN'] = self.nExistingUPRN
+
+        # set index name - needed later for merging / duplicate removal
+        self.toLinkAddressData.index.name = 'TestData_Index'
+
+        # update the results dictionary with the number of addresses
+        self.results['addresses'] = n_addresses
+        self.results['withUPRN'] = self.nExistingUPRN
 
     def _load_addressbase(self):
         """
@@ -268,13 +272,16 @@ class AddressLinker:
         msk = self.addressBase['LOCALITY'].isnull()
         self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
 
-        # drop some that are not needed
-        self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
+        # drop some that are not needed - in the future versions these might be useful
+        self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION',
+                               'PAO_END_SUFFIX', 'PAO_END_NUMBER', 'SAO_START_SUFFIX'],
+                              axis=1, inplace=True)
 
         # split postcode to in and outcode - useful for doing blocking in different ways
-        postcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
-        postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-        self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
+        if self.settings['expandPostcode']:
+            postcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
+            postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+            self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
 
         # rename some columns (sorted windowing requires column names to match)
         self.addressBase.rename(columns={'THROUGHFARE': 'StreetName',
@@ -351,7 +358,7 @@ class AddressLinker:
                                                                               axis=1)
 
         # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
-        # e.g. FLAT 15 191 - 193 NEWPORT ROAD  CARDIFF CF24 1AJ is parsed incorrectly if there
+        # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
         # is space around the hyphen
         self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
                                                                               x['ADDRESS_norm'].replace(' - ', '-'),
@@ -383,20 +390,24 @@ class AddressLinker:
                                                                                                         addRegex, '',
                                                                                                         case=False)
 
-    def _fix_london_boroughs(self, parsed):
+    @staticmethod
+    def _fix_london_boroughs(parsed, directory, datafile='localities.csv'):
         """
-        A private method to address incorrectly parsed London boroughs.
+        A static private method to address incorrectly parsed London boroughs.
 
         If the street name contains London borough then move it to locality and remove from the street name.
 
         :param parsed: a dictionary containing the address tokens that have been parsed
         :type parsed: dict
+        :param directory: location of the data file
+        :type directory: str
+        :param datafile: name of the data file containing a column locality
+        :type datafile: str
 
         :return: a dictionary containing the address tokens with updated information
         :rtype: dict
         """
-        london_localities = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') +
-                                        'localities.csv')['locality']
+        london_localities = pd.read_csv(directory + datafile)['locality']
 
         for LondonLocality in london_localities:
             if parsed['StreetName'].strip().endswith(LondonLocality):
@@ -464,7 +475,7 @@ class AddressLinker:
             # Probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
             if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
                 if 'LONDON' in parsed['TownName']:
-                    parsed = self._fix_london_boroughs(parsed)
+                    parsed = self._fix_london_boroughs(parsed, os.path.join(self.currentDirectory, '../../data/'))
 
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
@@ -516,14 +527,15 @@ class AddressLinker:
         self.toLinkAddressData['Postcode'] = postcode
         self.toLinkAddressData['BuildingSuffix'] = building_suffix
 
-        # if valid postcode information found then split between in and outcode
-        if self.toLinkAddressData['Postcode'].count() > 0:
-            postcodes = self.toLinkAddressData['Postcode'].str.split(' ', expand=True)
-            postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-            self.toLinkAddressData = pd.concat([self.toLinkAddressData, postcodes], axis=1)
-        else:
-            self.toLinkAddressData['postcode_in'] = None
-            self.toLinkAddressData['postcode_out'] = None
+        if self.settings['expandPostcode']:
+            # if valid postcode information found then split between in and outcode
+            if self.toLinkAddressData['Postcode'].count() > 0:
+                postcodes = self.toLinkAddressData['Postcode'].str.split(' ', expand=True)
+                postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+                self.toLinkAddressData = pd.concat([self.toLinkAddressData, postcodes], axis=1)
+            else:
+                self.toLinkAddressData['postcode_in'] = None
+                self.toLinkAddressData['postcode_out'] = None
 
         # # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
         self.toLinkAddressData['FlatNumber'] = None
@@ -549,7 +561,7 @@ class AddressLinker:
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, None)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
         """
         A method to link addresses against AddressBase.
 
@@ -560,27 +572,24 @@ class AddressLinker:
         self.log.info('Linking addresses against Address Base data...')
 
         still_missing = self.toLinkAddressData
-        for blocking_mode in blocking_modes:
+        all_new_matches = []
+
+        # loop over the different blocking modes to find all matches
+        for blocking_mode in tqdm(blocking_modes):
             if len(still_missing.index) > 0:
                 new_matches, still_missing = self._find_likeliest_address(still_missing, blocking=blocking_mode)
-
-                if blocking_mode == 1:
-                    self.matches = new_matches
-                else:
-                    self.matches = self.matches.append(new_matches)
+                all_new_matches.append(new_matches)
             else:
-                self.log.info('Found potential matches for all addresses')
-                break
+                continue  # using continue here because break does not allow tqdm to finish
+
+        # concatenate all the new matches to a single dataframe
+        self.matches = pd.concat(all_new_matches)
 
     def _find_likeliest_address(self, addresses_to_be_linked, blocking=1):
         """
-        A private method to link toMatch data to the AddressBase source information.
+        A private method to link addresses_to_be_linked data to the AddressBase source information.
 
-        Uses blocking to speed up the matching. This is dangerous if misspelled
-
-        .. note: the aggressive blocking does not work when both BuildingNumber and BuildingName is missing.
-                 This is somewhat common for example for care homes. One should really separate these into
-                 different category and do blocking only on postcode.
+        Uses different blocking methods to speed up the matching. This is dangerous if any information is misspelled.
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
@@ -654,9 +663,7 @@ class AddressLinker:
                        missing_value=0.1)
 
         # set rules for organisations such as care homes and similar type addresses
-        compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
-                       missing_value=0.5)
-        compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl',
+        compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
                        missing_value=0.6)
         compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl',
                        missing_value=0.6)
@@ -716,8 +723,12 @@ class AddressLinker:
         self.log.info('Merging back the original information...')
 
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
-        self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index')
-        self.matched_addresses = pd.merge(self.matched_addresses, self.addressBase, how='left', on='AddressBase_Index')
+
+        # perform matching
+        self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
+                                          copy=False)
+        self.matched_addresses = pd.merge(self.matched_addresses, self.addressBase, how='left', on='AddressBase_Index',
+                                          copy=False)
 
         # drop unnecessary columns
         if self.settings['dropColumns']:
@@ -725,7 +736,7 @@ class AddressLinker:
 
     def _run_test(self):
         """
-        Run a simple test with a few address that are matched against a mini version of AddressBase.
+        A private method to run a simple test with a few address that are matched against a mini version of AddressBase.
 
         Exercises the complete chain from reading in, normalising, parsing, and finally linking.
         Asserts that the linked addresses were correctly linked to counterparts in the mini version of AB.
@@ -747,48 +758,46 @@ class AddressLinker:
         """
         self.log.info('Checking Performance...')
 
-        # count the number of matches and number of edge cases
+        # count the number of matches and the total number of addresses and write to the lod
         n_matched = len(self.matched_addresses.index)
         total = len(self.toLinkAddressData.index)
-
-        # how many were matched
         self.log.info('Matched {} entries'.format(n_matched))
         self.log.info('Total Match Fraction {} per cent'.format(round(n_matched / total * 100., 1)))
 
-        # save matched
+        # save matched to a file for inspection
         self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched.csv', index=False)
 
-        # find those without match
+        # find those without match and write to the log and file
         IDs = self.matched_addresses['ID'].values
         missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
         missing = self.toLinkAddressData.loc[missing_msk]
         not_found = len(missing.index)
         missing.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched_missing.csv', index=False)
-        self.log.info('{} addresses were not linked...'.format(not_found))
 
-        nOldUPRNs = len(self.matched_addresses.loc[self.matched_addresses['UPRN_old'].notnull()].index)
-        self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
+        self.log.info('{} addresses were not linked...'.format(not_found))
 
         # find those with UPRN attached earlier and check which are the same
         msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
         matches = self.matched_addresses.loc[msk]
         sameUPRNs = len(matches.index)
-        fp = len(self.matched_addresses.loc[~msk].index)
         matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
+
+        self.log.info('{} previous UPRNs in the matched data...'.format(self.nExistingUPRN))
         self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
 
         self.log.info('Correctly Matched {}'.format(sameUPRNs))
         self.log.info('Correctly Matched Fraction {}'.format(round(sameUPRNs / total * 100., 1)))
 
-        self.log.info('False Positives {}'.format(fp))
-        self.log.info('False Positive Rate {}'.format(round(fp / total * 100., 1)))
-
         # find those that has a previous UPRN but does not mach a new one (filter out nulls)
         msk = self.matched_addresses['UPRN_old'].notnull()
         not_nulls = self.matched_addresses.loc[msk]
         non_matches = not_nulls.loc[not_nulls['UPRN_old'] != not_nulls['UPRN']]
+        false_positives = len(non_matches.index)
         non_matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
-        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(non_matches.index)))
+
+        self.log.info('{} addresses have a different UPRN as earlier...'.format(false_positives))
+        self.log.info('False Positives {}'.format(false_positives))
+        self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
 
         # find all newly linked
         new_UPRNs = self.matched_addresses.loc[~msk]
@@ -798,11 +807,22 @@ class AddressLinker:
         self.results['linked'] = n_matched
         self.results['not_linked'] = not_found
         self.results['correct'] = sameUPRNs
-        self.results['false_positive'] = fp
+        self.results['false_positive'] = false_positives
 
-        mne = []
-        matchf = []
-        fpf = []
+        # make a simple visualisation
+        all_results = [n_matched, sameUPRNs, false_positives, not_found]
+        all_results_names = ['Linked', 'Same UPRN', 'False Positives', 'Not Linked']
+        x = np.arange(len(all_results))
+        plt.figure(figsize=(12, 10))
+        width = 0.5
+        plt.bar(x, all_results, width, color='g')
+        plt.ylabel('Number of Addresses')
+        plt.title('Prototype Linking Code (version={})'.format(__version__))
+        plt.xticks(x + width / 2., all_results_names, rotation=45)
+        plt.tight_layout()
+        plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
+        plt.close()
+
         # check results for each class separately if possible
         if 'Category' in self.matched_addresses.columns:
             for category in sorted(set(self.matched_addresses['Category'].values)):
@@ -812,38 +832,15 @@ class AddressLinker:
                 correct = self.matched_addresses.loc[msk]
                 n_matched = len(correct.index)
                 outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
-                fp = len(
+                false_positives = len(
                     self.matched_addresses.loc[(self.matched_addresses['UPRN'] != self.matched_addresses['UPRN_old']) &
                                                (self.matched_addresses['Category'] == category)].index)
 
                 self.log.info('Results for category {}'.format(category))
                 self.log.info('Correctly Matched: {}'.format(n_matched))
                 self.log.info('Match Fraction: {}'.format(n_matched / outof * 100.))
-                self.log.info('False Positives: {}'.format(fp))
-                self.log.info('False Positive Rate: {}'.format(fp / outof * 100., 1))
-
-                mne.append(category)
-                matchf.append((n_matched / outof * 100.))
-                fpf.append(fp / outof * 100.)
-        else:
-            mne = [self.settings['outname'], ]
-            matchf = [sameUPRNs / total * 100., ]
-            fpf = [fp / total * 100., ]
-
-        # make a simple visualisation
-        x = np.arange(len(mne))
-        plt.figure(figsize=(12, 10))
-
-        width = 0.35
-        p1 = plt.bar(x, matchf, width, color='g')
-        p2 = plt.bar(x + width, fpf, width, color='r')
-        plt.ylabel('Fraction of the Sample')
-        plt.title('Prototype Linking')
-        plt.xticks(x + width, mne, rotation=45)
-        plt.ylim(0, 101)
-        plt.tight_layout()
-        plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
-        plt.close()
+                self.log.info('False Positives: {}'.format(false_positives))
+                self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
 
     def store_results(self, table='results'):
         """
