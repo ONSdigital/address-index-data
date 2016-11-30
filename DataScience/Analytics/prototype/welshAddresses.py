@@ -25,7 +25,7 @@ After all requirements are satisfied, the script can be invoked using CPython in
 Requirements
 ------------
 
-:requires: pandas
+:requires: pandas (0.19.1)
 :requires: addressLinking (and all the requirements within it)
 
 

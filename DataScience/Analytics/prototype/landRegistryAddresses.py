@@ -26,7 +26,7 @@ The script can be run from command line using CPython::
 Requirements
 ------------
 
-:requires: pandas
+:requires: pandas (0.19.1)
 :requires: addressLinking (and all the requirements within it)
 
 

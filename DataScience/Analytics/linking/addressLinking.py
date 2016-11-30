@@ -13,12 +13,19 @@ blocking. As the final solution will likely use ElasticSearch, the aim of this p
 not the highest accuracy but to quickly test different ideas, which can inform the final
 ElasticSearch solution.
 
+.. Warning:: The current version relies strongly on postcode. If the address has an incorrect
+             postcode, it is fairly likely that an incorrect address will be linked. There are
+             two options to address this in the prototype: 1) one should add e.g. Town or street
+             name to the blocking to use the postcode only if it matches the Town name, or 2)
+             one should try to validate during the parsing if the postcode is likely to be
+             correct or not.
+
 
 Requirements
 ------------
 
 :requires: ProbabilisticParser (a CRF model specifically build for ONS)
-:requires: pandas ( 0.19.1)
+:requires: pandas (0.19.1)
 :requires: numpy (1.11.2)
 :requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
 :requires: recordlinkage (0.6.0: https://pypi.python.org/pypi/recordlinkage/)
@@ -134,7 +141,7 @@ class AddressLinker:
         self.matched_addresses = pd.DataFrame()
 
         # dictionary container for results - need updating during the processing, mostly in the check_performance
-        self.results = dict(date=datetime.datetime.now().strftime("%Y-%m-%d %H%M%S"),
+        self.results = dict(date=datetime.datetime.now(),
                             name=self.settings['outname'],
                             dataset=self.settings['inputFilename'],
                             addresses=-1,
@@ -834,11 +841,17 @@ class AddressLinker:
         ax = fig.add_subplot(1, 1, 1)
         plt.barh(location, all_results, width, color='g', alpha=0.6)
         for p in ax.patches:
-            ax.annotate("%i" % int(p.get_width()), (p.get_x() + p.get_width(), p.get_y()),
-                        xytext=(-100, 18), textcoords='offset points', color='white', fontsize=24)
+            n_addresses = int(p.get_width())
+            if n_addresses > 200:
+                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+                            xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
+            else:
+                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+                            xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
+
         plt.xlabel('Number of Addresses')
         plt.yticks(location + width / 2., all_results_names)
-        plt.xlim(0, ax.get_xlim()[1] + 1)
+        plt.xlim(0, ax.get_xlim()[1]*1.05)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
         plt.close()

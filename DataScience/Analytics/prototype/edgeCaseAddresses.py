@@ -23,7 +23,7 @@ After all requirements are satisfied, the script can be invoked using CPython in
 Requirements
 ------------
 
-:requires: pandas
+:requires: pandas (0.19.1)
 :requires: addressLinking (and all the requirements within it)
 
 
@@ -37,27 +37,19 @@ Version
 -------
 
 :version: 0.1
-:date: 29-Nov-2016
+:date: 30-Nov-2016
 
 
 Results
 -------
 
-With full AB and reasonable runtime:
-    Matched 1934 entries
-    Total Match Fraction 96.7
-    Correctly Matched 1921
-    Correctly Matched Fraction 96.0
-    False Positives 13
-    False Positive Rate 0.7
-    Correctly Matched 994 DEAD_SIMPLE
-    Match Fraction 99.4
-    False Positives 0
-    False Positive Rate 0.0
-    Correctly Matched 927 DEAD_SIMPLE_NO_PC
-    Match Fraction 92.7
-    False Positives 13
-    False Positive Rate 1.3
+With full AB and a greedy approach (AddressLinker version 0.1):
+    Matched 4649 entries
+    Total Match Fraction 93.0
+    Correctly Matched 3634
+    Correctly Matched Fraction 72.7
+    False Positives 1015
+    False Positive Rate 20.3
 """
 from Analytics.linking import addressLinking
 import pandas as pd
@@ -79,11 +71,19 @@ class EdgeCaseLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old', 'MNEMONIC': 'Category'}, inplace=True)
 
 
-if __name__ == "__main__":
+def run_edge_case_linker():
+    """
+    A simple wrapper that allows running Edge Case linker.
+
+    :return: None
+    """
     settings = dict(inputFilename='EDGE_CASES_EC5K_NoPostcode.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-                    outname='EdgeCases',
-                    outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/')
+                    outname='EdgeCases')
 
     linker = EdgeCaseLinker(**settings)
     linker.run_all()
+
+
+if __name__ == "__main__":
+    run_edge_case_linker()
