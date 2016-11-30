@@ -557,7 +557,6 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
-        self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
 
         # if SubBuilding name or organisation name is empty add dummy
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
@@ -844,7 +843,9 @@ class AddressLinker:
         plt.barh(location, all_results, width, color='g', alpha=0.6)
         for p in ax.patches:
             n_addresses = int(p.get_width())
-            if n_addresses > 200:
+            if n_addresses < 0:
+                continue
+            elif n_addresses > 100:
                 ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
                             xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
             else:
