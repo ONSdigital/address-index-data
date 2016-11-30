@@ -542,14 +542,6 @@ class AddressLinker:
         columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
         self.toLinkAddressData[columns_to_add_empty_strings].fillna('', inplace=True)
 
-        # some funky postcodes, remove these
-        msk = self.toLinkAddressData['postcode_in'] == 'Z1'
-        self.toLinkAddressData.loc[msk, 'postcode_in'] = None
-        self.toLinkAddressData.loc[msk, 'Postcode'] = None
-        msk = self.toLinkAddressData['postcode_in'] == 'Z11'
-        self.toLinkAddressData.loc[msk, 'postcode_in'] = None
-        self.toLinkAddressData.loc[msk, 'Postcode'] = None
-
         # save for inspection
         self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
                                       index=False)
@@ -557,7 +549,7 @@ class AddressLinker:
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, None)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, None)):
         """
         A method to link addresses against AddressBase.
 
@@ -605,15 +597,23 @@ class AddressLinker:
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
-            pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
+            pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
+                              right_on=['postcode', 'BUILDING_NUMBER'])
         elif blocking == 2:
-            pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'BuildingName'])
+            pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
+                              right_on=['postcode', 'BuildingName'])
         elif blocking == 3:
-            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
+            pairs = pcl.block(left_on=['Postcode', 'StreetName'],
+                              right_on=['postcode', 'StreetName'])
         elif blocking == 4:
-            pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['BuildingName', 'StreetName'])
+            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
+                              right_on=['BUILDING_NUMBER', 'StreetName'])
+        elif blocking == 5:
+            pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
+                              right_on=['BuildingName', 'StreetName'])
         else:
-            pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
+            pairs = pcl.block(left_on=['BuildingNumber', 'TownName'],
+                              right_on=['BUILDING_NUMBER', 'townName'])
 
         self.log.info(
             'Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(addresses_to_be_linked.index)))
@@ -650,7 +650,8 @@ class AddressLinker:
         # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
         # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
         # This comparison should probably be numeric.
-        compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl')
+        compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl',
+                       missing_value=0.1)
 
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
