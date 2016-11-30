@@ -36,15 +36,15 @@ Version
 :date: 30-Nov-2016
 """
 import datetime
-import re
-import time
 import os
-import warnings
+import re
 import sqlite3
+import time
+import warnings
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
-import matplotlib.pyplot as plt
 import recordlinkage as rl
 from Analytics.linking import logger
 from ProbabilisticParser import parser
@@ -125,6 +125,8 @@ class AddressLinker:
         self.nExistingUPRN = 0
         self.toLinkAddressData = None
         self.matches = None
+        self.addressBase = None
+        self.matched_addresses = None
 
         # dictionary container for results - need updating during the processing, mostly in the check_performance
         self.results = dict(date=datetime.datetime.now().strftime("%Y-%m-%d %H%M%S"),
@@ -157,9 +159,9 @@ class AddressLinker:
             self.log.info(self.toLinkAddressData.info())
 
         # count the number of addresses using the index
-        naddresses = len(self.toLinkAddressData.index)
+        n_addresses = len(self.toLinkAddressData.index)
 
-        self.log.info('Found {} addresses...'.format(naddresses))
+        self.log.info('Found {} addresses...'.format(n_addresses))
         if 'UPRN_old' in self.toLinkAddressData.columns:
             self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
         else:
@@ -168,14 +170,14 @@ class AddressLinker:
 
         self.log.info('{} with UPRN already attached...'.format(self.nExistingUPRN))
 
-        self.results['addresses'] = naddresses
+        self.results['addresses'] = n_addresses
         self.results['withUPRN'] = self.nExistingUPRN
 
         # set index name - needed later for merging / duplicate removal
         self.toLinkAddressData.index.name = 'TestData_Index'
 
         # update the results dictionary with the number of addresse
-        self.results['addresses'] = naddresses
+        self.results['addresses'] = n_addresses
         self.results['withUPRN'] = self.nExistingUPRN
 
     def load_data(self):
@@ -270,9 +272,9 @@ class AddressLinker:
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR'], axis=1, inplace=True)
 
         # split postcode to in and outcode - useful for doing blocking in different ways
-        pcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
-        pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-        self.addressBase = pd.concat([self.addressBase, pcodes], axis=1)
+        postcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
+        postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+        self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
 
         # rename some columns (sorted windowing requires column names to match)
         self.addressBase.rename(columns={'THROUGHFARE': 'StreetName',
@@ -308,19 +310,19 @@ class AddressLinker:
         """
         regx = r'(([gG][iI][rR] {0,}0[aA]{2})|((([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y]?[0-9][0-9]?)|(([a-pr-uwyzA-PR-UWYZ][0-9][a-hjkstuwA-HJKSTUW])|([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y][0-9][abehmnprv-yABEHMNPRV-Y]))) {0,}[0-9][abd-hjlnp-uw-zABD-HJLNP-UW-Z]{2}))'
         try:
-            tmp = re.findall(regx, string)[0][0]
-            tmp = tmp.lower().strip()
+            potential_postcode = re.findall(regx, string)[0][0]
+            potential_postcode = potential_postcode.lower().strip()
         except IndexError:
-            tmp = None
+            potential_postcode = None
 
         # above regex gives also those without space between, add if needed
-        if tmp is not None:
-            if ' ' not in tmp:
-                inc = tmp[-3:]
-                out = tmp.replace(inc, '')
-                tmp = out + ' ' + inc
+        if potential_postcode is not None:
+            if ' ' not in potential_postcode:
+                inc = potential_postcode[-3:]
+                out = potential_postcode.replace(inc, '')
+                potential_postcode = out + ' ' + inc
 
-        return tmp
+        return potential_postcode
 
     def _normalize_input_data(self):
         """
@@ -424,10 +426,10 @@ class AddressLinker:
         # temp data storage lists
         organisation = []
         department = []
-        subbuilding = []
-        buildingname = []
-        buildingnumber = []
-        buildingsuffix = []
+        sub_building = []
+        building_name = []
+        building_number = []
+        building_suffix = []
         street = []
         locality = []
         town = []
@@ -436,24 +438,24 @@ class AddressLinker:
         # loop over addresses - quite inefficient, should avoid a loop
         for address in tqdm(addresses):
             parsed = parser.tag(address.upper())  # probabilistic parser
-            pcode = self._extract_postcode(address)  # regular expression extraction
+            possible_postcode = self._extract_postcode(address)  # regular expression extraction
 
             # if both parsers found postcode then check that they are the same
-            if parsed.get('Postcode', None) is not None and pcode is not None:
-                if parsed['Postcode'] != pcode:
-                    # not the same, use pcode
-                    parsed['Postcode'] = pcode
+            if parsed.get('Postcode', None) is not None and possible_postcode is not None:
+                if parsed['Postcode'] != possible_postcode:
+                    # not the same, use possible_postcode
+                    parsed['Postcode'] = possible_postcode
 
             # if the probabilistic parser did not find postcode but regular expression did, then use that
-            if parsed.get('Postcode', None) is None and pcode is not None:
-                parsed['Postcode'] = pcode
+            if parsed.get('Postcode', None) is None and possible_postcode is not None:
+                parsed['Postcode'] = possible_postcode
 
             if parsed.get('Postcode', None) is not None:
                 # check that there is space, if not then add
                 if ' ' not in parsed['Postcode']:
-                    inc = parsed['Postcode'][-3:]
-                    out = parsed['Postcode'].replace(inc, '')
-                    parsed['Postcode'] = out + ' ' + inc
+                    in_code = parsed['Postcode'][-3:]
+                    out_code = parsed['Postcode'].replace(in_code, '')
+                    parsed['Postcode'] = out_code + ' ' + in_code
 
                 # change to all capitals
                 parsed['Postcode'] = parsed['Postcode'].upper()
@@ -493,32 +495,32 @@ class AddressLinker:
             # store the parsed information to separate lists
             organisation.append(parsed.get('OrganisationName', None))
             department.append(parsed.get('DepartmentName', None))
-            subbuilding.append(parsed.get('SubBuildingName', None))
-            buildingname.append(parsed.get('BuildingName', None))
-            buildingnumber.append(parsed.get('BuildingNumber', None))
+            sub_building.append(parsed.get('SubBuildingName', None))
+            building_name.append(parsed.get('BuildingName', None))
+            building_number.append(parsed.get('BuildingNumber', None))
             street.append(parsed.get('StreetName', None))
             locality.append(parsed.get('Locality', None))
             town.append(parsed.get('TownName', None))
             postcode.append(parsed.get('Postcode', None))
-            buildingsuffix.append(parsed.get('BuildingSuffix', None))
+            building_suffix.append(parsed.get('BuildingSuffix', None))
 
         # add the parsed information to the dataframe
         self.toLinkAddressData['OrganisationName'] = organisation
         self.toLinkAddressData['DepartmentName'] = department
-        self.toLinkAddressData['SubBuildingName'] = subbuilding
-        self.toLinkAddressData['BuildingName'] = buildingname
-        self.toLinkAddressData['BuildingNumber'] = buildingnumber
+        self.toLinkAddressData['SubBuildingName'] = sub_building
+        self.toLinkAddressData['BuildingName'] = building_name
+        self.toLinkAddressData['BuildingNumber'] = building_number
         self.toLinkAddressData['StreetName'] = street
         self.toLinkAddressData['Locality'] = locality
         self.toLinkAddressData['TownName'] = town
         self.toLinkAddressData['Postcode'] = postcode
-        self.toLinkAddressData['BuildingSuffix'] = buildingsuffix
+        self.toLinkAddressData['BuildingSuffix'] = building_suffix
 
         # if valid postcode information found then split between in and outcode
         if self.toLinkAddressData['Postcode'].count() > 0:
-            pcodes = self.toLinkAddressData['Postcode'].str.split(' ', expand=True)
-            pcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-            self.toLinkAddressData = pd.concat([self.toLinkAddressData, pcodes], axis=1)
+            postcodes = self.toLinkAddressData['Postcode'].str.split(' ', expand=True)
+            postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+            self.toLinkAddressData = pd.concat([self.toLinkAddressData, postcodes], axis=1)
         else:
             self.toLinkAddressData['postcode_in'] = None
             self.toLinkAddressData['postcode_out'] = None
@@ -613,7 +615,8 @@ class AddressLinker:
         else:
             pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
 
-        self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(addresses_to_be_linked.index)))
+        self.log.info(
+            'Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(addresses_to_be_linked.index)))
 
         # compare the two data sets
         # the idea is to build evidence to support linking, hence some fields are compared multiple times
@@ -694,11 +697,11 @@ class AddressLinker:
         matches = matches.sort_values(by='TestData_Index')
 
         # matched IDs
-        matchedIndex = matches['TestData_Index'].values
+        matched_index = matches['TestData_Index'].values
 
         # missing ones
-        missingIndex = addresses_to_be_linked.index.difference(matchedIndex)
-        missing = addresses_to_be_linked.loc[missingIndex]
+        missing_index = addresses_to_be_linked.index.difference(matched_index)
+        missing = addresses_to_be_linked.loc[missing_index]
 
         self.log.info('Found {} matches...'.format(len(matches.index)))
         self.log.info('Failed to found {} matches...'.format(len(missing.index)))
@@ -712,12 +715,12 @@ class AddressLinker:
         self.log.info('Merging back the original information...')
 
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
-        self.matched = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index')
-        self.matched = pd.merge(self.matched, self.addressBase, how='left', on='AddressBase_Index')
+        self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index')
+        self.matched_addresses = pd.merge(self.matched_addresses, self.addressBase, how='left', on='AddressBase_Index')
 
         # drop unnecessary columns
         if self.settings['dropColumns']:
-            self.matched.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
+            self.matched_addresses.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
 
     def _run_test(self):
         """
@@ -729,7 +732,7 @@ class AddressLinker:
         self.log.info('Running test...')
 
         # pandas test whether the UPRNs are the same, ignore type and names, but require exact match
-        pdt.assert_series_equal(self.matched['UPRN_old'], self.matched['UPRN'],
+        pdt.assert_series_equal(self.matched_addresses['UPRN_old'], self.matched_addresses['UPRN'],
                                 check_dtype=False, check_exact=True, check_names=False)
 
     def check_performance(self):
@@ -744,32 +747,32 @@ class AddressLinker:
         self.log.info('Checking Performance...')
 
         # count the number of matches and number of edge cases
-        nmatched = len(self.matched.index)
+        n_matched = len(self.matched_addresses.index)
         total = len(self.toLinkAddressData.index)
 
         # how many were matched
-        self.log.info('Matched {} entries'.format(nmatched))
-        self.log.info('Total Match Fraction {} per cent'.format(round(nmatched / total * 100., 1)))
+        self.log.info('Matched {} entries'.format(n_matched))
+        self.log.info('Total Match Fraction {} per cent'.format(round(n_matched / total * 100., 1)))
 
         # save matched
-        self.matched.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched.csv', index=False)
+        self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched.csv', index=False)
 
         # find those without match
-        IDs = self.matched['ID'].values
+        IDs = self.matched_addresses['ID'].values
         missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
         missing = self.toLinkAddressData.loc[missing_msk]
         not_found = len(missing.index)
         missing.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched_missing.csv', index=False)
         self.log.info('{} addresses were not linked...'.format(not_found))
 
-        nOldUPRNs = len(self.matched.loc[self.matched['UPRN_old'].notnull()].index)
+        nOldUPRNs = len(self.matched_addresses.loc[self.matched_addresses['UPRN_old'].notnull()].index)
         self.log.info('{} previous UPRNs in the matched data...'.format(nOldUPRNs))
 
         # find those with UPRN attached earlier and check which are the same
-        msk = self.matched['UPRN_old'] == self.matched['UPRN']
-        matches = self.matched.loc[msk]
+        msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
+        matches = self.matched_addresses.loc[msk]
         sameUPRNs = len(matches.index)
-        fp = len(self.matched.loc[~msk].index)
+        fp = len(self.matched_addresses.loc[~msk].index)
         matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
         self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
 
@@ -780,18 +783,18 @@ class AddressLinker:
         self.log.info('False Positive Rate {}'.format(round(fp / total * 100., 1)))
 
         # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = self.matched['UPRN_old'].notnull()
-        notnulls = self.matched.loc[msk]
-        nonmatches = notnulls.loc[notnulls['UPRN_old'] != notnulls['UPRN']]
-        nonmatches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
-        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(nonmatches.index)))
+        msk = self.matched_addresses['UPRN_old'].notnull()
+        not_nulls = self.matched_addresses.loc[msk]
+        non_matches = not_nulls.loc[not_nulls['UPRN_old'] != not_nulls['UPRN']]
+        non_matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
+        self.log.info('{} addresses have a different UPRN as earlier...'.format(len(non_matches.index)))
 
         # find all newly linked
-        newUPRNs = self.matched.loc[~msk]
-        newUPRNs.to_csv(self.settings['outpath'] + self.settings['outname'] + '_newUPRN.csv', index=False)
-        self.log.info('{} more addresses with UPRN...'.format(len(newUPRNs.index)))
+        new_UPRNs = self.matched_addresses.loc[~msk]
+        new_UPRNs.to_csv(self.settings['outpath'] + self.settings['outname'] + '_newUPRN.csv', index=False)
+        self.log.info('{} more addresses with UPRN...'.format(len(new_UPRNs.index)))
 
-        self.results['linked'] = nmatched
+        self.results['linked'] = n_matched
         self.results['not_linked'] = not_found
         self.results['correct'] = sameUPRNs
         self.results['false_positive'] = fp
@@ -800,23 +803,26 @@ class AddressLinker:
         matchf = []
         fpf = []
         # check results for each class separately if possible
-        if 'Category' in self.matched.columns:
-            for category in sorted(set(self.matched['Category'].values)):
-                msk = (self.matched['UPRN'] == self.matched['UPRN_old']) & (self.matched['Category'] == category)
-                correct = self.matched.loc[msk]
-                nmatched = len(correct.index)
+        if 'Category' in self.matched_addresses.columns:
+            for category in sorted(set(self.matched_addresses['Category'].values)):
+                msk = (self.matched_addresses['UPRN'] == self.matched_addresses['UPRN_old']) & \
+                      (self.matched_addresses['Category'] == category)
+
+                correct = self.matched_addresses.loc[msk]
+                n_matched = len(correct.index)
                 outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
-                fp = len(self.matched.loc[(self.matched['UPRN'] != self.matched['UPRN_old']) &
-                                          (self.matched['Category'] == category)].index)
+                fp = len(
+                    self.matched_addresses.loc[(self.matched_addresses['UPRN'] != self.matched_addresses['UPRN_old']) &
+                                               (self.matched_addresses['Category'] == category)].index)
 
                 self.log.info('Results for category {}'.format(category))
-                self.log.info('Correctly Matched: {}'.format(nmatched))
-                self.log.info('Match Fraction: {}'.format(nmatched / outof * 100.))
+                self.log.info('Correctly Matched: {}'.format(n_matched))
+                self.log.info('Match Fraction: {}'.format(n_matched / outof * 100.))
                 self.log.info('False Positives: {}'.format(fp))
                 self.log.info('False Positive Rate: {}'.format(fp / outof * 100., 1))
 
                 mne.append(category)
-                matchf.append((nmatched / outof * 100.))
+                matchf.append((n_matched / outof * 100.))
                 fpf.append(fp / outof * 100.)
         else:
             mne = [self.settings['outname'], ]
