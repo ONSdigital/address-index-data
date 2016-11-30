@@ -109,10 +109,12 @@ class AddressLinker:
             * :type expandSynonyms: bool
             * :param expandPostcode: whether to expand a postcode to in and out codes or not
             * :type expandPostcode: bool
-            * :param verbose: whether or not output information
-            * :type verbose: bool
             * :param test: whether or not to use test data
             * :type test: bool
+            * :param store: whether or not to store the results to a database table
+            * :type store: bool
+            * :param verbose: whether or not output information
+            * :type verbose: bool
         """
         # set up and update settings - controls the flow
         self.settings = dict(inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
@@ -127,6 +129,7 @@ class AddressLinker:
                              expandSynonyms=True,
                              expandPostcode=False,
                              test=False,
+                             store=True,
                              verbose=False)
         self.settings.update(kwargs)
 
@@ -928,7 +931,8 @@ class AddressLinker:
 
         self.check_performance()
 
-        self.store_results()
+        if self.settings['store']:
+            self.store_results()
 
         if self.settings['test']:
             self._run_test()
