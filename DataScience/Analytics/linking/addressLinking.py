@@ -33,7 +33,7 @@ Version
 -------
 
 :version: 0.1
-:date: 29-Nov-2016
+:date: 30-Nov-2016
 """
 import datetime
 import re
@@ -52,6 +52,8 @@ from tqdm import tqdm
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
+
+__version__ = '0.1'
 
 
 class AddressLinker:
@@ -133,7 +135,8 @@ class AddressLinker:
                             withUPRN=-1,
                             not_linked=-1,
                             correct=-1,
-                            fp=-1)
+                            false_positive=-1,
+                            code_version=__version__)
 
         # set up a logger, use date and time as filename
         start_date = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -568,12 +571,11 @@ class AddressLinker:
             postcode_building_number = postcode_exists.loc[~msk]
 
             if len(postcode_building_number) > 0:
-                self.matches, missing = self._link_addresses_with_postcode(postcode_building_number)
+                self.matches, missing = self._find_likeliest_address(postcode_building_number, blocking=1)
             if len(postcode_no_building_number) > 0:
                 if len(missing.index) > 0:
                     postcode_no_building_number = postcode_no_building_number.append(missing)
-                matches_new, missing = self._link_addresses_with_postcode(postcode_no_building_number,
-                                                                          buildingNumberBlocking=False)
+                matches_new, missing = self._find_likeliest_address(postcode_no_building_number, blocking=2)
 
             # add those without building number to already found addresses
             self.matches = self.matches.append(matches_new)
@@ -586,17 +588,16 @@ class AddressLinker:
             no_postcode_building_number = no_postcode.loc[~msk]
 
             if len(no_postcode_building_number.index) > 0:
-                matches_new, missing = self._link_addresses_without_postcode(no_postcode_building_number)
+                matches_new, missing = self._find_likeliest_address(no_postcode_building_number, blocking=3)
                 self.matches = self.matches.append(matches_new)
 
             if len(no_postcode_no_building_number.index) > 0:
                 if len(missing.index) > 0:
                     no_postcode_no_building_number.append(missing)
-                matches_new, missing = self._link_addresses_without_postcode(no_postcode_no_building_number,
-                                                                             buildingNumberBlocking=False)
+                matches_new, missing = self._find_likeliest_address(no_postcode_no_building_number, blocking=4)
                 self.matches = self.matches.append(matches_new)
 
-    def _link_addresses_with_postcode(self, toMatch, buildingNumberBlocking=True):
+    def _find_likeliest_address(self, toMatch, blocking=1):
         """
         A private method to link toMatch data to the AddressBase source information.
 
@@ -609,24 +610,28 @@ class AddressLinker:
 
         :param toMatch: dataframe holding the address information that is to be matched against a source
         :type toMatch: pandas.DataFrame
-        :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
-        :type buildingNumberBlocking: bool
+        :param blocking: the mode of blocking, ranging from 1 to 4
+        :type blocking: int
 
-        :return: dataframe of matches
-        :rtype: pandas.DataFrame
+        :return: dataframe of matches, dataframe of non-matched addresses
+        :rtype: list(pandas.DataFrame, pandas.DataFrame)
         """
         # create pairs
         pcl = rl.Pairs(toMatch, self.addressBase)
 
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
-        if buildingNumberBlocking:
-            self.log.info(
-                'Start matching those with postcode information, using postcode and building number blocking...')
+        self.log.info('Start matching with blocking model {}'.format(blocking))
+        if blocking == 1:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
+        elif blocking == 2:
+            pairs = pcl.block(left_on=['Postcode', 'BuildingName'], right_on=['postcode', 'BuildingName'])
+        elif blocking == 3:
+            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
+        elif blocking == 4:
+            pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['BuildingName', 'StreetName'])
         else:
-            self.log.info('Start matching those with postcode information, using postcode blocking...')
-            pairs = pcl.block(left_on=['Postcode'], right_on=['postcode'])
+            pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
 
         self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(toMatch.index)))
 
@@ -667,119 +672,26 @@ class AddressLinker:
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
                        missing_value=0.5)
+        compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl',
+                       missing_value=0.6)
+        compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl',
+                       missing_value=0.6)
+
+        # Extras
+        compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl',
+                       missing_value=0.6)
 
         # execute the comparison model
         compare.run()
 
         # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
         compare.vectors['pao_dl'] *= 5.
+        compare.vectors['town_dl'] *= 5.
         compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['flatw_dl'] *= 3.
-        compare.vectors['building_name_dl'] *= 3.
-        compare.vectors['pao_suffix_dl'] *= 2.
-
-        # add sum of the components to the comparison vectors dataframe
-        compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
-
-        # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
-        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
-
-        # to pick the most likely match we sort by the sum of the similarity and pick the top
-        # sort matches by the sum of the vectors and then keep the first
-        matches = matches.sort_values(by='similarity_sum', ascending=False)
-
-        # reset index
-        matches = matches.reset_index()
-
-        # keep first if duplicate in the WG_Index column
-        matches = matches.drop_duplicates('TestData_Index', keep='first')
-
-        # sort by WG_Index
-        matches = matches.sort_values(by='TestData_Index')
-
-        # matched IDs
-        matchedIndex = matches['TestData_Index'].values
-
-        # missing ones
-        missingIndex = toMatch.index.difference(matchedIndex)
-        missing = toMatch.loc[missingIndex]
-
-        self.log.info('Found {} matches...'.format(len(matches.index)))
-        self.log.info('Failed to found {} matches...'.format(len(missing.index)))
-
-        return matches, missing
-
-    def _link_addresses_without_postcode(self, toMatch, buildingNumberBlocking=True):
-        """
-        A private method to link toMatch data to the AddressBase source information.
-        Uses blocking to speed up the matching.
-
-        .. note: the aggressive blocking that uses street name rules out any addresses with a typo in the street name.
-                 Given that this is fairly common, one should use sorted neighbourhood search instead of blocking.
-                 However, given that this prototype needs to run on a laptop with limited memory in a reasonable time
-                 the aggressive blocking is used. In production, no blocking should be used.
-
-        :param toMatch: dataframe holding the address information that is to be matched against a source
-        :type toMatch: pandas.DataFrame
-        :param buildingNumberBlocking: whether or not to block on BuildingNumber of BuildingName
-        :type buildingNumberBlocking: bool
-
-        :return: dataframe of matches
-        :rtype: pandas.DataFrame
-        """
-        # create pairs
-        pcl = rl.Pairs(toMatch, self.addressBase)
-
-        # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
-        if buildingNumberBlocking:
-            self.log.info(
-                'Start matching those without postcode information, using building number and street name blocking...')
-            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'], right_on=['BUILDING_NUMBER', 'StreetName'])
-        else:
-            self.log.info(
-                'Start matching those without postcode information, using building name and street name blocking...')
-            pairs = pcl.block(left_on=['BuildingName', 'StreetName'], right_on=['BuildingName', 'StreetName'])
-
-        self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(toMatch.index)))
-
-        # compare the two data sets - use different metrics for the comparison
-        # the idea is to build evidence to support linking, hence some fields are compared multiple times
-        compare = rl.Compare(pairs, self.addressBase, toMatch, batch=True)
-
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
-        compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl')
-        if buildingNumberBlocking:
-            compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl')
-        compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl')
-        compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl')
-        compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl')
-        compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl')
-        # add a comparison from other fields
-        compare.string('TOWN_NAME', 'TownName', method='damerau_levenshtein', name='town2_dl')
-
-        # the following is good for flats and apartments than have been numbered
-        compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl')
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl')
-
-        # set rules for organisations such as care homes and similar type addresses
-        # compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl')
-        compare.string('ORGANISATION', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl')
-        compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='org2_dl')
-        compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl')
-
-        # Extras
-        compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl')
-
-        compare.run()
-
-        # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-        compare.vectors['pao_dl'] *= 5.
-        compare.vectors['town_dl'] *= 7.
         compare.vectors['organisation_dl'] *= 4.
-        compare.vectors['sao_number_dl'] *= 4.
         compare.vectors['flatw_dl'] *= 3.
-        if buildingNumberBlocking:
-            compare.vectors['building_name_dl'] *= 3.
+        compare.vectors['pao_suffix_dl'] *= 2.
+        compare.vectors['building_name_dl'] *= 3.
         compare.vectors['locality_dl'] *= 2.
 
         # add sum of the components to the comparison vectors dataframe
@@ -902,7 +814,7 @@ class AddressLinker:
         self.results['linked'] = nmatched
         self.results['not_linked'] = not_found
         self.results['correct'] = sameUPRNs
-        self.results['fp'] = fp
+        self.results['false_positive'] = fp
 
         mne = []
         matchf = []
