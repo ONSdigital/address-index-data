@@ -94,8 +94,6 @@ class AddressLinker:
             * :type ABpath: str
             * :param ABfilename: name of the file containing modified AddressBase
             * :type ABfilename: str
-            * :param log: name of the log file
-            * :type log: str
             * :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
                           Affects for example the false positive rate.
             * :type limit: float
@@ -121,7 +119,6 @@ class AddressLinker:
                              inputFilename='WelshGovernmentData21Nov2016.csv',
                              ABpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
                              ABfilename='AB.csv',
-                             log='ALP',
                              limit=0.1,
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
@@ -143,6 +140,9 @@ class AddressLinker:
         self.addressBase = pd.DataFrame()
         self.matched_addresses = pd.DataFrame()
 
+        if self.settings['test']:
+            self.settings['outname'] = 'DataLinkingTest'
+
         # dictionary container for results - need updating during the processing, mostly in the check_performance
         self.results = dict(date=datetime.datetime.now(),
                             name=self.settings['outname'],
@@ -158,7 +158,7 @@ class AddressLinker:
 
         # set up a logger, use date and time as filename
         start_date = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        self.log = logger.set_up_logger(self.settings['log'] + start_date + '.log')
+        self.log = logger.set_up_logger(self.settings['outpath'] + self.settings['outname'] + '_' + start_date + '.log')
         self.log.info('A new Linking Run Started with the following settings')
         self.log.debug(self.settings)
 
@@ -175,7 +175,6 @@ class AddressLinker:
         if self.settings['test']:
             self.log.warning('Reading in test data...')
             self.settings['inputFilename'] = 'testData.csv'
-            self.settings['outname'] = 'DataLinkingTest'
 
             # update results so that can be filtered out from the database
             self.results['name'] = 'TEST'
