@@ -4,12 +4,14 @@ ONS Address Index - Linking Prototype
 
 Contains a class, which implements an Address Linking Prototype (ALP).
 
-This is a prototype code aimed for experimentation and testing. There are not unit tests.
+This is a prototype code aimed for experimentation and testing. There are not unit tests, but
+a simple functional test that performs a simple validation on the complete parsing and linking
+chain.
+
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
 blocking. As the final solution will likely use ElasticSearch, the aim of this prototype is
 not the highest accuracy but to quickly test different ideas, which can inform the final
 ElasticSearch solution.
-
 
 
 Requirements
@@ -141,6 +143,7 @@ class AddressLinker:
                             not_linked=-1,
                             correct=-1,
                             false_positive=-1,
+                            new_UPRNs=-1,
                             code_version=__version__)
 
         # set up a logger, use date and time as filename
@@ -190,9 +193,9 @@ class AddressLinker:
             self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
             raise NotImplementedError
 
-    def _check_loaded_data(self):
+    def check_loaded_data(self):
         """
-        A simple private method to check what the loaded data contains.
+        A simple method to check what the loaded data contains.
 
         Computes the number of addresses and those with UPRNs attached. Assumes that
         the old UPRNs are found in UPRN_old column of the dataframe.
@@ -225,10 +228,11 @@ class AddressLinker:
         self.results['addresses'] = n_addresses
         self.results['withUPRN'] = self.nExistingUPRN
 
-    def _load_addressbase(self):
+    def load_addressbase(self):
         """
-        A private method to load a compressed version of the full AddressBase file. The information being used
-        has been processed from a AB Epoch 39 files provided by ONS.
+        A method to load a compressed version of the full AddressBase file.
+
+        The information being used has been processed from a AB Epoch 39 files provided by ONS.
 
         .. Note: this function modifies the original AB information by e.g. combining different tables. Such
                  activities are undertaken because of the aggressive blocking the prototype linking code uses.
@@ -590,6 +594,10 @@ class AddressLinker:
         A private method to link addresses_to_be_linked data to the AddressBase source information.
 
         Uses different blocking methods to speed up the matching. This is dangerous if any information is misspelled.
+        Note also that this method simply returns the likeliest matching address if multiple matches are found.
+        This is to facilitate automated scoring. In practice one should set a limit above which all potential
+        matches are returned and either perform postprocessing clustering or return all potential matches to the
+        user for manual inspection.
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
@@ -749,9 +757,9 @@ class AddressLinker:
 
     def check_performance(self):
         """
-        Check performance.
+        A method to compute the linking performance.
 
-        Computes the number of linked addresses. If UPRN exists, then calculates the number of
+        Computes the number of linked addresses. If UPRNs exist, then calculates the number of
         false positives and those that were not found by the prototype. Splits the numbers based
         on category if present in the data. Finally visualises the results using a simple bar
         chart.
@@ -776,49 +784,61 @@ class AddressLinker:
 
         self.log.info('{} addresses were not linked...'.format(not_found))
 
-        # find those with UPRN attached earlier and check which are the same
-        msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
-        matches = self.matched_addresses.loc[msk]
-        sameUPRNs = len(matches.index)
-        matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
+        # if UPRN_old is present then check the overlap and the number of false posities
+        if 'UPRN_old' not in self.matched_addresses.columns:
+            sameUPRNs = -1
+            false_positives = -1
+            n_new_UPRNs = -1
+        else:
+            # find those with UPRN attached earlier and check which are the same
+            msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
+            matches = self.matched_addresses.loc[msk]
+            sameUPRNs = len(matches.index)
+            matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
 
-        self.log.info('{} previous UPRNs in the matched data...'.format(self.nExistingUPRN))
-        self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
+            self.log.info('{} previous UPRNs in the matched data...'.format(self.nExistingUPRN))
+            self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
+            self.log.info('Correctly Matched {}'.format(sameUPRNs))
+            self.log.info('Correctly Matched Fraction {}'.format(round(sameUPRNs / total * 100., 1)))
 
-        self.log.info('Correctly Matched {}'.format(sameUPRNs))
-        self.log.info('Correctly Matched Fraction {}'.format(round(sameUPRNs / total * 100., 1)))
+            # find those that have previous UPRNs but do not match the new ones (filter out nulls)
+            msk = self.matched_addresses['UPRN_old'].notnull()
+            not_nulls = self.matched_addresses.loc[msk]
+            non_matches = not_nulls.loc[not_nulls['UPRN_old'] != not_nulls['UPRN']]
+            false_positives = len(non_matches.index)
+            non_matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
 
-        # find those that has a previous UPRN but does not mach a new one (filter out nulls)
-        msk = self.matched_addresses['UPRN_old'].notnull()
-        not_nulls = self.matched_addresses.loc[msk]
-        non_matches = not_nulls.loc[not_nulls['UPRN_old'] != not_nulls['UPRN']]
-        false_positives = len(non_matches.index)
-        non_matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
+            self.log.info('{} addresses have a different UPRN as earlier...'.format(false_positives))
+            self.log.info('False Positives {}'.format(false_positives))
+            self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
 
-        self.log.info('{} addresses have a different UPRN as earlier...'.format(false_positives))
-        self.log.info('False Positives {}'.format(false_positives))
-        self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
-
-        # find all newly linked
-        new_UPRNs = self.matched_addresses.loc[~msk]
-        new_UPRNs.to_csv(self.settings['outpath'] + self.settings['outname'] + '_newUPRN.csv', index=False)
-        self.log.info('{} more addresses with UPRN...'.format(len(new_UPRNs.index)))
+            # find all newly linked - those that did not have UPRNs already attached
+            new_UPRNs = self.matched_addresses.loc[~msk]
+            n_new_UPRNs = len(new_UPRNs.index)
+            new_UPRNs.to_csv(self.settings['outpath'] + self.settings['outname'] + '_newUPRN.csv', index=False)
+            self.log.info('{} more addresses with UPRN...'.format(n_new_UPRNs))
 
         self.results['linked'] = n_matched
         self.results['not_linked'] = not_found
         self.results['correct'] = sameUPRNs
         self.results['false_positive'] = false_positives
+        self.results['new_UPRNs'] = n_new_UPRNs
 
         # make a simple visualisation
-        all_results = [n_matched, sameUPRNs, false_positives, not_found]
-        all_results_names = ['Linked', 'Same UPRN', 'False Positives', 'Not Linked']
-        x = np.arange(len(all_results))
-        plt.figure(figsize=(12, 10))
+        all_results = [total, n_matched, sameUPRNs, n_new_UPRNs, false_positives, not_found]
+        all_results_names = ['Input', 'Linked', 'Same UPRNs', 'New UPRNs', 'False Positives', 'Not Linked']
+        location = np.arange(len(all_results))
         width = 0.5
-        plt.bar(x, all_results, width, color='g')
-        plt.ylabel('Number of Addresses')
+        fig = plt.figure(figsize=(12, 10))
         plt.title('Prototype Linking Code (version={})'.format(__version__))
-        plt.xticks(x + width / 2., all_results_names, rotation=45)
+        ax = fig.add_subplot(1, 1, 1)
+        plt.barh(location, all_results, width, color='g', alpha=0.6)
+        for p in ax.patches:
+            ax.annotate("%i" % int(p.get_width()), (p.get_x() + p.get_width(), p.get_y()),
+                        xytext=(-100, 18), textcoords='offset points', color='white', fontsize=24)
+        plt.xlabel('Number of Addresses')
+        plt.yticks(location + width / 2., all_results_names)
+        plt.xlim(0, ax.get_xlim()[1] + 1)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
         plt.close()
@@ -844,9 +864,9 @@ class AddressLinker:
 
     def store_results(self, table='results'):
         """
-        Stores the results to a SQLite3 database. Appends to the file if it exists.
+        Stores the results to a SQLite3 database. Appends to the database table if it exists.
 
-        :param table: name of the table
+        :param table: name of the database table to store the results
         :type table: str
 
         :return: None
@@ -868,13 +888,12 @@ class AddressLinker:
         """
         start = time.clock()
         self.load_data()
+        self.check_loaded_data()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
-        self._check_loaded_data()
-
         start = time.clock()
-        self._load_addressbase()
+        self.load_addressbase()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 

@@ -40,14 +40,14 @@ Version
 -------
 
 :version: 0.1
-:date: 29-Nov-2016
+:date: 30-Nov-2016
 
 
 Results
 -------
 
-With full AB and reasonable runtime (i.e. using blocking):
-    Total Match Fraction 99.8 per cent
+With full AB and a reasonable runtime (AddressLinker version 0.1):
+    Total Match Fraction 98.4 per cent
 """
 from Analytics.linking import addressLinking
 import pandas as pd
@@ -91,11 +91,19 @@ class LandRegistryLinker(addressLinking.AddressLinker):
                                                'TransactionID': 'ID'}, inplace=True)
 
 
-if __name__ == "__main__":
+def run_land_registry_linker():
+    """
+    A simple wrapper that allows running Land Registry linker.
+
+    :return: None
+    """
     settings = dict(inputFilename='pp-monthly-update-Edited.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-                    outname='LandRegistry',
-                    outpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/')
+                    outname='LandRegistry')
 
     linker = LandRegistryLinker(**settings)
     linker.run_all()
+
+
+if __name__ == "__main__":
+    run_land_registry_linker()
