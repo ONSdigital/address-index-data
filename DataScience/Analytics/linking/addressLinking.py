@@ -555,61 +555,41 @@ class AddressLinker:
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
 
-    def link_all_addresses(self):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, None)):
         """
         A method to link addresses against AddressBase.
+
+        :param blocking_modes: a tuple listing all the blocking modes that should be used. These modes correspond to
+                               different ways of performing blocking.
+        :type blocking_modes: tuple
         """
         self.log.info('Linking addresses against Address Base data...')
-        # split to those with full postcode and no postcode - use different matching strategies
-        msk = self.toLinkAddressData['Postcode'].isnull()
-        postcode_exists = self.toLinkAddressData.loc[~msk]
-        no_postcode = self.toLinkAddressData.loc[msk]
 
-        if len(postcode_exists.index) > 0:
-            msk = postcode_exists['BuildingNumber'].isnull()
-            postcode_no_building_number = postcode_exists.loc[msk]
-            postcode_building_number = postcode_exists.loc[~msk]
+        still_missing = self.toLinkAddressData
+        for blocking_mode in blocking_modes:
+            if len(still_missing.index) > 0:
+                new_matches, still_missing = self._find_likeliest_address(still_missing, blocking=blocking_mode)
 
-            if len(postcode_building_number) > 0:
-                self.matches, missing = self._find_likeliest_address(postcode_building_number, blocking=1)
-            if len(postcode_no_building_number) > 0:
-                if len(missing.index) > 0:
-                    postcode_no_building_number = postcode_no_building_number.append(missing)
-                matches_new, missing = self._find_likeliest_address(postcode_no_building_number, blocking=2)
+                if blocking_mode == 1:
+                    self.matches = new_matches
+                else:
+                    self.matches = self.matches.append(new_matches)
+            else:
+                self.log.info('Found potential matches for all addresses')
+                break
 
-            # add those without building number to already found addresses
-            self.matches = self.matches.append(matches_new)
-            # add those that were not matched to those without postcode
-            no_postcode = no_postcode.append(missing)
-
-        if len(no_postcode.index) > 0:
-            msk = no_postcode['BuildingNumber'].isnull()
-            no_postcode_no_building_number = no_postcode.loc[msk]
-            no_postcode_building_number = no_postcode.loc[~msk]
-
-            if len(no_postcode_building_number.index) > 0:
-                matches_new, missing = self._find_likeliest_address(no_postcode_building_number, blocking=3)
-                self.matches = self.matches.append(matches_new)
-
-            if len(no_postcode_no_building_number.index) > 0:
-                if len(missing.index) > 0:
-                    no_postcode_no_building_number.append(missing)
-                matches_new, missing = self._find_likeliest_address(no_postcode_no_building_number, blocking=4)
-                self.matches = self.matches.append(matches_new)
-
-    def _find_likeliest_address(self, toMatch, blocking=1):
+    def _find_likeliest_address(self, addresses_to_be_linked, blocking=1):
         """
         A private method to link toMatch data to the AddressBase source information.
 
-        Uses blocking to speed up the matching. This is dangerous for postcodes that have been misspelled
-        and will potentially lead to false positives.
+        Uses blocking to speed up the matching. This is dangerous if misspelled
 
         .. note: the aggressive blocking does not work when both BuildingNumber and BuildingName is missing.
                  This is somewhat common for example for care homes. One should really separate these into
                  different category and do blocking only on postcode.
 
-        :param toMatch: dataframe holding the address information that is to be matched against a source
-        :type toMatch: pandas.DataFrame
+        :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
+        :type addresses_to_be_linked: pandas.DataFrame
         :param blocking: the mode of blocking, ranging from 1 to 4
         :type blocking: int
 
@@ -617,11 +597,11 @@ class AddressLinker:
         :rtype: list(pandas.DataFrame, pandas.DataFrame)
         """
         # create pairs
-        pcl = rl.Pairs(toMatch, self.addressBase)
+        pcl = rl.Pairs(addresses_to_be_linked, self.addressBase)
 
         # set blocking - no need to check all pairs, so speeds things up (albeit risks missing if not correctly spelled)
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
-        self.log.info('Start matching with blocking model {}'.format(blocking))
+        self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'], right_on=['postcode', 'BUILDING_NUMBER'])
         elif blocking == 2:
@@ -633,11 +613,11 @@ class AddressLinker:
         else:
             pairs = pcl.block(left_on=['BuildingNumber', 'TownName'], right_on=['BUILDING_NUMBER', 'townName'])
 
-        self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(toMatch.index)))
+        self.log.info('Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(addresses_to_be_linked.index)))
 
         # compare the two data sets
         # the idea is to build evidence to support linking, hence some fields are compared multiple times
-        compare = rl.Compare(pairs, self.addressBase, toMatch, batch=True)
+        compare = rl.Compare(pairs, self.addressBase, addresses_to_be_linked, batch=True)
 
         # set rules for standard residential addresses
         compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl',
@@ -717,8 +697,8 @@ class AddressLinker:
         matchedIndex = matches['TestData_Index'].values
 
         # missing ones
-        missingIndex = toMatch.index.difference(matchedIndex)
-        missing = toMatch.loc[missingIndex]
+        missingIndex = addresses_to_be_linked.index.difference(matchedIndex)
+        missing = addresses_to_be_linked.loc[missingIndex]
 
         self.log.info('Found {} matches...'.format(len(matches.index)))
         self.log.info('Failed to found {} matches...'.format(len(missing.index)))
