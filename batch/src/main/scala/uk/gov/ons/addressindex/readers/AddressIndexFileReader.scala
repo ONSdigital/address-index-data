@@ -27,65 +27,65 @@ object AddressIndexFileReader {
     *
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(): DataFrame = getDataFrame(pathToCsv, CSVSchemas.postcodeAddressFileSchema)
+  def readDeliveryPointCSV(): DataFrame = readCsv(pathToCsv, CSVSchemas.postcodeAddressFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the blpu data from CSV
     */
-  def readBlpuCSV(): DataFrame = getDataFrame(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
+  def readBlpuCSV(): DataFrame = readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the classification data from CSV
     */
-  def readClassificationCSV(): DataFrame = getDataFrame(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
+  def readClassificationCSV(): DataFrame = readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the crossref data from CSV
     */
-  def readCrossrefCSV(): DataFrame = getDataFrame(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
+  def readCrossrefCSV(): DataFrame = readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the lpi data from CSV
     */
-  def readLpiCSV(): DataFrame = getDataFrame(pathToLpiCSV, CSVSchemas.lpiFileSchema)
+  def readLpiCSV(): DataFrame = readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the organisation data from CSV
     */
-  def readOrganisationCSV(): DataFrame = getDataFrame(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
+  def readOrganisationCSV(): DataFrame = readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street data from CSV
     */
-  def readStreetCSV(): DataFrame = getDataFrame(pathToStreetCSV, CSVSchemas.streetFileSchema)
+  def readStreetCSV(): DataFrame = readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street-descriptor data from CSV
     */
-  def readStreetDescriptorCSV(): DataFrame = getDataFrame(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
+  def readStreetDescriptorCSV(): DataFrame = readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the successor data from CSV
     */
-  def readSuccessorCSV(): DataFrame = getDataFrame(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
+  def readSuccessorCSV(): DataFrame = readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
 
-  private def getDataFrame(path: String, schema: StructType) =
+  private def readCsv(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
