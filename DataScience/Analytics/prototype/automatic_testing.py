@@ -4,6 +4,8 @@ ONS Address Index - Automatic Testing of Different Datasets
 ===========================================================
 
 A simple wrapper to call all independent address linking datasets in serial.
+Could be parallelised trivially, however, the linking code is memory hungry
+so the node needs to have sufficient memory to enable this.
 
 
 Running
@@ -17,9 +19,9 @@ After all requirements are satisfied, the script can be invoked using CPython in
 Requirements
 ------------
 
-:requires: pandas (0.19.1)
-:requires: matplotlib (1.5.3)
-:requires: sqlalchemy
+:requires: pandas (tested with 0.19.1)
+:requires: matplotlib (tested with 1.5.3)
+:requires: sqlalchemy (tested with 1.1.4)
 :requires: addressLinking (and all the requirements within it)
 
 
@@ -38,19 +40,21 @@ Version
 """
 import os
 import datetime
+import sqlite3
 import Analytics.prototype.welshAddresses as wa
 import Analytics.prototype.landRegistryAddresses as lr
 import Analytics.prototype.edgeCaseAddresses as ec
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
+from Analytics.linking import addressLinking
 
 
-# set global local variable that is platform specific so that there is no need to make code changes
+# set global location variable that is platform specific so that there is no need to make code changes
 if 'Pro.local' in os.uname().nodename:
-    location = '//Users/saminiemi/Projects/ONS/AddressIndex/linkedData/'
+    location = '/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/'
 elif 'cdhut-d03-' in os.uname().nodename:
-    location = '//opt/scratch/AddressIndex/Results/'
+    location = '/opt/scratch/AddressIndex/Results/'
 else:
     raise ConnectionError('ERROR: cannot connect to the SQLite3 database')
 
@@ -59,24 +63,115 @@ def run_all_datasets():
     """
     Run all address linking codes in serial.
 
-    :return:
+    :return: None
     """
+    print('Running Edge Case addresses test...')
+    ec.run_edge_case_linker()
+
     print('Running Welsh addresses test...')
     wa.run_welsh_address_linker()
 
     print('Running Landry Registry addresses test...')
     lr.run_land_registry_linker()
 
-    print('Running Edge Case addresses test...')
-    ec.run_edge_case_linker()
+
+def _load_welsh_data():
+    """
+    Load Welsh address data and results. Joint the information together to a single
+    dataframe.
+
+    :return: a single data frame containing original data and attached UPRNs
+    :rtype: pandas.DataFrame
+    """
+    # load original data
+    original = pd.read_csv(location + 'WelshGovernmentData21Nov2016.csv',
+                           usecols=['ID', 'UPRNs_matched_to_date'])
+    original.rename(columns={'UPRNs_matched_to_date': 'UPRN_ORIG'}, inplace=True)
+
+    # load prototype linked data
+    prototype = pd.read_csv(location + 'WelshGov_matched.csv',
+                            usecols=['ID', 'UPRN'])
+    prototype.rename(columns={'UPRN': 'UPRN_PROTO'}, inplace=True)
+
+    # load SAS code (PG) data
+    sas = pd.read_csv(location + 'Paul_matches_with_address_text_welshGov.csv',
+                      usecols=['UID', 'UPRN'])
+    sas.rename(columns={'UID': 'ID', 'UPRN': 'UPRN_SAS'}, inplace=True)
+
+    # join data frames
+    data = pd.merge(original, prototype, how='left', on='ID')
+    data = pd.merge(data, sas, how='left', on='ID')
+
+    return data
+
+
+def _compute_welsh_performance(df, methods=('UPRN_ORIG', 'UPRN_PROTO', 'UPRN_SAS')):
+    """
+    Compute performance for the Welsh dataset using SAS code UPRNs as a reference.
+
+    :param df: dataframe containing UPRNs of methods as columns
+    :type df: pandas.DataFrame
+    :param methods: a tuple listing methods to analyse
+    :type methods: tuple
+
+    :return: results of the performance computations
+    :rtype: dict
+    """
+    # simple performance metrics that can be computed directly from the data frame and dummies
+    addresses = len(df.index)
+    linked = len(df.loc[~df['UPRN_PROTO'].isnull()].index)
+    not_linked = len(df.loc[df['UPRN_PROTO'].isnull()].index)
+    withUPRN = len(df.loc[~df['UPRN_SAS'].isnull()].index)
+    correct = -1
+    false_positive = -1
+    new_UPRNs = -1
+
+    # iterate over the possible method combinations - capture relevant information
+    for i, method1 in enumerate(methods):
+        for j, method2 in enumerate(methods):
+            if method1 == 'UPRN_SAS' and method2 == 'UPRN_PROTO':
+                agree = df[method1] == df[method2]
+                nagree = len(df.loc[agree].index)
+
+                msk = (~df[method1].isnull()) & (~df[method2].isnull())
+                disagree = df.loc[msk, method1] != df.loc[msk, method2]
+                ndisagree = len(df.loc[msk & disagree].index)
+
+                msk = (df[method1].isnull()) & (~df[method2].isnull())
+                nmethod2only = len(df.loc[msk].index)
+
+                correct = nagree
+                false_positive = ndisagree
+                new_UPRNs = nmethod2only
+
+    results = dict(addresses=addresses, correct=correct, false_positive=false_positive, linked=linked,
+                   new_UPRNs=new_UPRNs, not_linked=not_linked, withUPRN=withUPRN)
+
+    return results
 
 
 def compute_performance():
     """
+    Computes additional performance metrics as some datasets have multiple UPRNs attached or
+    UPRNs have been attached later.
 
-    :return:
+    :return: None
     """
-    pass
+    welsh_data = _load_welsh_data()
+
+    # compute results and create a dictionary
+    results = _compute_welsh_performance(welsh_data, methods=('UPRN_PROTO', 'UPRN_SAS'))
+    results['code_version'] = addressLinking.__version__
+    results['dataset'] = 'WelshGovernmentData21Nov2016.csv'
+    results['date'] = datetime.datetime.now()
+    results['name'] = 'WelshGovSAS'
+
+    # convert to Pandas Dataframe
+    results = pd.DataFrame.from_records([results])
+
+    # push to the database
+    with sqlite3.connect(location + 'AddressLinkingResults.sqlite') as cnx:
+        results.to_sql('results', cnx, index=False, if_exists='append')
 
 
 def _get_data_from_db(sql):
@@ -90,7 +185,7 @@ def _get_data_from_db(sql):
     :rtype: pandas.DataFrame
     """
     # build the connection string from specifying the DB type, location, and filename separately
-    connection = 'sqlite://' + location + 'AddressLinkingResults.sqlite'
+    connection = 'sqlite:///' + location + 'AddressLinkingResults.sqlite'
 
     df = pd.read_sql_query(sql, create_engine(connection))
 
@@ -142,7 +237,7 @@ def plot_performance():
 
 def run_all(plot_only=False):
     """
-    Execute the full automated testing sequence.
+    Execute the fully automated testing sequence.
 
     :param plot_only: whether to re-run all test datasets or simply generate performance figures
     :param plot_only: bool
@@ -156,4 +251,4 @@ def run_all(plot_only=False):
 
 
 if __name__ == "__main__":
-    run_all(plot_only=True)
+    run_all()
