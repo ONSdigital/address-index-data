@@ -3,7 +3,7 @@
 ONS Address Index - Patient Records Test
 ========================================
 
-A simple script to attach UPRNs to Patient Record test data. The data set contains UPRNs that were
+A simple script to attach UPRNs to Patient Records test data. The data set contains UPRNs that were
 attached with another technique, so the comparison is carried out against those attached
 earlier.
 
@@ -22,7 +22,7 @@ After all requirements are satisfied, the script can be invoked using CPython in
     python patientRecordAddresses.py
 
 
-.. Note:: This dataset cannot leave ONS network and thus the script can be run only on an ONS network node.
+.. Note:: This dataset cannot leave ONS network and thus the script can only be run on an ONS network node.
 
 
 Requirements
@@ -50,7 +50,7 @@ import pandas as pd
 
 class PatientRecordsAddressLinker(addressLinking.AddressLinker):
     """
-    Address Linker for Pantient Records test data. Inherits the AddressLinker and overwrites the load_data method.
+    Address Linker for Patient Records test data. Inherits the AddressLinker and overwrites the load_data method.
     """
 
     def load_data(self):
@@ -60,20 +60,23 @@ class PatientRecordsAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData = pd.read_excel(self.settings['inputPath'] + self.settings['inputFilename'])
 
         self.toLinkAddressData.drop(['TRUTH_CONFIDENCE', 'primary_uprn', 'alt_UPRN', 'alt_primary_uprn',
-                                     'layers', 'this_layer', 'Ambiguous_match', 'low_ambiguity_USRN'], inplace=True)
+                                     'layers', 'this_layer', 'Ambiguous_match', 'low_ambiguity_USRN'],
+                                    axis=1, inplace=True)
 
         self.toLinkAddressData.rename(columns={'id': 'ID', 'uprn': 'UPRN_old'}, inplace=True)
 
 
 def run_patient_record_address_linker():
     """
-    A simple wrapper that allows running Welsh Address linker.
+    A simple wrapper that allows running the patient record address linker.
 
     :return: None
     """
     settings = dict(inputFilename='RW100K.xlsx',
                     inputPath='/opt/scratch/AddressIndex/TestData/',
-                    outname='PatientRecord')
+                    outPath='/opt/scratch/AddressIndex/Results/',
+                    outname='PatientRecord',
+                    ABpath='/opt/scratch/AddressIndex/AddressBase/')
 
     linker = PatientRecordsAddressLinker(**settings)
     linker.run_all()

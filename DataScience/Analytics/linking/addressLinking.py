@@ -50,7 +50,6 @@ import re
 import sqlite3
 import time
 import warnings
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
@@ -58,6 +57,10 @@ import recordlinkage as rl
 from Analytics.linking import logger
 from ProbabilisticParser import parser
 from tqdm import tqdm
+
+import matplotlib
+matplotlib.use('Agg')   # to prevent Tkinter crashing on cdhut-d03
+import matplotlib.pyplot as plt
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
