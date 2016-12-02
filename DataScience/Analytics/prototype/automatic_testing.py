@@ -197,8 +197,7 @@ def _get_data_from_db(sql):
     return df
 
 
-def _create_figures(plot_data, testset_name,
-                    columns_to_plot=['addresses', 'correct', 'false_positive', 'linked', 'new_UPRNs', 'not_linked']):
+def _create_figures(plot_data, testset_name, columns_to_plot):
     """
     Create two figures to show the performance as a function of time.
 
@@ -251,7 +250,8 @@ def plot_performance():
     for testset_name in set(data['name']):
         plot_data = data.loc[data['name'] == testset_name]
         print('Plotting {} results'.format(testset_name))
-        _create_figures(plot_data, testset_name)
+        _create_figures(plot_data, testset_name,
+                        ['addresses', 'correct', 'false_positive', 'linked', 'new_UPRNs', 'not_linked'])
 
 
 def run_all(plot_only=False):
