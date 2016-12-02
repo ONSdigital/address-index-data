@@ -118,10 +118,15 @@ def _compute_welsh_performance(df, methods=('UPRN_ORIG', 'UPRN_PROTO', 'UPRN_SAS
     :rtype: dict
     """
     # simple performance metrics that can be computed directly from the data frame and dummies
+
+    msk = df['UPRN_PROTO'].isnull()
     addresses = len(df.index)
-    linked = len(df.loc[~df['UPRN_PROTO'].isnull()].index)
-    not_linked = len(df.loc[df['UPRN_PROTO'].isnull()].index)
-    withUPRN = len(df.loc[~df['UPRN_SAS'].isnull()].index)
+    linked = len(df.loc[~msk].index)
+    not_linked = len(df.loc[msk].index)
+
+    msk = df['UPRN_SAS'].isnull()
+    withUPRN = len(df.loc[~msk].index)
+
     correct = -1
     false_positive = -1
     new_UPRNs = -1
@@ -192,6 +197,40 @@ def _get_data_from_db(sql):
     return df
 
 
+def _create_figures(plot_data, testset_name,
+                    columns_to_plot=['addresses', 'correct', 'false_positive', 'linked', 'new_UPRNs', 'not_linked']):
+    """
+    Create two figures to show the performance as a function of time.
+
+    :param plot_data: dataframe contaninig column date and those to be plotted
+    :type plot_data: pandas.DataFrame
+    :param testset_name: name of the test dataset, used as a part of the output file name
+    :type testset_name: str
+    :param columns_to_plot: a list of names of the columns storing the performance metrics to be plotted
+    :type columns_to_plot: list
+
+    :return: None
+    """
+    plot_data.plot(x='date', y=columns_to_plot,
+                   subplots=True, sharex=True, layout=(3, 2), figsize=(12, 18),
+                   fontsize=16, sort_columns=True, color='m',
+                   xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
+                         plot_data['date'].max() + datetime.timedelta(days=1)))
+    plt.tight_layout()
+    plt.savefig(location + testset_name + 'results.png')
+    plt.close()
+
+    plot_data.plot(x='date', y=columns_to_plot,
+                   figsize=(12, 18), fontsize=16, sort_columns=True,
+                   xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
+                         plot_data['date'].max() + datetime.timedelta(days=1)),
+                   ylim=(plot_data[columns_to_plot].min(axis=0).min() - 1,
+                         plot_data[columns_to_plot].max(axis=0).max() + 1))
+    plt.tight_layout()
+    plt.savefig(location + testset_name + 'results2.png')
+    plt.close()
+
+
 def plot_performance():
     """
     Generates simple graphs which show the linking performance as a function of time for all datasets
@@ -208,31 +247,11 @@ def plot_performance():
     # convert date to datetime
     data['date'] = pd.to_datetime(data['date'])
 
-    columns_to_plot = ['addresses', 'correct', 'false_positive', 'linked', 'new_UPRNs', 'not_linked']
-
     # create figures
     for testset_name in set(data['name']):
         plot_data = data.loc[data['name'] == testset_name]
         print('Plotting {} results'.format(testset_name))
-
-        plot_data.plot(x='date', y=columns_to_plot,
-                       subplots=True, sharex=True, layout=(3, 2), figsize=(12, 18),
-                       fontsize=16, sort_columns=True, color='m',
-                       xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
-                             plot_data['date'].max() + datetime.timedelta(days=1)))
-        plt.tight_layout()
-        plt.savefig(location + testset_name + 'results.png')
-        plt.close()
-
-        plot_data.plot(x='date', y=columns_to_plot,
-                       figsize=(12, 18), fontsize=16, sort_columns=True,
-                       xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
-                             plot_data['date'].max() + datetime.timedelta(days=1)),
-                       ylim=(plot_data[columns_to_plot].min(axis=0).min() - 1,
-                             plot_data[columns_to_plot].max(axis=0).max() + 1))
-        plt.tight_layout()
-        plt.savefig(location + testset_name + 'results2.png')
-        plt.close()
+        _create_figures(plot_data, testset_name)
 
 
 def run_all(plot_only=False):
