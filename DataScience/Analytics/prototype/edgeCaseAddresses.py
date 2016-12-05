@@ -71,7 +71,7 @@ class EdgeCaseLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old', 'MNEMONIC': 'Category'}, inplace=True)
 
 
-def run_edge_case_linker():
+def run_edge_case_linker(**kwargs):
     """
     A simple wrapper that allows running Edge Case linker.
 
@@ -80,6 +80,7 @@ def run_edge_case_linker():
     settings = dict(inputFilename='EDGE_CASES_EC5K_NoPostcode.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                     outname='EdgeCases')
+    settings.update(kwargs)
 
     linker = EdgeCaseLinker(**settings)
     linker.run_all()

@@ -44,7 +44,7 @@ import sqlite3
 import Analytics.prototype.welshAddresses as wa
 import Analytics.prototype.landRegistryAddresses as lr
 import Analytics.prototype.edgeCaseAddresses as ec
-import Analytics.prototype.patientRecordAddesses as pr
+import Analytics.prototype.patientRecordAddresses as pr
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine

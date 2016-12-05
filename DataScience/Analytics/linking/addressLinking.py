@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 30-Nov-2016
+:version: 0.2
+:date: 5-Dec-2016
 """
 import datetime
 import os
@@ -65,7 +65,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 class AddressLinker:
@@ -273,6 +273,9 @@ class AddressLinker:
         msk = self.addressBase['THROUGHFARE'].isnull()
         self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'STREET_DESCRIPTOR']
 
+        msk = self.addressBase['BUILDING_NUMBER'].isnull()
+        self.addressBase.loc[msk, 'BUILDING_NUMBER'] = self.addressBase.loc[msk, 'PAO_START_NUMBER']
+
         msk = self.addressBase['ORGANISATION_NAME'].isnull()
         self.addressBase.loc[msk, 'ORGANISATION_NAME'] = self.addressBase.loc[msk, 'ORGANISATION']
 
@@ -306,10 +309,6 @@ class AddressLinker:
                                          'PAO_TEXT': 'pao_text',
                                          'LOCALITY': 'locality',
                                          'BUILDING_NAME': 'BuildingName'}, inplace=True)
-
-        # if SubBuildingName is empty add dummy - helps as string distance cannot be computed between Nones
-        msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
-        self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = 'N/A'
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
@@ -456,6 +455,7 @@ class AddressLinker:
         sub_building = []
         building_name = []
         building_number = []
+        pao_start_number = []
         building_suffix = []
         street = []
         locality = []
@@ -496,6 +496,7 @@ class AddressLinker:
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
                 parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
+                parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
                 # accept suffixes that are only maximum two chars and if not hyphen
                 if len(parsed['BuildingSuffix']) > 2 and (parsed['BuildingSuffix'] != '-'):
                     parsed['BuildingSuffix'] = None
@@ -519,6 +520,10 @@ class AddressLinker:
                     except ValueError:
                         pass
 
+            # if pao_start_number is Null then add BuildingNumber to it
+            if parsed.get('pao_start_number', None) is None and parsed.get('BuildingNumber', None) is not None:
+                parsed['pao_start_number'] = parsed['BuildingNumber']
+
             # store the parsed information to separate lists
             organisation.append(parsed.get('OrganisationName', None))
             department.append(parsed.get('DepartmentName', None))
@@ -530,6 +535,7 @@ class AddressLinker:
             town.append(parsed.get('TownName', None))
             postcode.append(parsed.get('Postcode', None))
             building_suffix.append(parsed.get('BuildingSuffix', None))
+            pao_start_number.append(parsed.get('pao_start_number', None))
 
         # add the parsed information to the dataframe
         self.toLinkAddressData['OrganisationName'] = organisation
@@ -542,6 +548,7 @@ class AddressLinker:
         self.toLinkAddressData['TownName'] = town
         self.toLinkAddressData['Postcode'] = postcode
         self.toLinkAddressData['BuildingSuffix'] = building_suffix
+        self.toLinkAddressData['BuildingStartNumber'] = pao_start_number
 
         if self.settings['expandPostcode']:
             # if valid postcode information found then split between in and outcode
@@ -561,12 +568,14 @@ class AddressLinker:
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
 
-        # if SubBuilding name or organisation name is empty add dummy
+        # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
+        msk = self.toLinkAddressData['BuildingSuffix'].isnull()
+        self.toLinkAddressData.loc[msk, 'BuildingSuffix'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
-        columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName', 'BuildingSuffix']
+        columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName']
         self.toLinkAddressData[columns_to_add_empty_strings].fillna('', inplace=True)
 
         # save for inspection
@@ -612,7 +621,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 4
+        :param blocking: the mode of blocking, ranging from 1 to 5
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -625,20 +634,20 @@ class AddressLinker:
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
-            pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
-                              right_on=['postcode', 'BUILDING_NUMBER'])
-        elif blocking == 2:
             pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
                               right_on=['postcode', 'BuildingName'])
+        elif blocking == 2:
+            pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
+                              right_on=['postcode', 'BUILDING_NUMBER'])
         elif blocking == 3:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['postcode', 'StreetName'])
         elif blocking == 4:
-            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
-                              right_on=['BUILDING_NUMBER', 'StreetName'])
-        elif blocking == 5:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BuildingName', 'StreetName'])
+        elif blocking == 5:
+            pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
+                              right_on=['BUILDING_NUMBER', 'StreetName'])
         else:
             pairs = pcl.block(left_on=['BuildingNumber', 'TownName'],
                               right_on=['BUILDING_NUMBER', 'townName'])
@@ -651,61 +660,65 @@ class AddressLinker:
         compare = rl.Compare(pairs, self.addressBase, addresses_to_be_linked, batch=True)
 
         # set rules for standard residential addresses
-        compare.string('SAO_TEXT', 'SubBuildingName', method='damerau_levenshtein', name='flat_dl',
+        compare.string('SAO_TEXT', 'SubBuildingName', method='jarowinkler', name='flat_dl',
                        missing_value=0.6)
-        compare.string('pao_text', 'BuildingName', method='damerau_levenshtein', name='pao_dl',
+        compare.string('pao_text', 'BuildingName', method='jarowinkler', name='pao_dl',
                        missing_value=0.6)
-        compare.string('BuildingName', 'BuildingName', method='damerau_levenshtein', name='building_name_dl',
+        compare.string('BuildingName', 'BuildingName', method='jarowinkler', name='building_name_dl',
+                       missing_value=0.7)
+        compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
-        compare.string('PAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='pao_number_dl',
-                       missing_value=0.5)
-        compare.string('StreetName', 'StreetName', method='damerau_levenshtein', name='street_dl',
-                       missing_value=0.1)
-        compare.string('townName', 'TownName', method='damerau_levenshtein', name='town_dl',
+        compare.string('PAO_START_NUMBER', 'BuildingStartNumber', method='jarowinkler', name='pao_number_dl',
                        missing_value=0.2)
-        compare.string('locality', 'Locality', method='damerau_levenshtein', name='locality_dl',
+        compare.string('StreetName', 'StreetName', method='jarowinkler', name='street_dl',
+                       missing_value=0.6)
+        compare.string('townName', 'TownName', method='jarowinkler', name='town_dl',
+                       missing_value=0.2)
+        compare.string('locality', 'Locality', method='jarowinkler', name='locality_dl',
                        missing_value=0.5)
 
         # use to separate e.g. 55A from 55
-        compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='damerau_levenshtein', name='pao_suffix_dl',
+        compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='jarowinkler', name='pao_suffix_dl',
                        missing_value=0.5)
 
         # the following is good for flats and apartments than have been numbered
-        compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='damerau_levenshtein', name='flatw_dl',
-                       missing_value=0.5)
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl',
+        compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
+                       missing_value=0.7)
+        compare.string('SAO_START_NUMBER', 'FlatNumber', method='jarowinkler', name='sao_number_dl',
                        missing_value=0.6)
-        # some times the PAO_START_NUMBER is 1 for the whole house without a number and SAO START NUMBER refers
-        # to the flat number, but the flat number is actually part of the house number without flat/apt etc. specifier
-        # This comparison should probably be numeric.
-        compare.string('SAO_START_NUMBER', 'BuildingNumber', method='damerau_levenshtein', name='sao_number2_dl',
-                       missing_value=0.1)
 
         # set rules for organisations such as care homes and similar type addresses
-        compare.string('ORGANISATION_NAME', 'OrganisationName', method='damerau_levenshtein', name='organisation_dl',
+        compare.string('ORGANISATION_NAME', 'OrganisationName', method='jarowinkler', name='organisation_dl',
                        missing_value=0.6)
-        compare.string('DEPARTMENT_NAME', 'DepartmentName', method='damerau_levenshtein', name='department_dl',
+        compare.string('DEPARTMENT_NAME', 'DepartmentName', method='jarowinkler', name='department_dl',
                        missing_value=0.6)
 
         # Extras
-        compare.string('STREET_DESCRIPTOR', 'StreetName', method='damerau_levenshtein', name='street_desc_dl',
+        compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
                        missing_value=0.6)
 
         # execute the comparison model
         compare.run()
 
         # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-        compare.vectors['pao_dl'] *= 5.
-        compare.vectors['town_dl'] *= 5.
-        compare.vectors['sao_number_dl'] *= 4.
-        compare.vectors['organisation_dl'] *= 4.
-        compare.vectors['flatw_dl'] *= 3.
-        compare.vectors['pao_suffix_dl'] *= 2.
-        compare.vectors['building_name_dl'] *= 3.
-        compare.vectors['locality_dl'] *= 2.
+        # compare.vectors['pao_dl'] *= 5.
+        # compare.vectors['town_dl'] *= 5.
+        # compare.vectors['sao_number_dl'] *= 4.
+        # compare.vectors['organisation_dl'] *= 4.
+        # compare.vectors['flatw_dl'] *= 3.
+        # compare.vectors['pao_suffix_dl'] *= 2.
+        # compare.vectors['building_name_dl'] *= 3.
+        # compare.vectors['locality_dl'] *= 2.
 
         # add sum of the components to the comparison vectors dataframe
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
+
+        # remove those matches that are not close enough - requires e.g. street name to be close enough
+        if blocking in (1, 2):
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+        elif blocking == 3:
+            compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
+            compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
 
         # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
         matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
@@ -717,11 +730,9 @@ class AddressLinker:
         # reset index
         matches = matches.reset_index()
 
-        # keep first if duplicate in the WG_Index column
-        matches = matches.drop_duplicates('TestData_Index', keep='first')
-
-        # sort by WG_Index
+        # sort by WG_Index and add blocking mode
         matches = matches.sort_values(by='TestData_Index')
+        matches['block_mode'] = blocking
 
         # matched IDs
         matched_index = matches['TestData_Index'].values
@@ -730,14 +741,15 @@ class AddressLinker:
         missing_index = addresses_to_be_linked.index.difference(matched_index)
         missing = addresses_to_be_linked.loc[missing_index]
 
-        self.log.info('Found {} matches...'.format(len(matches.index)))
-        self.log.info('Failed to found {} matches...'.format(len(missing.index)))
+        self.log.info('Found {} potential matches...'.format(len(matches.index)))
+        self.log.info('Failed to found matches for {} addresses...'.format(len(missing.index)))
 
         return matches, missing
 
     def merge_linked_data_and_address_base_information(self):
         """
-        Merge address base information to the identified matches.
+        Merge address base information to the identified matches, sort by the likeliest match, and
+        drop other potential matches.
         """
         self.log.info('Merging back the original information...')
 
@@ -752,6 +764,12 @@ class AddressLinker:
         # drop unnecessary columns
         if self.settings['dropColumns']:
             self.matched_addresses.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
+
+        # sort by similarity, save for inspection and keep only the likeliest
+        self.matched_addresses = self.matched_addresses.sort_values(by='similarity_sum', ascending=False)
+        self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_all_matches.csv',
+                                      index=False)
+        self.matched_addresses = self.matched_addresses.drop_duplicates('TestData_Index', keep='first')
 
     def _run_test(self):
         """
@@ -838,29 +856,7 @@ class AddressLinker:
         # make a simple visualisation
         all_results = [total, n_matched, sameUPRNs, n_new_UPRNs, false_positives, not_found]
         all_results_names = ['Input', 'Linked', 'Same UPRNs', 'New UPRNs', 'False Positives', 'Not Linked']
-        location = np.arange(len(all_results))
-        width = 0.5
-        fig = plt.figure(figsize=(12, 10))
-        plt.title('Prototype Linking Code (version={})'.format(__version__))
-        ax = fig.add_subplot(1, 1, 1)
-        plt.barh(location, all_results, width, color='g', alpha=0.6)
-        for p in ax.patches:
-            n_addresses = int(p.get_width())
-            if n_addresses < 0:
-                continue
-            elif n_addresses > 100:
-                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
-                            xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
-            else:
-                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
-                            xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
-
-        plt.xlabel('Number of Addresses')
-        plt.yticks(location + width / 2., all_results_names)
-        plt.xlim(0, ax.get_xlim()[1]*1.05)
-        plt.tight_layout()
-        plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
-        plt.close()
+        self._generate_performance_figure(all_results, all_results_names)
 
         # check results for each class separately if possible
         if 'Category' in self.matched_addresses.columns:
@@ -880,6 +876,37 @@ class AddressLinker:
                 self.log.info('Match Fraction: {}'.format(n_matched / outof * 100.))
                 self.log.info('False Positives: {}'.format(false_positives))
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
+
+    def _generate_performance_figure(self, all_results, all_results_names):
+        """
+
+        :param all_results:
+        :param all_results_names:
+        :return:
+        """
+        location = np.arange(len(all_results))
+        width = 0.5
+        fig = plt.figure(figsize=(12, 10))
+        plt.title('Prototype Linking Code (version={})'.format(__version__))
+        ax = fig.add_subplot(1, 1, 1)
+        plt.barh(location, all_results, width, color='g', alpha=0.6)
+        for p in ax.patches:
+            n_addresses = int(p.get_width())
+            if n_addresses < 0:
+                continue
+            elif n_addresses > 500:
+                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+                            xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
+            else:
+                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+                            xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
+
+        plt.xlabel('Number of Addresses')
+        plt.yticks(location + width / 2., all_results_names)
+        plt.xlim(0, ax.get_xlim()[1]*1.05)
+        plt.tight_layout()
+        plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
+        plt.close()
 
     def store_results(self, table='results'):
         """
