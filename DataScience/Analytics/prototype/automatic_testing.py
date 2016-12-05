@@ -34,8 +34,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 1-Dec-2016
+:version: 0.2
+:date: 5-Dec-2016
 
 """
 import os
@@ -44,19 +44,25 @@ import sqlite3
 import Analytics.prototype.welshAddresses as wa
 import Analytics.prototype.landRegistryAddresses as lr
 import Analytics.prototype.edgeCaseAddresses as ec
+import Analytics.prototype.patientRecordAddesses as pr
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 from Analytics.linking import addressLinking
 
-
 # set global location variable that is platform specific so that there is no need to make code changes
 if 'Pro.local' in os.uname().nodename:
-    location = '/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/'
+    ABpath = '/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/'
+    outpath = '/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/'
+    inputPath = '/Users/saminiemi/Projects/ONS/AddressIndex/data/'
+    local = True
 elif 'cdhut-d03-' in os.uname().nodename:
-    location = '/opt/scratch/AddressIndex/Results/'
+    ABpath = '/opt/scratch/AddressIndex/AddressBase/'
+    outpath = '/opt/scratch/AddressIndex/Results/'
+    inputPath = '/opt/scratch/AddressIndex/TestData/'
+    local = False
 else:
-    raise ConnectionError('ERROR: cannot connect to the SQLite3 database')
+    raise ConnectionError('ERROR: cannot access AddressBase or connect to the SQLite3 database')
 
 
 def run_all_datasets():
@@ -65,14 +71,22 @@ def run_all_datasets():
 
     :return: None
     """
+    settings = dict(ABpath=ABpath, outpath=outpath, inputPath=inputPath)
+
     print('Running Edge Case addresses test...')
-    ec.run_edge_case_linker()
+    ec.run_edge_case_linker(**settings)
 
     print('Running Welsh addresses test...')
-    wa.run_welsh_address_linker()
+    wa.run_welsh_address_linker(**settings)
 
     print('Running Landry Registry addresses test...')
-    lr.run_land_registry_linker()
+    lr.run_land_registry_linker(**settings)
+
+    if local:
+        print('Cannot run Patient Records test locally...')
+    else:
+        print('Running Patient Records addresses test...')
+        pr.run_patient_record_address_linker(**settings)
 
 
 def _load_welsh_data():
@@ -84,17 +98,17 @@ def _load_welsh_data():
     :rtype: pandas.DataFrame
     """
     # load original data
-    original = pd.read_csv(location + 'WelshGovernmentData21Nov2016.csv',
+    original = pd.read_csv(outpath + 'WelshGovernmentData21Nov2016.csv',
                            usecols=['ID', 'UPRNs_matched_to_date'])
     original.rename(columns={'UPRNs_matched_to_date': 'UPRN_ORIG'}, inplace=True)
 
     # load prototype linked data
-    prototype = pd.read_csv(location + 'WelshGov_matched.csv',
+    prototype = pd.read_csv(outpath + 'WelshGov_matched.csv',
                             usecols=['ID', 'UPRN'])
     prototype.rename(columns={'UPRN': 'UPRN_PROTO'}, inplace=True)
 
     # load SAS code (PG) data
-    sas = pd.read_csv(location + 'Paul_matches_with_address_text_welshGov.csv',
+    sas = pd.read_csv(outpath + 'Paul_matches_with_address_text_welshGov.csv',
                       usecols=['UID', 'UPRN'])
     sas.rename(columns={'UID': 'ID', 'UPRN': 'UPRN_SAS'}, inplace=True)
 
@@ -175,7 +189,7 @@ def compute_performance():
     results = pd.DataFrame.from_records([results])
 
     # push to the database
-    with sqlite3.connect(location + 'AddressLinkingResults.sqlite') as cnx:
+    with sqlite3.connect(outpath + 'AddressLinkingResults.sqlite') as cnx:
         results.to_sql('results', cnx, index=False, if_exists='append')
 
 
@@ -190,7 +204,7 @@ def _get_data_from_db(sql):
     :rtype: pandas.DataFrame
     """
     # build the connection string from specifying the DB type, location, and filename separately
-    connection = 'sqlite:///' + location + 'AddressLinkingResults.sqlite'
+    connection = 'sqlite:///' + outpath + 'AddressLinkingResults.sqlite'
 
     df = pd.read_sql_query(sql, create_engine(connection))
 
@@ -216,7 +230,7 @@ def _create_figures(plot_data, testset_name, columns_to_plot):
                    xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
                          plot_data['date'].max() + datetime.timedelta(days=1)))
     plt.tight_layout()
-    plt.savefig(location + testset_name + 'results.png')
+    plt.savefig(outpath + testset_name + 'results.png')
     plt.close()
 
     plot_data.plot(x='date', y=columns_to_plot,
@@ -226,7 +240,7 @@ def _create_figures(plot_data, testset_name, columns_to_plot):
                    ylim=(plot_data[columns_to_plot].min(axis=0).min() - 1,
                          plot_data[columns_to_plot].max(axis=0).max() + 1))
     plt.tight_layout()
-    plt.savefig(location + testset_name + 'results2.png')
+    plt.savefig(outpath + testset_name + 'results2.png')
     plt.close()
 
 

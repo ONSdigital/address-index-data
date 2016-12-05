@@ -66,7 +66,7 @@ class PatientRecordsAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'id': 'ID', 'uprn': 'UPRN_old'}, inplace=True)
 
 
-def run_patient_record_address_linker():
+def run_patient_record_address_linker(**kwargs):
     """
     A simple wrapper that allows running the patient record address linker.
 
@@ -74,9 +74,10 @@ def run_patient_record_address_linker():
     """
     settings = dict(inputFilename='RW100K.xlsx',
                     inputPath='/opt/scratch/AddressIndex/TestData/',
-                    outPath='/opt/scratch/AddressIndex/Results/',
+                    outpath='/opt/scratch/AddressIndex/Results/',
                     outname='PatientRecord',
                     ABpath='/opt/scratch/AddressIndex/AddressBase/')
+    settings.update(kwargs)
 
     linker = PatientRecordsAddressLinker(**settings)
     linker.run_all()

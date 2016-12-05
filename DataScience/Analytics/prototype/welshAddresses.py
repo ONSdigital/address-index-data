@@ -84,7 +84,7 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(convert_numeric=True)
 
 
-def run_welsh_address_linker():
+def run_welsh_address_linker(**kwargs):
     """
     A simple wrapper that allows running Welsh Address linker.
 
@@ -93,6 +93,7 @@ def run_welsh_address_linker():
     settings = dict(inputFilename='WelshGovernmentData21Nov2016.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                     outname='WelshGov')
+    settings.update(kwargs)
 
     linker = WelshAddressLinker(**settings)
     linker.run_all()

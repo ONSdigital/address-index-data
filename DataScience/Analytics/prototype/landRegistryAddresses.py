@@ -91,7 +91,7 @@ class LandRegistryLinker(addressLinking.AddressLinker):
                                                'TransactionID': 'ID'}, inplace=True)
 
 
-def run_land_registry_linker():
+def run_land_registry_linker(**kwargs):
     """
     A simple wrapper that allows running Land Registry linker.
 
@@ -100,6 +100,7 @@ def run_land_registry_linker():
     settings = dict(inputFilename='pp-monthly-update-Edited.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                     outname='LandRegistry')
+    settings.update(kwargs)
 
     linker = LandRegistryLinker(**settings)
     linker.run_all()
