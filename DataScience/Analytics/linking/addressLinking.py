@@ -549,6 +549,8 @@ class AddressLinker:
         self.toLinkAddressData['Postcode'] = postcode
         self.toLinkAddressData['BuildingSuffix'] = building_suffix
         self.toLinkAddressData['BuildingStartNumber'] = pao_start_number
+        self.toLinkAddressData['PAOText'] = self.toLinkAddressData['BuildingName'].copy()
+        self.toLinkAddressData['SAOText'] = self.toLinkAddressData['SubBuildingName'].copy()
 
         if self.settings['expandPostcode']:
             # if valid postcode information found then split between in and outcode
@@ -573,6 +575,10 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
         msk = self.toLinkAddressData['BuildingSuffix'].isnull()
         self.toLinkAddressData.loc[msk, 'BuildingSuffix'] = 'N/A'
+        msk = self.toLinkAddressData['PAOText'].isnull()
+        self.toLinkAddressData.loc[msk, 'PAOText'] = 'N/A'
+        msk = self.toLinkAddressData['SAOText'].isnull()
+        self.toLinkAddressData.loc[msk, 'SAOText'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
         columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName']
@@ -660,9 +666,9 @@ class AddressLinker:
         compare = rl.Compare(pairs, self.addressBase, addresses_to_be_linked, batch=True)
 
         # set rules for standard residential addresses
-        compare.string('SAO_TEXT', 'SubBuildingName', method='jarowinkler', name='flat_dl',
+        compare.string('SAO_TEXT', 'SAOText', method='jarowinkler', name='flat_dl',
                        missing_value=0.6)
-        compare.string('pao_text', 'BuildingName', method='jarowinkler', name='pao_dl',
+        compare.string('pao_text', 'PAOText', method='jarowinkler', name='pao_dl',
                        missing_value=0.6)
         compare.string('BuildingName', 'BuildingName', method='jarowinkler', name='building_name_dl',
                        missing_value=0.7)
@@ -683,13 +689,13 @@ class AddressLinker:
 
         # the following is good for flats and apartments than have been numbered
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
-                       missing_value=0.7)
+                       missing_value=0.6)
         compare.string('SAO_START_NUMBER', 'FlatNumber', method='jarowinkler', name='sao_number_dl',
                        missing_value=0.6)
 
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION_NAME', 'OrganisationName', method='jarowinkler', name='organisation_dl',
-                       missing_value=0.6)
+                       missing_value=0.1)
         compare.string('DEPARTMENT_NAME', 'DepartmentName', method='jarowinkler', name='department_dl',
                        missing_value=0.6)
 
@@ -972,5 +978,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True))
+    linker = AddressLinker(**dict(test=True, store=False))
     linker.run_all()
