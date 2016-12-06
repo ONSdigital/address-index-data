@@ -311,14 +311,6 @@ class AddressLinker:
         msk = self.addressBase['PAO_TEXT'] != 'STREET RECORD'
         self.addressBase = self.addressBase.loc[msk]
 
-        # rename some columns (sorted windowing requires column names to match)
-        self.addressBase.rename(columns={'THROUGHFARE': 'StreetName',
-                                         'POST_TOWN': 'townName',
-                                         'POSTCODE': 'postcode',
-                                         'PAO_TEXT': 'pao_text',
-                                         'LOCALITY': 'locality',
-                                         'BUILDING_NAME': 'BuildingName'}, inplace=True)
-
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
@@ -652,22 +644,22 @@ class AddressLinker:
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
             pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
-                              right_on=['postcode', 'BuildingName'])
+                              right_on=['POSTCODE', 'BUILDING_NAME'])
         elif blocking == 2:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
-                              right_on=['postcode', 'BUILDING_NUMBER'])
+                              right_on=['POSTCODE', 'BUILDING_NUMBER'])
         elif blocking == 3:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
-                              right_on=['postcode', 'StreetName'])
+                              right_on=['POSTCODE', 'THROUGHFARE'])
         elif blocking == 4:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
-                              right_on=['BuildingName', 'StreetName'])
+                              right_on=['BUILDING_NAME', 'THROUGHFARE'])
         elif blocking == 5:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
-                              right_on=['BUILDING_NUMBER', 'StreetName'])
+                              right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
         else:
             pairs = pcl.block(left_on=['BuildingNumber', 'TownName'],
-                              right_on=['BUILDING_NUMBER', 'townName'])
+                              right_on=['BUILDING_NUMBER', 'POST_TOWN'])
 
         self.log.info(
             'Need to test {0} pairs for {1} addresses...'.format(len(pairs), len(addresses_to_be_linked.index)))
@@ -679,19 +671,19 @@ class AddressLinker:
         # set rules for standard residential addresses
         compare.string('SAO_TEXT', 'SAOText', method='jarowinkler', name='flat_dl',
                        missing_value=0.6)
-        compare.string('pao_text', 'PAOText', method='jarowinkler', name='pao_dl',
+        compare.string('PAO_TEXT', 'PAOText', method='jarowinkler', name='pao_dl',
                        missing_value=0.6)
-        compare.string('BuildingName', 'BuildingName', method='jarowinkler', name='building_name_dl',
+        compare.string('BUILDING_NAME', 'BuildingName', method='jarowinkler', name='building_name_dl',
                        missing_value=0.7)
         compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
         compare.string('PAO_START_NUMBER', 'BuildingStartNumber', method='jarowinkler', name='pao_number_dl',
                        missing_value=0.2)
-        compare.string('StreetName', 'StreetName', method='jarowinkler', name='street_dl',
+        compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
                        missing_value=0.6)
-        compare.string('townName', 'TownName', method='jarowinkler', name='town_dl',
+        compare.string('POST_TOWN', 'TownName', method='jarowinkler', name='town_dl',
                        missing_value=0.2)
-        compare.string('locality', 'Locality', method='jarowinkler', name='locality_dl',
+        compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
                        missing_value=0.5)
 
         # use to separate e.g. 55A from 55
@@ -989,5 +981,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True))
+    linker = AddressLinker(**dict(test=True, store=False))
     linker.run_all()
