@@ -291,7 +291,8 @@ class AddressLinker:
         msk = self.addressBase['LOCALITY'].isnull()
         self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
 
-        # sometimes address base des not have SAO_START_NUMBER even if SAO_TEXT clearly has number
+        # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
+        # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
         msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
         self.addressBase.loc[msk, 'SAO_START_NUMBER'] = \
             self.addressBase.loc[msk, 'SAO_TEXT'].apply(lambda x: ''.join([x for x in x if x.isdigit()]))
@@ -308,7 +309,7 @@ class AddressLinker:
             self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
 
         # remove street records from the list of potential matches
-        msk = self.addressBase['PAO_TEXT'] == 'STREET RECORD'
+        msk = self.addressBase['PAO_TEXT'] != 'STREET RECORD'
         self.addressBase = self.addressBase.loc[msk]
 
         # rename some columns (sorted windowing requires column names to match)
@@ -318,6 +319,8 @@ class AddressLinker:
                                          'PAO_TEXT': 'pao_text',
                                          'LOCALITY': 'locality',
                                          'BUILDING_NAME': 'BuildingName'}, inplace=True)
+
+        self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
@@ -987,5 +990,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True, store=True))
+    linker = AddressLinker(**dict(test=True))
     linker.run_all()
