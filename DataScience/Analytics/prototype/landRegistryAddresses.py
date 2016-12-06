@@ -41,13 +41,6 @@ Version
 
 :version: 0.1
 :date: 30-Nov-2016
-
-
-Results
--------
-
-With full AB and a reasonable runtime (AddressLinker version 0.1):
-    Total Match Fraction 98.4 per cent
 """
 from Analytics.linking import addressLinking
 import pandas as pd

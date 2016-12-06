@@ -36,7 +36,6 @@ Version
 
 :version: 0.2
 :date: 5-Dec-2016
-
 """
 import os
 import datetime
@@ -146,8 +145,8 @@ def _compute_welsh_performance(df, methods=('UPRN_ORIG', 'UPRN_PROTO', 'UPRN_SAS
     new_UPRNs = -1
 
     # iterate over the possible method combinations - capture relevant information
-    for i, method1 in enumerate(methods):
-        for j, method2 in enumerate(methods):
+    for method1 in methods:
+        for method2 in methods:
             if method1 == 'UPRN_SAS' and method2 == 'UPRN_PROTO':
                 agree = df[method1] == df[method2]
                 nagree = len(df.loc[agree].index)

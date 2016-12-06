@@ -38,18 +38,6 @@ Version
 
 :version: 0.1
 :date: 30-Nov-2016
-
-
-Results
--------
-
-With full AB and a greedy approach (AddressLinker version 0.1):
-    Matched 4649 entries
-    Total Match Fraction 93.0
-    Correctly Matched 3634
-    Correctly Matched Fraction 72.7
-    False Positives 1015
-    False Positive Rate 20.3
 """
 from Analytics.linking import addressLinking
 import pandas as pd

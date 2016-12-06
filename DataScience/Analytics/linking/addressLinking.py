@@ -57,9 +57,8 @@ import recordlinkage as rl
 from Analytics.linking import logger
 from ProbabilisticParser import parser
 from tqdm import tqdm
-
 import matplotlib
-matplotlib.use('Agg')   # to prevent Tkinter crashing on cdhut-d03
+matplotlib.use('Agg')  # to prevent Tkinter crashing on cdhut-d03
 import matplotlib.pyplot as plt
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -921,7 +920,7 @@ class AddressLinker:
 
         plt.xlabel('Number of Addresses')
         plt.yticks(location + width / 2., all_results_names)
-        plt.xlim(0, ax.get_xlim()[1]*1.05)
+        plt.xlim(0, ax.get_xlim()[1] * 1.05)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
         plt.close()

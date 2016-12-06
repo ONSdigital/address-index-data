@@ -40,17 +40,6 @@ Version
 
 :version: 0.1
 :date: 30-Nov-2016
-
-
-Results
--------
-
-With full AB and a reasonable runtime (AddressLinker version 0.1):
-    Total Match Fraction 97.9 per cent
-    96029 previous UPRNs in the matched data
-    95522 addresses have the same UPRN as earlier
-    158 addresses have a different UPRN as earlier
-    32592 more addresses with UPRN
 """
 from Analytics.linking import addressLinking
 import pandas as pd
