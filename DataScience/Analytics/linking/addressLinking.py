@@ -291,6 +291,11 @@ class AddressLinker:
         msk = self.addressBase['LOCALITY'].isnull()
         self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
 
+        # sometimes address base des not have SAO_START_NUMBER even if SAO_TEXT clearly has number
+        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
+        self.addressBase.loc[msk, 'SAO_START_NUMBER'] = \
+            self.addressBase.loc[msk, 'SAO_TEXT'].apply(lambda x: ''.join([x for x in x if x.isdigit()]))
+
         # drop some that are not needed - in the future versions these might be useful
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION',
                                'PAO_END_SUFFIX', 'PAO_END_NUMBER', 'SAO_START_SUFFIX'],
@@ -301,6 +306,10 @@ class AddressLinker:
             postcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
             postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
             self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
+
+        # remove street records from the list of potential matches
+        msk = self.addressBase['PAO_TEXT'] == 'STREET RECORD'
+        self.addressBase = self.addressBase.loc[msk]
 
         # rename some columns (sorted windowing requires column names to match)
         self.addressBase.rename(columns={'THROUGHFARE': 'StreetName',
@@ -690,7 +699,7 @@ class AddressLinker:
         # the following is good for flats and apartments than have been numbered
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
                        missing_value=0.6)
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='jarowinkler', name='sao_number_dl',
+        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl',
                        missing_value=0.6)
 
         # set rules for organisations such as care homes and similar type addresses
@@ -978,5 +987,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True, store=False))
+    linker = AddressLinker(**dict(test=True, store=True))
     linker.run_all()
