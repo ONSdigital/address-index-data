@@ -12,45 +12,47 @@ object SqlHelper {
 
     val blpuTable = SparkProvider.registerTempTable(blpu, "blpu")
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
+    val classificationTable = SparkProvider.registerTempTable(classification, "classification")
     val lpiTable = SparkProvider.registerTempTable(lpi, "lpi")
     val streetTable = SparkProvider.registerTempTable(street, "street")
     val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
     SparkProvider.sqlContext.sql(
-      """SELECT
-          blpu.uprn,
-          blpu.postcodeLocator,
-          blpu.addressbasePostal,
-          blpu.latitude,
-          blpu.longitude,
-          blpu.xCoordinate as easting,
-          blpu.yCoordinate as northing,
-          org.organisation,
-          org.legalName,
-          c.classificationCode,
-          lpi.usrn,
-          lpi.lpiKey,
-          lpi.paoText,
-          lpi.paoStartNumber,
-          lpi.paoStartSuffix,
-          lpi.paoEndNumber,
-          lpi.paoEndSuffix,
-          lpi.saoText,
-          lpi.saoStartNumber,
-          lpi.saoStartSuffix,
-          lpi.saoEndNumber,
-          lpi.saoEndSuffix,
-          lpi.level,
-          lpi.officialFlag,
-          lpi.logicalStatus,
-          st.streetDescriptor,
-          st.townName,
-          st.locality
-        FROM blpu
-        LEFT JOIN organisation org ON blpu.uprn = org.uprn
-        LEFT JOIN classification c ON blpu.uprn = c.uprn
-        LEFT JOIN lpi ON blpu.uprn = lpi.uprn
-        LEFT JOIN street ON lpi.usrn = street.usrn
-        LEFT JOIN streetDesc st ON street.usrn = st.usrn AND lpi.language = st.language""").na.fill("")
+      s"""SELECT
+          $blpuTable.uprn,
+          $blpuTable.postcodeLocator,
+          $blpuTable.addressbasePostal,
+          $blpuTable.latitude,
+          $blpuTable.longitude,
+          $blpuTable.xCoordinate as easting,
+          $blpuTable.yCoordinate as northing,
+          $organisationTable.organisation,
+          $organisationTable.legalName,
+          $classificationTable.classificationCode,
+          $lpiTable.usrn,
+          $lpiTable.lpiKey,
+          $lpiTable.paoText,
+          $lpiTable.paoStartNumber,
+          $lpiTable.paoStartSuffix,
+          $lpiTable.paoEndNumber,
+          $lpiTable.paoEndSuffix,
+          $lpiTable.saoText,
+          $lpiTable.saoStartNumber,
+          $lpiTable.saoStartSuffix,
+          $lpiTable.saoEndNumber,
+          $lpiTable.saoEndSuffix,
+          $lpiTable.level,
+          $lpiTable.officialFlag,
+          $lpiTable.logicalStatus,
+          $streetDescriptorTable.streetDescriptor,
+          $streetDescriptorTable.townName,
+          $streetDescriptorTable.locality
+        FROM $blpuTable
+        LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
+        LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn
+        LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
+        LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
+        LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
+        AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
   }
 }

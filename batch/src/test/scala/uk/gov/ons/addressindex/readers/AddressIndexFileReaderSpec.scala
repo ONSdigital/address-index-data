@@ -93,7 +93,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "32" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "683979" // PRO_ORDER
-      firstLine.getString(3) shouldBe "100040241256" // UPRN
+      firstLine.getString(3) shouldBe "100010971564" // UPRN
       firstLine.getString(4) shouldBe "1110C000053211" // CLASS_KEY
       firstLine.getString(5) shouldBe "RD" // CLASSIFICATION_CODE
       firstLine.getString(6) shouldBe "AddressBase Premium Classification Scheme" // CLASS_SCHEME
