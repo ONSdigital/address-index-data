@@ -719,34 +719,15 @@ class AddressLinker:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
 
-        # weight each feature according to the output of a logistic regression model with L2-regularisation
-        # the logistic model was build using addressLinkingML.py script in sandbox folder.
-        compare.vectors['flat_dl'] *= 1.5915830376517321
-        compare.vectors['pao_dl'] *= 1.6465683517461194
-        compare.vectors['building_name_dl'] *= 6.221646604316489
-        compare.vectors['building_number_dl'] *= 4.595091388365253
-        compare.vectors['pao_number_dl'] *= 3.705495946304363
-        compare.vectors['street_dl'] *= -3.152396535083692
-        compare.vectors['town_dl'] *= 3.451978575825192
-        compare.vectors['locality_dl'] *= 3.5453750884813164
-        compare.vectors['pao_suffix_dl'] *= 5.999052706151166
-        compare.vectors['flatw_dl'] *= 2.9306817263001554
-        compare.vectors['sao_number_dl'] *= 14.085111079888184
-        compare.vectors['organisation_dl'] *= 4.4635996956096
-        compare.vectors['department_dl'] *= -0.00432544214418846
-        compare.vectors['street_desc_dl'] *= -2.779946248205403
-
         # compute probabilities
-        intercept = -25.3560458612
-        compare.vectors['sum'] = compare.vectors.sum(axis=1)
-        compare.vectors['probability'] = 1. / (1 + np.exp(-(intercept + compare.vectors['sum'])))
+        compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
 
         # find all matches where the probability is above the limit - filters out low prob links
-        matches = compare.vectors.loc[compare.vectors['probability'] > self.settings['limit']]
+        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
-        matches = matches.sort_values(by='probability', ascending=False)
+        matches = matches.sort_values(by='similarity_sum', ascending=False)
 
         # reset index
         matches = matches.reset_index()
@@ -778,7 +759,7 @@ class AddressLinker:
 
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
 
-        self.matches.sort_values(by='probability', ascending=False, inplace=True)
+        self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
 
         # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
