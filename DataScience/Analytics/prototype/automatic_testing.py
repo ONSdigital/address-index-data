@@ -75,17 +75,17 @@ def run_all_datasets():
     print('Running Edge Case addresses test...')
     ec.run_edge_case_linker(**settings)
 
-    print('Running Welsh addresses test...')
-    wa.run_welsh_address_linker(**settings)
-
-    print('Running Landry Registry addresses test...')
-    lr.run_land_registry_linker(**settings)
-
     if local:
         print('Cannot run Patient Records test locally...')
     else:
         print('Running Patient Records addresses test...')
         pr.run_patient_record_address_linker(**settings)
+
+    print('Running Welsh addresses test...')
+    wa.run_welsh_address_linker(**settings)
+
+    print('Running Landry Registry addresses test...')
+    lr.run_land_registry_linker(**settings)
 
 
 def _load_welsh_data():
@@ -259,7 +259,7 @@ def _create_precision_recall_figure(plot_data, testset_name):
     plot_data['precision'] = plot_data['correct'] / (plot_data['correct'] + plot_data['false_positive'])
     plot_data['recall'] = plot_data['correct'] / plot_data['addresses']
     plot_data['f1score'] = 2. * (plot_data['precision'] * plot_data['recall']) / \
-                                (plot_data['precision'] + plot_data['recall'])
+                           (plot_data['precision'] + plot_data['recall'])
 
     plot_data.plot(x='date', y=columns_to_plot, lw=2,
                    figsize=(12, 18), fontsize=16, sort_columns=True,

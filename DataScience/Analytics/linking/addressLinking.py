@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 5-Dec-2016
+:version: 0.3
+:date: 7-Dec-2016
 """
 import datetime
 import os
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 
 class AddressLinker:
@@ -96,8 +96,8 @@ class AddressLinker:
             * :type ABpath: str
             * :param ABfilename: name of the file containing modified AddressBase
             * :type ABfilename: str
-            * :param limit: the sum of the matching metrics need to be above this limit to count as a potential match.
-                          Affects for example the false positive rate.
+            * :param limit: Minimum probability for a potential match to be included in the list of potential matches.
+                            Affects for example the false positive rate.
             * :type limit: float
             * :param outname: a string that is prepended to the output data
             * :type outname: str
@@ -123,7 +123,7 @@ class AddressLinker:
                              inputFilename='WelshGovernmentData21Nov2016.csv',
                              ABpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
                              ABfilename='AB.csv',
-                             limit=0.1,
+                             limit=0.0,
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
                              multipleMatches=False,
@@ -712,19 +712,6 @@ class AddressLinker:
         # execute the comparison model
         compare.run()
 
-        # arbitrarily scale up some of the comparisons - todo: the weights should be solved rather than arbitrary
-        # compare.vectors['pao_dl'] *= 5.
-        # compare.vectors['town_dl'] *= 5.
-        # compare.vectors['sao_number_dl'] *= 4.
-        # compare.vectors['organisation_dl'] *= 4.
-        # compare.vectors['flatw_dl'] *= 3.
-        # compare.vectors['pao_suffix_dl'] *= 2.
-        # compare.vectors['building_name_dl'] *= 3.
-        # compare.vectors['locality_dl'] *= 2.
-
-        # add sum of the components to the comparison vectors dataframe
-        compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
-
         # remove those matches that are not close enough - requires e.g. street name to be close enough
         if blocking in (1, 2):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
@@ -732,12 +719,34 @@ class AddressLinker:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
 
-        # find all matches where the metrics is above the chosen limit - small impact if choosing the best match
-        matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
+        # weight each feature according to the output of a logistic regression model with L2-regularisation
+        # the logistic model was build using addressLinkingML.py script in sandbox folder.
+        compare.vectors['flat_dl'] *= 1.5915830376517321
+        compare.vectors['pao_dl'] *= 1.6465683517461194
+        compare.vectors['building_name_dl'] *= 6.221646604316489
+        compare.vectors['building_number_dl'] *= 4.595091388365253
+        compare.vectors['pao_number_dl'] *= 3.705495946304363
+        compare.vectors['street_dl'] *= -3.152396535083692
+        compare.vectors['town_dl'] *= 3.451978575825192
+        compare.vectors['locality_dl'] *= 3.5453750884813164
+        compare.vectors['pao_suffix_dl'] *= 5.999052706151166
+        compare.vectors['flatw_dl'] *= 2.9306817263001554
+        compare.vectors['sao_number_dl'] *= 14.085111079888184
+        compare.vectors['organisation_dl'] *= 4.4635996956096
+        compare.vectors['department_dl'] *= -0.00432544214418846
+        compare.vectors['street_desc_dl'] *= -2.779946248205403
+
+        # compute probabilities
+        intercept = -25.3560458612
+        compare.vectors['sum'] = compare.vectors.sum(axis=1)
+        compare.vectors['probability'] = 1. / (1 + np.exp(-(intercept + compare.vectors['sum'])))
+
+        # find all matches where the probability is above the limit - filters out low prob links
+        matches = compare.vectors.loc[compare.vectors['probability'] > self.settings['limit']]
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
-        matches = matches.sort_values(by='similarity_sum', ascending=False)
+        matches = matches.sort_values(by='probability', ascending=False)
 
         # reset index
         matches = matches.reset_index()
@@ -769,7 +778,7 @@ class AddressLinker:
 
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
 
-        self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
+        self.matches.sort_values(by='probability', ascending=False, inplace=True)
 
         # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',

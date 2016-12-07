@@ -43,6 +43,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
 import matplotlib
+
 matplotlib.use('Agg')  # to prevent Tkinter crashing on cdhut-d03
 import matplotlib.pyplot as plt
 
@@ -101,10 +102,12 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
 
 def check_performance(y_test, y_pred):
     """
+    Calculate AUC and plot ROC.
 
-    :param y_test:
-    :param y_pred:
-    :return:
+    :param y_test: actual results
+    :param y_pred: predicted probabilities for the positive class
+
+    :return: None
     """
     print('\nAUC={}'.format(roc_auc_score(y_test, y_pred[:, 1])))
 
@@ -124,9 +127,18 @@ def check_performance(y_test, y_pred):
 
 def build_model(data):
     """
+    Train a simple logistic regression model on 70 per cent of the data and test the performance on 30
+    per cent of the data.
 
-    :param data:
-    :return:
+    The logistic regression uses L2-regularisation with intercept being fitted. The function outputs
+    coefficient weights which can be interpreted as the importance of features. Computes the probabilities
+    manually and asserts that they are the same as returned by scikit-learn. This is simply to confirm
+    the mechanics of computing probabilities from scikit-learn intercept and coefficients.
+
+    :param data: input data with features and target
+    :type data: pandas.DataFrame
+
+    :return: None
     """
     y = data['target'].values
 
