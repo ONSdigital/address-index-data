@@ -318,4 +318,4 @@ def run_all(plot_only=False):
 
 
 if __name__ == "__main__":
-    run_all(plot_only=True)
+    run_all()

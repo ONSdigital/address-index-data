@@ -103,6 +103,8 @@ class AddressLinker:
             * :type outname: str
             * :param outpath: location to which to store the output data
             * :type outpath: str
+            * :param multipleMatches: whether or not to store multiple matches or just the likeliest
+            * :type multipleMatches: bool
             * :param dropColumns: whether or not to drop extra columns that are created during the linking
             * :type dropColumns: bool
             * :param expandSynonyms: whether to expand common synonyms or not
@@ -124,6 +126,7 @@ class AddressLinker:
                              limit=0.1,
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
+                             multipleMatches=False,
                              dropColumns=False,
                              expandSynonyms=True,
                              expandPostcode=False,
@@ -764,7 +767,12 @@ class AddressLinker:
 
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
 
-        # perform matching
+        self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
+
+        if not self.settings['multipleMatches']:
+            self.matches.drop_duplicates('TestData_Index', keep='first', inplace=True)
+
+        # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
                                           copy=False)
         self.matched_addresses = pd.merge(self.matched_addresses, self.addressBase, how='left', on='AddressBase_Index',
@@ -775,10 +783,10 @@ class AddressLinker:
             self.matched_addresses.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
 
         # sort by similarity, save for inspection and keep only the likeliest
-        self.matched_addresses = self.matched_addresses.sort_values(by='similarity_sum', ascending=False)
-        self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_all_matches.csv',
-                                      index=False)
-        self.matched_addresses = self.matched_addresses.drop_duplicates('TestData_Index', keep='first')
+        if self.settings['multipleMatches']:
+            self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_all_matches.csv',
+                                          index=False)
+            self.matched_addresses.drop_duplicates('TestData_Index', keep='first', inplace=True)
 
     def _run_test(self):
         """
