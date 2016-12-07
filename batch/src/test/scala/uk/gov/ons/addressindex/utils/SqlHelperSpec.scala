@@ -11,10 +11,16 @@ class SqlHelperSpec extends WordSpec with Matchers {
   "SqlHelper" should {
     "join blpu, organisation, lpi, street and street_descriptor" in {
 
+      // Given
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
       // When
-      val result = SqlHelper.joinCsvs(AddressIndexFileReader.readBlpuCSV(), AddressIndexFileReader.readLpiCSV(),
-        AddressIndexFileReader.readOrganisationCSV(), AddressIndexFileReader.readClassificationCSV(),
-        AddressIndexFileReader.readStreetCSV(), AddressIndexFileReader.readStreetDescriptorCSV()).collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).collect()
 
       // Then
       result.length shouldBe 4
@@ -53,10 +59,16 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {
 
+      // Given
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
       // When
-      val result = SqlHelper.joinCsvs(AddressIndexFileReader.readBlpuCSV(), AddressIndexFileReader.readLpiCSV(),
-        AddressIndexFileReader.readOrganisationCSV(), AddressIndexFileReader.readClassificationCSV(),
-        AddressIndexFileReader.readStreetCSV(), AddressIndexFileReader.readStreetDescriptorCSV()).collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).collect()
 
       // Then
       result.length shouldBe 4
