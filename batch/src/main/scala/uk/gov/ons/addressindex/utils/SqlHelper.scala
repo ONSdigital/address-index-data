@@ -9,12 +9,12 @@ object SqlHelper {
 
   def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, classification: DataFrame, street: DataFrame,
                streetDescriptor: DataFrame): DataFrame = {
-    blpu.registerTempTable("blpu")
-    organisation.registerTempTable("organisation")
-    classification.registerTempTable("classification")
-    lpi.registerTempTable("lpi")
-    street.registerTempTable("street")
-    streetDescriptor.registerTempTable("streetDesc")
+
+    val blpuTable = SparkProvider.registerTempTable(blpu, "blpu")
+    val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
+    val lpiTable = SparkProvider.registerTempTable(lpi, "lpi")
+    val streetTable = SparkProvider.registerTempTable(street, "street")
+    val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
     SparkProvider.sqlContext.sql(
       """SELECT
