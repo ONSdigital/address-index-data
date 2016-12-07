@@ -223,7 +223,7 @@ def _create_figures(plot_data, testset_name, columns_to_plot):
 
     :return: None
     """
-    plot_data.plot(x='date', y=columns_to_plot,
+    plot_data.plot(x='date', y=columns_to_plot, lw=2,
                    subplots=True, sharex=True, layout=(3, 2), figsize=(12, 18),
                    fontsize=16, sort_columns=True, color='m',
                    xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
@@ -232,7 +232,7 @@ def _create_figures(plot_data, testset_name, columns_to_plot):
     plt.savefig(outpath + testset_name + 'results.png')
     plt.close()
 
-    plot_data.plot(x='date', y=columns_to_plot,
+    plot_data.plot(x='date', y=columns_to_plot, lw=2,
                    figsize=(12, 18), fontsize=16, sort_columns=True,
                    xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
                          plot_data['date'].max() + datetime.timedelta(days=1)),
@@ -240,6 +240,35 @@ def _create_figures(plot_data, testset_name, columns_to_plot):
                          plot_data[columns_to_plot].max(axis=0).max() + 1))
     plt.tight_layout()
     plt.savefig(outpath + testset_name + 'results2.png')
+    plt.close()
+
+
+def _create_precision_recall_figure(plot_data, testset_name):
+    """
+    Create a simple figure showing precision, recall, and f1-score.
+
+    :param plot_data: dataframe contaninig column date and those to be plotted
+    :type plot_data: pandas.DataFrame
+    :param testset_name: name of the test dataset, used as a part of the output file name
+    :type testset_name: str
+
+    :return: None
+    """
+    columns_to_plot = ['precision', 'recall', 'f1score']
+
+    plot_data['precision'] = plot_data['correct'] / (plot_data['correct'] + plot_data['false_positive'])
+    plot_data['recall'] = plot_data['correct'] / plot_data['addresses']
+    plot_data['f1score'] = 2. * (plot_data['precision'] * plot_data['recall']) / \
+                                (plot_data['precision'] + plot_data['recall'])
+
+    plot_data.plot(x='date', y=columns_to_plot, lw=2,
+                   figsize=(12, 18), fontsize=16, sort_columns=True,
+                   xlim=(plot_data['date'].min() - datetime.timedelta(days=1),
+                         plot_data['date'].max() + datetime.timedelta(days=1)),
+                   ylim=(plot_data[columns_to_plot].min(axis=0).min() * 0.95,
+                         plot_data[columns_to_plot].max(axis=0).max() * 1.05))
+    plt.tight_layout()
+    plt.savefig(outpath + testset_name + 'results3.png')
     plt.close()
 
 
@@ -263,8 +292,14 @@ def plot_performance():
     for testset_name in set(data['name']):
         plot_data = data.loc[data['name'] == testset_name]
         print('Plotting {} results'.format(testset_name))
+
         _create_figures(plot_data, testset_name,
                         ['addresses', 'correct', 'false_positive', 'linked', 'new_UPRNs', 'not_linked'])
+
+        msk = plot_data['false_positive'] >= 0
+        plot_data = plot_data.loc[msk]
+        if len(plot_data.index) > 0:
+            _create_precision_recall_figure(plot_data, testset_name)
 
 
 def run_all(plot_only=False):
@@ -283,4 +318,4 @@ def run_all(plot_only=False):
 
 
 if __name__ == "__main__":
-    run_all()
+    run_all(plot_only=True)
