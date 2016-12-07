@@ -824,20 +824,20 @@ class AddressLinker:
 
         # if UPRN_old is present then check the overlap and the number of false posities
         if 'UPRN_old' not in self.matched_addresses.columns:
-            sameUPRNs = -1
+            true_positives = -1
             false_positives = -1
             n_new_UPRNs = -1
         else:
             # find those with UPRN attached earlier and check which are the same
             msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
             matches = self.matched_addresses.loc[msk]
-            sameUPRNs = len(matches.index)
+            true_positives = len(matches.index)
             matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
 
             self.log.info('{} previous UPRNs in the matched data...'.format(self.nExistingUPRN))
-            self.log.info('{} addresses have the same UPRN as earlier...'.format(sameUPRNs))
-            self.log.info('Correctly Matched {}'.format(sameUPRNs))
-            self.log.info('Correctly Matched Fraction {}'.format(round(sameUPRNs / total * 100., 1)))
+            self.log.info('{} addresses have the same UPRN as earlier...'.format(true_positives))
+            self.log.info('Correctly Matched {}'.format(true_positives))
+            self.log.info('Correctly Matched Fraction {}'.format(round(true_positives / total * 100., 1)))
 
             # find those that have previous UPRNs but do not match the new ones (filter out nulls)
             msk = self.matched_addresses['UPRN_old'].notnull()
@@ -850,6 +850,15 @@ class AddressLinker:
             self.log.info('False Positives {}'.format(false_positives))
             self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
 
+            # get precision, recall and f1-score
+            precision = true_positives / (true_positives + false_positives)
+            recall = true_positives / total     # note that this is not truly recall as some addresses may have no match
+            f1score = 2. * (precision * recall) / (precision + recall)
+
+            self.log.info('Precision = {}'.format(precision))
+            self.log.info('Minimum Recall = {}'.format(recall))
+            self.log.info('Minimum F1-score = {}'.format(f1score))
+
             # find all newly linked - those that did not have UPRNs already attached
             new_UPRNs = self.matched_addresses.loc[~msk]
             n_new_UPRNs = len(new_UPRNs.index)
@@ -858,12 +867,12 @@ class AddressLinker:
 
         self.results['linked'] = n_matched
         self.results['not_linked'] = not_found
-        self.results['correct'] = sameUPRNs
+        self.results['correct'] = true_positives
         self.results['false_positive'] = false_positives
         self.results['new_UPRNs'] = n_new_UPRNs
 
         # make a simple visualisation
-        all_results = [total, n_matched, sameUPRNs, n_new_UPRNs, false_positives, not_found]
+        all_results = [total, n_matched, true_positives, n_new_UPRNs, false_positives, not_found]
         all_results_names = ['Input', 'Linked', 'Same UPRNs', 'New UPRNs', 'False Positives', 'Not Linked']
         self._generate_performance_figure(all_results, all_results_names)
 
@@ -873,8 +882,8 @@ class AddressLinker:
                 msk = (self.matched_addresses['UPRN'] == self.matched_addresses['UPRN_old']) & \
                       (self.matched_addresses['Category'] == category)
 
-                correct = self.matched_addresses.loc[msk]
-                n_matched = len(correct.index)
+                true_positives = self.matched_addresses.loc[msk]
+                n_matched = len(true_positives.index)
                 outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
                 false_positives = len(
                     self.matched_addresses.loc[(self.matched_addresses['UPRN'] != self.matched_addresses['UPRN_old']) &
@@ -885,6 +894,14 @@ class AddressLinker:
                 self.log.info('Match Fraction: {}'.format(n_matched / outof * 100.))
                 self.log.info('False Positives: {}'.format(false_positives))
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
+
+                precision = true_positives / (true_positives + false_positives)
+                recall = true_positives / outof
+                f1score = 2. * (precision * recall) / (precision + recall)
+
+                self.log.info('Precision = {}'.format(precision))
+                self.log.info('Minimum Recall = {}'.format(recall))
+                self.log.info('Minimum F1-score = {}'.format(f1score))
 
     def _generate_performance_figure(self, all_results, all_results_names):
         """
