@@ -132,8 +132,6 @@ def output_predicted_probabilities(data, crf,
 
     :return: None
     """
-
-    print('writing predicted probabilities data to an XML file...')
     fh = open(outfile, mode='w')
     fh.write('<AddressCollection>\n')
 
@@ -185,7 +183,7 @@ def generate_outputs(crf, holdout_file='/Users/saminiemi/Projects/ONS/AddressInd
     print('Writing model predictions to a file...')
     output_predictions(y_pred)
 
-    print('Writing predicted probabilities to a file...')
+    print('writing predicted probabilities data to an XML file...')
     data = parser_tokens.readXML(holdout_file)
     output_predicted_probabilities(data, crf)
 
