@@ -530,6 +530,10 @@ class AddressLinker:
             if parsed.get('pao_start_number', None) is None and parsed.get('BuildingNumber', None) is not None:
                 parsed['pao_start_number'] = parsed['BuildingNumber']
 
+            # parser sometimes places house to organisation name, while it is likelier that it should be subBuilding
+            if parsed.get('OrganisationName') == 'HOUSE' and parsed.get('SubBuildingName', None) is None:
+                parsed['SubBuildingName'] = parsed.get('OrganisationName')
+
             # store the parsed information to separate lists
             organisation.append(parsed.get('OrganisationName', None))
             department.append(parsed.get('DepartmentName', None))
@@ -725,12 +729,12 @@ class AddressLinker:
         # find all matches where the probability is above the limit - filters out low prob links
         matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
-        # to pick the most likely match we sort by the sum of the similarity and pick the top
-        # sort matches by the sum of the vectors and then keep the first
-        matches = matches.sort_values(by='similarity_sum', ascending=False)
-
         # reset index
         matches = matches.reset_index()
+
+        # to pick the most likely match we sort by the sum of the similarity and pick the top
+        # sort matches by the sum of the vectors and then keep the first
+        matches.sort_values(by=['similarity_sum', 'AddressBase_Index'], ascending=[False, True], inplace=True)
 
         # add blocking mode
         matches['block_mode'] = blocking
@@ -995,5 +999,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True, store=False))
+    linker = AddressLinker(**dict(test=True, multipleMatches=True))
     linker.run_all()
