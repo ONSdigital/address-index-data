@@ -93,7 +93,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "32" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "683979" // PRO_ORDER
-      firstLine.getString(3) shouldBe "100040241256" // UPRN
+      firstLine.getString(3) shouldBe "100010971564" // UPRN
       firstLine.getString(4) shouldBe "1110C000053211" // CLASS_KEY
       firstLine.getString(5) shouldBe "RD" // CLASSIFICATION_CODE
       firstLine.getString(6) shouldBe "AddressBase Premium Classification Scheme" // CLASS_SCHEME
@@ -141,7 +141,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "24" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "309891" // PRO_ORDER
-      firstLine.getString(3) shouldBe "10013693666" // UPRN
+      firstLine.getString(3) shouldBe "100010971564" // UPRN
       firstLine.getString(4) shouldBe "1610L000015314" // LPI_KEY
       firstLine.getString(5) shouldBe "ENG" // LANGUAGE
       firstLine.getString(6) shouldBe "1" // LOGICAL_STATUS
@@ -179,7 +179,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "31" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "357282" // PRO_ORDER
-      firstLine.getString(3) shouldBe "1" // UPRN
+      firstLine.getString(3) shouldBe "100010971564" // UPRN
       firstLine.getString(4) shouldBe "0116O000707611" // ORG_KEY
       firstLine.getString(5) shouldBe "SOME COUNCIL" // ORGANISATION
       firstLine.getString(6) shouldBe "THE LEGAL NAME" // LEGAL_NAME
@@ -202,7 +202,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "11" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "1" // PRO_ORDER
-      firstLine.getString(3) shouldBe "10416245" // USRN
+      firstLine.getString(3) shouldBe "9401385" // USRN
       firstLine.getString(4) shouldBe "1" // RECORD_TYPE
       firstLine.getString(5) shouldBe "1350" // SWA_ORG_REF_NAMING
       firstLine.getString(6) shouldBe "2" // STATE
@@ -238,10 +238,10 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getString(0) shouldBe "15" // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getString(2) shouldBe "334565" // PRO_ORDER
-      firstLine.getString(3) shouldBe "84206901" // USRN
+      firstLine.getString(3) shouldBe "9401385" // USRN
       firstLine.getString(4) shouldBe "A STREET DESCRIPTOR" // STREET_DESCRIPTOR
-      firstLine.getString(5) shouldBe "LOCALITY" // LOCALITY
-      firstLine.getString(6) shouldBe "TOWN" // TOWN_NAME
+      firstLine.getString(5) shouldBe "A GREAT LOCALITY" // LOCALITY
+      firstLine.getString(6) shouldBe "TOWNY TOWN" // TOWN_NAME
       firstLine.getString(7) shouldBe "ADMIN AREA A" // ADMINSTRATIVE_AREA
       firstLine.getString(8) shouldBe "ENG" // LANGUAGE
       firstLine.getString(9) shouldBe "2015-05-16" // START_DATE
