@@ -266,7 +266,7 @@ class AddressLinker:
                                               'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
                                               'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
                                               'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str, 'PAO_END_NUMBER': str,
-                                              'PAO_END_SUFFIX': str, 'SAO_TEXT': str, 'SAO_START_NUMBER': str,
+                                              'PAO_END_SUFFIX': str, 'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
                                               'SAO_START_SUFFIX': str, 'ORGANISATION': str, 'STREET_DESCRIPTOR': str,
                                               'TOWN_NAME': str, 'LOCALITY': str})
         self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
@@ -296,8 +296,10 @@ class AddressLinker:
         # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
         # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
         msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
-        self.addressBase.loc[msk, 'SAO_START_NUMBER'] = \
-            self.addressBase.loc[msk, 'SAO_TEXT'].apply(lambda x: ''.join([x for x in x if x.isdigit()]))
+        self.addressBase.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
+            self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
+        self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
+        self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
         # drop some that are not needed - in the future versions these might be useful
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION',
@@ -579,6 +581,9 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
+        self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
+        self.toLinkAddressData['FlatNumber'].fillna('-12345', inplace=True)
+        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int64)
 
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
@@ -700,8 +705,7 @@ class AddressLinker:
         # the following is good for flats and apartments than have been numbered
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
                        missing_value=0.6)
-        compare.string('SAO_START_NUMBER', 'FlatNumber', method='damerau_levenshtein', name='sao_number_dl',
-                       missing_value=0.6)
+        compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
 
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION_NAME', 'OrganisationName', method='jarowinkler', name='organisation_dl',
@@ -853,7 +857,7 @@ class AddressLinker:
 
             # get precision, recall and f1-score
             precision = true_positives / (true_positives + false_positives)
-            recall = true_positives / total     # note that this is not truly recall as some addresses may have no match
+            recall = true_positives / total  # note that this is not truly recall as some addresses may have no match
             f1score = 2. * (precision * recall) / (precision + recall)
 
             self.log.info('Precision = {}'.format(precision))
