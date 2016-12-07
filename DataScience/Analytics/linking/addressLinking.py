@@ -742,9 +742,11 @@ class AddressLinker:
         # reset index
         matches = matches.reset_index()
 
-        # sort by WG_Index and add blocking mode
-        matches = matches.sort_values(by='TestData_Index')
+        # add blocking mode
         matches['block_mode'] = blocking
+
+        if not self.settings['multipleMatches']:
+            matches.drop_duplicates('TestData_Index', keep='first', inplace=True)
 
         # matched IDs
         matched_index = matches['TestData_Index'].values
@@ -768,9 +770,6 @@ class AddressLinker:
         self.toLinkAddressData = self.toLinkAddressData.reset_index()
 
         self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
-
-        if not self.settings['multipleMatches']:
-            self.matches.drop_duplicates('TestData_Index', keep='first', inplace=True)
 
         # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
