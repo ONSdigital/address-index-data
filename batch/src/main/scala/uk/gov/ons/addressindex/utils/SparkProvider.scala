@@ -1,7 +1,9 @@
 package uk.gov.ons.addressindex.utils
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -34,4 +36,12 @@ object SparkProvider {
 
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
   lazy val sqlContext = SQLContext.getOrCreate(sparkContext)
+
+  val incrementalId = new AtomicInteger()
+
+  def registerTempTable(dataFrame: DataFrame, name: String): String = {
+    val generatedName = name + incrementalId.getAndIncrement()
+    dataFrame.registerTempTable(generatedName)
+    generatedName
+  }
 }

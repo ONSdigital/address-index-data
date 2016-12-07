@@ -9,19 +9,19 @@ object SqlHelper {
 
   def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
                streetDescriptor: DataFrame): DataFrame = {
-    blpu.registerTempTable("blpu")
-    organisation.registerTempTable("organisation")
-    lpi.registerTempTable("lpi")
-    street.registerTempTable("street")
-    streetDescriptor.registerTempTable("streetDesc")
+    val blpuTable = SparkProvider.registerTempTable(blpu, "blpu")
+    val organisationTable = SparkProvider.registerTempTable(organisationTable, "organisation")
+    val lpiTable = SparkProvider.registerTempTable(lpi, "lpi")
+    val streetTable = SparkProvider.registerTempTable(street, "street")
+    val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
     SparkProvider.sqlContext.sql(
-      """SELECT blpu.uprn, org.organisation, lpi.paoText, lpi.paoStartNumber, lpi.saoText, st.streetDescriptor,
+      s"""SELECT blpu.uprn, org.organisation, lpi.paoText, lpi.paoStartNumber, lpi.saoText, st.streetDescriptor,
         |st.townName, st.locality
-        |FROM blpu
-        |JOIN organisation org ON blpu.uprn = org.uprn
-        |JOIN lpi ON blpu.uprn = lpi.uprn
-        |JOIN street on lpi.usrn = street.usrn
-        |JOIN streetDesc st on street.usrn = st.usrn""".stripMargin)
+        |FROM $blpuTable
+        |JOIN $organisationTable org ON blpu.uprn = org.uprn
+        |JOIN $lpiTable ON blpu.uprn = lpi.uprn
+        |JOIN $streetTable on lpi.usrn = street.usrn
+        |JOIN $streetDescriptorTable st on street.usrn = st.usrn""".stripMargin)
   }
 }
