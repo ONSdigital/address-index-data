@@ -890,20 +890,20 @@ class AddressLinker:
                       (self.matched_addresses['Category'] == category)
 
                 true_positives = self.matched_addresses.loc[msk]
-                n_matched = len(true_positives.index)
+                n_true_positives = len(true_positives.index)
                 outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
                 false_positives = len(
                     self.matched_addresses.loc[(self.matched_addresses['UPRN'] != self.matched_addresses['UPRN_old']) &
                                                (self.matched_addresses['Category'] == category)].index)
 
                 self.log.info('Results for category {}'.format(category))
-                self.log.info('Correctly Matched: {}'.format(n_matched))
-                self.log.info('Match Fraction: {}'.format(n_matched / outof * 100.))
+                self.log.info('Correctly Matched: {}'.format(n_true_positives))
+                self.log.info('Match Fraction: {}'.format(n_true_positives / outof * 100.))
                 self.log.info('False Positives: {}'.format(false_positives))
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
 
-                precision = true_positives / (true_positives + false_positives)
-                recall = true_positives / outof
+                precision = n_true_positives / (n_true_positives + false_positives)
+                recall = n_true_positives / outof
                 f1score = 2. * (precision * recall) / (precision + recall)
 
                 self.log.info('Precision = {}'.format(precision))
