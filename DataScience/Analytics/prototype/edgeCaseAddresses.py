@@ -38,18 +38,6 @@ Version
 
 :version: 0.1
 :date: 30-Nov-2016
-
-
-Results
--------
-
-With full AB and a greedy approach (AddressLinker version 0.1):
-    Matched 4649 entries
-    Total Match Fraction 93.0
-    Correctly Matched 3634
-    Correctly Matched Fraction 72.7
-    False Positives 1015
-    False Positive Rate 20.3
 """
 from Analytics.linking import addressLinking
 import pandas as pd
@@ -71,7 +59,7 @@ class EdgeCaseLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old', 'MNEMONIC': 'Category'}, inplace=True)
 
 
-def run_edge_case_linker():
+def run_edge_case_linker(**kwargs):
     """
     A simple wrapper that allows running Edge Case linker.
 
@@ -80,6 +68,7 @@ def run_edge_case_linker():
     settings = dict(inputFilename='EDGE_CASES_EC5K_NoPostcode.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                     outname='EdgeCases')
+    settings.update(kwargs)
 
     linker = EdgeCaseLinker(**settings)
     linker.run_all()

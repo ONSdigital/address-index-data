@@ -40,17 +40,6 @@ Version
 
 :version: 0.1
 :date: 30-Nov-2016
-
-
-Results
--------
-
-With full AB and a reasonable runtime (AddressLinker version 0.1):
-    Total Match Fraction 97.9 per cent
-    96029 previous UPRNs in the matched data
-    95522 addresses have the same UPRN as earlier
-    158 addresses have a different UPRN as earlier
-    32592 more addresses with UPRN
 """
 from Analytics.linking import addressLinking
 import pandas as pd
@@ -84,7 +73,7 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(convert_numeric=True)
 
 
-def run_welsh_address_linker():
+def run_welsh_address_linker(**kwargs):
     """
     A simple wrapper that allows running Welsh Address linker.
 
@@ -93,6 +82,7 @@ def run_welsh_address_linker():
     settings = dict(inputFilename='WelshGovernmentData21Nov2016.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                     outname='WelshGov')
+    settings.update(kwargs)
 
     linker = WelshAddressLinker(**settings)
     linker.run_all()
