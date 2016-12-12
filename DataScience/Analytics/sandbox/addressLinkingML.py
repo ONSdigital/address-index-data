@@ -40,6 +40,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier)
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
 import matplotlib
@@ -87,7 +88,7 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
     data['target'] = 0
     data.loc[msk, 'target'] = 1
 
-    data.drop(['UPRN', 'UPRN_old', 'similarity_sum', 'block_mode'], axis=1, inplace=True)
+    data.drop(['UPRN', 'UPRN_old', 'block_mode'], axis=1, inplace=True)
 
     positives = data['target'].sum()
     negatives = examples - positives
@@ -100,7 +101,7 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
     return data
 
 
-def check_performance(y_test, y_pred):
+def check_performance(y_test, y_pred, output='Logistic'):
     """
     Calculate AUC and plot ROC.
 
@@ -109,9 +110,9 @@ def check_performance(y_test, y_pred):
 
     :return: None
     """
-    print('\nAUC={}'.format(roc_auc_score(y_test, y_pred[:, 1])))
+    print('AUC={}'.format(roc_auc_score(y_test, y_pred)))
 
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred[:, 1])
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred)
     roc_auc = auc(fpr, tpr)
     plt.plot(fpr, tpr, lw=2, color='b', label='AUC = %0.2f' % roc_auc)
     plt.plot([0, 1], [0, 1], linestyle='--', lw=1.5, color='k', label='Random')
@@ -121,7 +122,7 @@ def check_performance(y_test, y_pred):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
-    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/LogisticROC.png')
+    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/' + output + 'ROC.png')
     plt.close()
 
 
@@ -141,30 +142,76 @@ def build_model(data):
     :return: None
     """
     y = data['target'].values
+    similarity_sum = data['similarity_sum'].values
+    similarity_sum /= similarity_sum.max()
 
-    tmp = data.drop(['target', ], axis=1)
-    columns = list(tmp.columns.values)
+    tmp = data.drop(['target', 'similarity_sum'], axis=1)
+    # columns = tmp.columns.values
+    columns = np.asarray([x.replace('_dl', '').replace('_', ' ') for x in tmp.columns.values])
     X = tmp.values
 
-    # split to training and testing
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test, ss_train, ss_test = train_test_split(X, y, similarity_sum,
+                                                                           test_size=0.3, random_state=42)
 
-    # build model
-    clf = LogisticRegression(class_weight='balanced', max_iter=100000, solver='sag', verbose=True, n_jobs=-1)
-    clf.fit(X_train, y_train)
+    print('similarity sum:')
+    check_performance(y_test, ss_test, output='SimilaritySum')
 
-    # predict probabilities
-    y_pred = clf.predict_proba(X_test)
+    lg = LogisticRegression(class_weight='balanced', max_iter=100000, solver='sag', verbose=True, n_jobs=-1)
+    rf = RandomForestClassifier(n_estimators=1000, n_jobs=-1, verbose=True)
+    et = ExtraTreesClassifier(n_estimators=1000, n_jobs=-1, verbose=True)
 
-    print('\nFeature Importance:')
-    print('Intercept = ', clf.intercept_[0])
-    for column, coefficient in zip(columns, clf.coef_[0]):
-        print('{0} = {1}'.format(column, coefficient))
+    for clf, name in zip((lg, rf, et), ('LogisticRegression', 'RandomForest', 'ExtraTrees')):
+        print('\n', name)
+        # build model
+        clf.fit(X_train, y_train)
 
-    manual_probs = 1. / (1 + np.exp(-(clf.intercept_[0] + np.sum(clf.coef_[0] * X_test, axis=1))))
-    np.testing.assert_almost_equal(y_pred[:, 1], manual_probs)
+        # predict probabilities
+        y_pred = clf.predict_proba(X_test)
 
-    check_performance(y_test, y_pred)
+        check_performance(y_test, y_pred[:, 1], output=name)
+
+        if 'Logistic' in name:
+            print('\nFeature Importance:')
+            print('Intercept = ', clf.intercept_[0])
+            for column, coefficient in zip(columns, clf.coef_[0]):
+                print('{0} = {1}'.format(column, coefficient))
+
+            n_features_generator = range(len(clf.coef_[0]))
+            indices = np.argsort(clf.coef_[0])[::-1]
+
+            plt.figure(figsize=(16, 12))
+            plt.title("Feature Importance")
+            plt.bar(n_features_generator, clf.coef_[0][indices], color="r", align="center")
+            plt.xticks(n_features_generator, columns, rotation=45)
+            plt.xlim([-1, X.shape[1]])
+            plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/' + name + 'FeatureImportance.png')
+            plt.tight_layout()
+            plt.close()
+
+            manual_probs = 1. / (1 + np.exp(-(clf.intercept_[0] + np.sum(clf.coef_[0] * X_test, axis=1))))
+            np.testing.assert_almost_equal(y_pred[:, 1], manual_probs)
+        else:
+            importances = clf.feature_importances_
+            std = np.std([tree.feature_importances_ for tree in clf.estimators_], axis=0)
+            indices = np.argsort(importances)[::-1]
+
+            columns = columns[indices]
+            n_features_generator = range(X.shape[1])
+
+            # Print the feature ranking
+            print("Feature ranking:")
+            for column, feature in zip(columns, n_features_generator):
+                print("%d. feature %s = %.5f" % (feature + 1, column, importances[indices[feature]]))
+
+            # Plot the feature importances of the forest
+            plt.figure(figsize=(16, 12))
+            plt.title("Feature Importance")
+            plt.bar(n_features_generator, importances[indices],  color="r", yerr=std[indices], align="center")
+            plt.xticks(n_features_generator, columns, rotation=45)
+            plt.xlim([-1, X.shape[1]])
+            plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/' + name + 'FeatureImportance.png')
+            plt.tight_layout()
+            plt.close()
 
 
 if __name__ == "__main__":
