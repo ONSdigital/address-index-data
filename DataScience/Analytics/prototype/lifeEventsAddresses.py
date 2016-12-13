@@ -3,7 +3,9 @@
 ONS Address Index - Life Events Testing
 =======================================
 
-A simple script to test
+A simple script to test the life events data. In general there are no UPRNs in this data,
+hence the most one can do is the get the linking rate and clerically review whether the
+found matches are correct or not.
 
 This is a prototype code aimed for experimentation and testing. There are not unit tests.
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
@@ -45,7 +47,7 @@ import pandas as pd
 
 class LifeEventsLinker(addressLinking.AddressLinker):
     """
-    Address Linker for Edge Cases test data. Inherits the AddressLinker and overwrites the load_data method.
+    Address Linker for Life Events test data. Inherits the AddressLinker and overwrites the load_data method.
     """
 
     def load_data(self):
@@ -61,7 +63,7 @@ class LifeEventsLinker(addressLinking.AddressLinker):
 
 def run_life_events_linker(**kwargs):
     """
-    A simple wrapper that allows running Edge Case linker.
+    A simple wrapper that allows running Life Events linker.
 
     :return: None
     """
