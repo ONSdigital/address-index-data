@@ -72,6 +72,7 @@ def run_edge_case_linker(**kwargs):
 
     linker = EdgeCaseLinker(**settings)
     linker.run_all()
+    del linker
 
 
 if __name__ == "__main__":

@@ -77,6 +77,7 @@ def run_life_events_linker(**kwargs):
 
     linker = LifeEventsLinker(**settings)
     linker.run_all()
+    del linker
 
 
 if __name__ == "__main__":

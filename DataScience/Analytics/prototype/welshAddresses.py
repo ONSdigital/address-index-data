@@ -86,6 +86,7 @@ def run_welsh_address_linker(**kwargs):
 
     linker = WelshAddressLinker(**settings)
     linker.run_all()
+    del linker
 
 
 if __name__ == "__main__":

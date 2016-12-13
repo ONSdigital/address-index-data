@@ -81,6 +81,7 @@ def run_patient_record_address_linker(**kwargs):
 
     linker = PatientRecordsAddressLinker(**settings)
     linker.run_all()
+    del linker
 
 
 if __name__ == "__main__":
