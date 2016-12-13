@@ -856,7 +856,11 @@ class AddressLinker:
             self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
 
             # get precision, recall and f1-score
-            precision = true_positives / (true_positives + false_positives)
+            try:
+                precision = true_positives / (true_positives + false_positives)
+            except ZeroDivisionError:
+                # in some rare cases with a few existing UPRNs it can happen that the union of new and old is empty
+                precision = 0.
             recall = true_positives / total  # note that this is not truly recall as some addresses may have no match
             f1score = 2. * (precision * recall) / (precision + recall)
 
@@ -900,7 +904,11 @@ class AddressLinker:
                 self.log.info('False Positives: {}'.format(false_positives))
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
 
-                precision = n_true_positives / (n_true_positives + false_positives)
+                try:
+                    precision = true_positives / (true_positives + false_positives)
+                except ZeroDivisionError:
+                    # in some rare cases with a few existing UPRNs it can happen that the union of new and old is Null
+                    precision = 0.
                 recall = n_true_positives / outof
                 f1score = 2. * (precision * recall) / (precision + recall)
 

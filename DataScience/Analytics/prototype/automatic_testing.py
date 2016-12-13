@@ -75,24 +75,29 @@ def run_all_datasets():
 
     print('Running Edge Case addresses test...')
     ec.run_edge_case_linker(**settings)
+    del ec
 
     if local:
         print('Cannot run Patient Records test locally...')
     else:
         print('Running Patient Records addresses test...')
         pr.run_patient_record_address_linker(**settings)
+        del pr
 
     if local:
         print('Cannot run Life Events test locally...')
     else:
         print('Running Life Events test locally...')
         le.run_life_events_linker(**settings)
+        del le
 
     print('Running Welsh addresses test...')
     wa.run_welsh_address_linker(**settings)
+    del wa
 
     print('Running Landry Registry addresses test...')
     lr.run_land_registry_linker(**settings)
+    del lr
 
 
 def _load_welsh_data():
