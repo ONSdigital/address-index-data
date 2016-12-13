@@ -56,7 +56,7 @@ class LifeEventsLinker(addressLinking.AddressLinker):
                                              low_memory=False)
 
         # change column names
-        self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old'}, inplace=True)
+        self.toLinkAddressData.rename(columns={'AddressInput': 'ADDRESS', 'UPRN': 'UPRN_old'}, inplace=True)
 
 
 def run_life_events_linker(**kwargs):
