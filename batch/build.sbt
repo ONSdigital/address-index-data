@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "com.databricks" %% "spark-csv" % "1.5.0",
   "com.typesafe" % "config" % "1.3.1",
   "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0"  excludeAll ExclusionRule(organization = "javax.servlet"),
-  "org.scalatest" %% "scalatest" % "3.0.0" % Test
+  "org.scalatest" %% "scalatest" % "3.0.0" % Test,
+  "org.rogach" %% "scallop" % "2.0.5"
 )
 
 scalacOptions ++= List("-unchecked", "-Xlint")
