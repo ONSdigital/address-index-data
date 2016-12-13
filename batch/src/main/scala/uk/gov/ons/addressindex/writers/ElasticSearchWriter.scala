@@ -12,11 +12,18 @@ import org.elasticsearch.spark.sql._
 object ElasticSearchWriter {
 
   private lazy val config = ConfigFactory.load()
-  private lazy val PAFIndex = config.getString("addressindex.elasticsearch.indices.paf")
+  private lazy val pafIndex = config.getString("addressindex.elasticsearch.indices.paf")
+  private lazy val nagIndex = config.getString("addressindex.elasticsearch.indices.nag")
 
   /**
     * Stores addresses (PAF) into ElasticSearch
     * @param data `DataFrame` containing addresses
     */
-  def saveAddresses(data:DataFrame): Unit = data.saveToEs(PAFIndex)
+  def savePAFAddresses(data:DataFrame): Unit = data.saveToEs(pafIndex)
+
+  /**
+    * Stores addresses (NAG) into ElasticSearch
+    * @param data `DataFrame` containing addresses
+    */
+  def saveNAGAddresses(data:DataFrame): Unit = data.saveToEs(nagIndex)
 }
