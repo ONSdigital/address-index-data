@@ -129,7 +129,7 @@ class AddressLinker:
                              multipleMatches=False,
                              dropColumns=False,
                              expandSynonyms=True,
-                             expandPostcode=False,
+                             expandPostcode=True,
                              test=False,
                              store=True,
                              verbose=False)
@@ -216,9 +216,6 @@ class AddressLinker:
         """
         self.log.info('Checking the loaded data...')
 
-        if self.settings['verbose']:
-            self.log.info(self.toLinkAddressData.info())
-
         # count the number of addresses using the index
         n_addresses = len(self.toLinkAddressData.index)
 
@@ -241,6 +238,10 @@ class AddressLinker:
         # update the results dictionary with the number of addresses
         self.results['addresses'] = n_addresses
         self.results['withUPRN'] = self.nExistingUPRN
+
+        if self.settings['verbose']:
+            print('Input File:')
+            print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
     def load_addressbase(self):
         """
@@ -320,6 +321,10 @@ class AddressLinker:
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
+
+        if self.settings['verbose']:
+            print('AddressBase:')
+            print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
 
     @staticmethod
     def _extract_postcode(string):
@@ -486,8 +491,9 @@ class AddressLinker:
                 parsed['Postcode'] = possible_postcode
 
             if parsed.get('Postcode', None) is not None:
-                # check that there is space, if not then add
-                if ' ' not in parsed['Postcode']:
+                # check that there is space, if not then add if the parsed postcode is long enough to contain a complete
+                # postcode. Some users have partial postcodes to which one should not add a space.
+                if ' ' not in parsed['Postcode'] and len(parsed['Postcode']) > 4:
                     in_code = parsed['Postcode'][-3:]
                     out_code = parsed['Postcode'].replace(in_code, '')
                     parsed['Postcode'] = out_code + ' ' + in_code
@@ -582,8 +588,8 @@ class AddressLinker:
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
-        self.toLinkAddressData['FlatNumber'].fillna('-12345', inplace=True)
-        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int64)
+        self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
+        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
@@ -605,6 +611,10 @@ class AddressLinker:
 
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
+
+        if self.settings['verbose']:
+            print('Parsed:')
+            print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
     def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
         """
@@ -697,6 +707,11 @@ class AddressLinker:
                        missing_value=0.2)
         compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
                        missing_value=0.5)
+
+        # add a comparison of the incode - this helps with e.g. life events addresses
+        if self.settings['expandPostcode']:
+            compare.string('postcode_in', 'postcode_in', method='jarowinkler', name='incode_dl',
+                           missing_value=0.0)
 
         # use to separate e.g. 55A from 55
         compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='jarowinkler', name='pao_suffix_dl',
@@ -908,7 +923,7 @@ class AddressLinker:
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
 
                 try:
-                    precision = true_positives / (true_positives + false_positives)
+                    precision = n_true_positives / (n_true_positives + false_positives)
                 except ZeroDivisionError:
                     # in some rare cases with a few existing UPRNs it can happen that the union of new and old is Null
                     precision = 0.
