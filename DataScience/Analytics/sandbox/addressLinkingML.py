@@ -149,15 +149,13 @@ def build_model(data):
     similarity_sum /= similarity_sum.max()
 
     TestData_Index = data['TestData_Index']
-    AddressBase_Index = data['AddressBase_Index']
 
     tmp = data.drop(['target', 'similarity_sum', 'TestData_Index', 'AddressBase_Index'], axis=1)
-    # columns = tmp.columns.values
     columns = np.asarray([x.replace('_dl', '').replace('_', ' ') for x in tmp.columns.values])
     X = tmp.values
 
-    X_train, X_test, y_train, y_test, ss_train, ss_test, td_train, td_test, ab_train, ab_test = \
-        train_test_split(X, y, similarity_sum, TestData_Index, AddressBase_Index, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test, ss_train, ss_test, td_train, td_test = \
+        train_test_split(X, y, similarity_sum, TestData_Index, test_size=0.3, random_state=42)
 
     print('{} matches in test data'.format(np.sum(y_test)))
 
