@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 7-Dec-2016
+:version: 0.4
+:date: 13-Dec-2016
 """
 import datetime
 import os
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 class AddressLinker:
