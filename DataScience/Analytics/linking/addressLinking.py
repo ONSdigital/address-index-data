@@ -862,7 +862,10 @@ class AddressLinker:
                 # in some rare cases with a few existing UPRNs it can happen that the union of new and old is empty
                 precision = 0.
             recall = true_positives / total  # note that this is not truly recall as some addresses may have no match
-            f1score = 2. * (precision * recall) / (precision + recall)
+            try:
+                f1score = 2. * (precision * recall) / (precision + recall)
+            except ZeroDivisionError:
+                f1score = 0.
 
             self.log.info('Precision = {}'.format(precision))
             self.log.info('Minimum Recall = {}'.format(recall))
@@ -910,7 +913,10 @@ class AddressLinker:
                     # in some rare cases with a few existing UPRNs it can happen that the union of new and old is Null
                     precision = 0.
                 recall = n_true_positives / outof
-                f1score = 2. * (precision * recall) / (precision + recall)
+                try:
+                    f1score = 2. * (precision * recall) / (precision + recall)
+                except ZeroDivisionError:
+                    f1score = 0.
 
                 self.log.info('Precision = {}'.format(precision))
                 self.log.info('Minimum Recall = {}'.format(recall))
