@@ -33,8 +33,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 7-Dec-2016
+:version: 0.2
+:date: 12-Dec-2016
 """
 import pandas as pd
 import numpy as np
@@ -44,7 +44,7 @@ from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier)
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
 import matplotlib
-
+from sklearn.externals import joblib
 matplotlib.use('Agg')  # to prevent Tkinter crashing on cdhut-d03
 import matplotlib.pyplot as plt
 
@@ -63,18 +63,14 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
     :return: data containing string distance metrics and target (match=1, non-match=0)
     :rtype: pandas.DataFrame
     """
-    data = pd.read_csv(filepath, dtype={'flat_dl': np.float64, 'pao_dl': np.float64, 'building_name_dl': np.float64,
-                                        'building_number_dl': np.float64, 'pao_number_dl': np.float64,
-                                        'street_dl': np.float64, 'town_dl': np.float64, 'locality_dl': np.float64,
-                                        'pao_suffix_dl': np.float64, 'flatw_dl': np.float64,
-                                        'sao_number_dl': np.float64, 'organisation_dl': np.float64,
-                                        'department_dl': np.float64, 'street_desc_dl': np.float64,
-                                        'similarity_sum': np.float64, 'block_mode': np.int32, 'UPRN_old': np.float64,
-                                        'UPRN': np.float64}, low_memory=False, na_values=None,
-                       usecols=['flat_dl', 'pao_dl', 'building_name_dl', 'building_number_dl', 'pao_number_dl',
-                                'street_dl', 'town_dl', 'locality_dl', 'pao_suffix_dl', 'flatw_dl', 'sao_number_dl',
-                                'organisation_dl', 'department_dl', 'street_desc_dl', 'similarity_sum', 'block_mode',
-                                'UPRN', 'UPRN_old'])
+    columns = {'TestData_Index': np.int64, 'flat_dl': np.float64, 'pao_dl': np.float64, 'building_name_dl': np.float64,
+               'building_number_dl': np.float64, 'pao_number_dl': np.float64, 'AddressBase_Index': np.int64,
+               'street_dl': np.float64, 'town_dl': np.float64, 'locality_dl': np.float64,  'pao_suffix_dl': np.float64,
+               'flatw_dl': np.float64, 'sao_number_dl': np.float64, 'organisation_dl': np.float64,
+               'department_dl': np.float64, 'street_desc_dl': np.float64, 'similarity_sum': np.float64,
+               'block_mode': np.int32, 'UPRN_old': np.float64, 'UPRN': np.float64}
+
+    data = pd.read_csv(filepath, dtype=columns, low_memory=False, na_values=None, usecols=columns.keys())
 
     msk = data['UPRN'].isnull() | data['UPRN_old'].isnull()
     data = data.loc[~msk]
@@ -93,7 +89,8 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
     positives = data['target'].sum()
     negatives = examples - positives
 
-    if verbose: print(data.info())
+    if verbose:
+        print(data.info())
 
     print('Found {} positives'.format(positives))
     print('Found {} negatives'.format(negatives))
@@ -101,7 +98,7 @@ def load_data(filepath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/tr
     return data
 
 
-def check_performance(y_test, y_pred, output='Logistic'):
+def check_performance(y_test, y_pred, td_test, output='Logistic'):
     """
     Calculate AUC and plot ROC.
 
@@ -110,6 +107,12 @@ def check_performance(y_test, y_pred, output='Logistic'):
 
     :return: None
     """
+    combined_data = pd.DataFrame({'target': y_test, 'probability': y_pred, 'TestData_Index': td_test})
+
+    combined_data.sort_values(by='probability', ascending=False, inplace=True)
+    combined_data.drop_duplicates('TestData_Index', keep='first', inplace=True)
+    print('Correctly Predicted = {} addresses'.format(combined_data['target'].sum()))
+
     print('AUC={}'.format(roc_auc_score(y_test, y_pred)))
 
     fpr, tpr, thresholds = roc_curve(y_test, y_pred)
@@ -145,16 +148,21 @@ def build_model(data):
     similarity_sum = data['similarity_sum'].values
     similarity_sum /= similarity_sum.max()
 
-    tmp = data.drop(['target', 'similarity_sum'], axis=1)
+    TestData_Index = data['TestData_Index']
+    AddressBase_Index = data['AddressBase_Index']
+
+    tmp = data.drop(['target', 'similarity_sum', 'TestData_Index', 'AddressBase_Index'], axis=1)
     # columns = tmp.columns.values
     columns = np.asarray([x.replace('_dl', '').replace('_', ' ') for x in tmp.columns.values])
     X = tmp.values
 
-    X_train, X_test, y_train, y_test, ss_train, ss_test = train_test_split(X, y, similarity_sum,
-                                                                           test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test, ss_train, ss_test, td_train, td_test, ab_train, ab_test = \
+        train_test_split(X, y, similarity_sum, TestData_Index, AddressBase_Index, test_size=0.3, random_state=42)
+
+    print('{} matches in test data'.format(np.sum(y_test)))
 
     print('similarity sum:')
-    check_performance(y_test, ss_test, output='SimilaritySum')
+    check_performance(y_test, ss_test, td_test, output='SimilaritySum')
 
     lg = LogisticRegression(class_weight='balanced', max_iter=100000, solver='sag', verbose=True, n_jobs=-1)
     rf = RandomForestClassifier(n_estimators=1000, n_jobs=-1, verbose=True)
@@ -162,13 +170,13 @@ def build_model(data):
 
     for clf, name in zip((lg, rf, et), ('LogisticRegression', 'RandomForest', 'ExtraTrees')):
         print('\n', name)
-        # build model
+        # build model and store on disk
         clf.fit(X_train, y_train)
+        joblib.dump(clf, '/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/' + name + '.pkl')
 
-        # predict probabilities
+        # predict probabilities and check performance
         y_pred = clf.predict_proba(X_test)
-
-        check_performance(y_test, y_pred[:, 1], output=name)
+        check_performance(y_test, y_pred[:, 1], td_test, output=name)
 
         if 'Logistic' in name:
             print('\nFeature Importance:')
