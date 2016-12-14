@@ -749,7 +749,7 @@ class AddressLinker:
         matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
         # reset index
-        matches = matches.reset_index()
+        matches.reset_index(inplace=True)
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
@@ -780,9 +780,13 @@ class AddressLinker:
         """
         self.log.info('Merging back the original information...')
 
-        self.toLinkAddressData = self.toLinkAddressData.reset_index()
+        self.toLinkAddressData.reset_index(inplace=True)
 
         self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
+
+        # remove those not needed from address base before merging
+        address_base_index = self.matches['AddressBase_Index'].values
+        self.addressBase = self.addressBase.loc[self.addressBase['AddressBase_Index'].isin(address_base_index)]
 
         # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
@@ -1014,7 +1018,7 @@ class AddressLinker:
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         start = time.clock()
-        self.addressBase = self.addressBase.reset_index()
+        self.addressBase.reset_index(inplace=True)
         self.merge_linked_data_and_address_base_information()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
