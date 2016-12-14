@@ -38,11 +38,12 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 13-Dec-2016
+:version: 0.2
+:date: 14-Dec-2016
 """
 from Analytics.linking import addressLinking
 import pandas as pd
+import numpy as np
 
 
 class LifeEventsLinker(addressLinking.AddressLinker):
@@ -59,6 +60,28 @@ class LifeEventsLinker(addressLinking.AddressLinker):
 
         # change column names
         self.toLinkAddressData.rename(columns={'AddressInput': 'ADDRESS', 'UPRN': 'UPRN_old'}, inplace=True)
+
+    def load_addressbase(self):
+        """
+        Overwrite the standard address base loading method to optimise memory consumption.
+        """
+        self.log.info('Reading in Modified Address Base Data...')
+
+        self.addressBase = pd.read_csv(self.settings['ABpath'] + 'AB_modified.csv',
+                                       dtype={'UPRN': np.int64, 'ORGANISATION_NAME': str,
+                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str,
+                                              'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
+                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str,
+                                              'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
+                                              'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str,
+                                              'postcode_in': str, 'postcode_out': str})
+        self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
+
+        self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
+
+        # set index name - needed later for merging / duplicate removal
+        self.addressBase.index.name = 'AddressBase_Index'
 
 
 def run_life_events_linker(**kwargs):
