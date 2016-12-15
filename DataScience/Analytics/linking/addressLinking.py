@@ -41,7 +41,7 @@ Author
 Version
 -------
 
-:version: 0.4
+:version: 0.5
 :date: 15-Dec-2016
 """
 import datetime
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 
 class AddressLinker:
@@ -872,7 +872,7 @@ class AddressLinker:
 
         self.log.info('{} addresses were not linked...'.format(not_found))
 
-        # if UPRN_old is present then check the overlap and the number of false posities
+        # if UPRN_old is present then check the overlap and the number of false positives
         if 'UPRN_old' not in self.matched_addresses.columns:
             true_positives = -1
             false_positives = -1
@@ -967,33 +967,45 @@ class AddressLinker:
                 self.log.info('Minimum Recall = {}'.format(recall))
                 self.log.info('Minimum F1-score = {}'.format(f1score))
 
-    def _generate_performance_figure(self, all_results, all_results_names):
+    def _generate_performance_figure(self, all_results, all_results_names, width=0.5):
         """
+        A simple bar chart showing the performance.
 
-        :param all_results:
-        :param all_results_names:
-        :return:
+        If existing UPRNs are available then simple metrics like the number of false positives is also shown.
+
+        :param all_results: a list of number of addresses in a given category as specified by all_results_names
+        :type all_results: list
+        :param all_results_names: a list containing the names that will be used as y-ticks
+        :type all_results_names: list
+        :param width: relative bar width
+        :type width: float
+
+        :return: None
         """
         location = np.arange(len(all_results))
-        width = 0.5
+
         fig = plt.figure(figsize=(12, 10))
         plt.title('Prototype Linking Code (version={})'.format(__version__))
         ax = fig.add_subplot(1, 1, 1)
+
         plt.barh(location, all_results, width, color='g', alpha=0.6)
-        for p in ax.patches:
-            n_addresses = int(p.get_width())
-            if n_addresses < 0:
+
+        for patch in ax.patches:
+            if patch.get_x() < 0:
                 continue
-            elif n_addresses > 500:
-                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+
+            n_addresses = int(patch.get_width())
+
+            if n_addresses > 500:
+                ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                             xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
             else:
-                ax.annotate("%i" % n_addresses, (p.get_x() + p.get_width(), p.get_y()),
+                ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                             xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
 
         plt.xlabel('Number of Addresses')
         plt.yticks(location + width / 2., all_results_names)
-        plt.xlim(0, ax.get_xlim()[1] * 1.05)
+        plt.xlim(0, ax.get_xlim()[1] * 1.02)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
         plt.close()
@@ -1029,7 +1041,10 @@ class AddressLinker:
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         start = time.clock()
-        self.load_addressbase()
+        if self.settings['test']:
+            self.load_and_process_addressbase()
+        else:
+            self.load_addressbase()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 

@@ -55,7 +55,6 @@ class CompaniesHouseLinker(addressLinking.AddressLinker):
         self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
                                              low_memory=False)
 
-        # change column names
         self.toLinkAddressData.rename(columns={'address': 'ADDRESS', 'id': 'ID'}, inplace=True)
 
 
