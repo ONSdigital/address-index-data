@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 7-Dec-2016
+:version: 0.4
+:date: 15-Dec-2016
 """
 import datetime
 import os
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 class AddressLinker:
@@ -122,14 +122,14 @@ class AddressLinker:
         self.settings = dict(inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                              inputFilename='WelshGovernmentData21Nov2016.csv',
                              ABpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
-                             ABfilename='AB.csv',
+                             ABfilename='AB_modified.csv',
                              limit=0.0,
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
                              multipleMatches=False,
                              dropColumns=False,
                              expandSynonyms=True,
-                             expandPostcode=False,
+                             expandPostcode=True,
                              test=False,
                              store=True,
                              verbose=False)
@@ -216,9 +216,6 @@ class AddressLinker:
         """
         self.log.info('Checking the loaded data...')
 
-        if self.settings['verbose']:
-            self.log.info(self.toLinkAddressData.info())
-
         # count the number of addresses using the index
         n_addresses = len(self.toLinkAddressData.index)
 
@@ -242,13 +239,43 @@ class AddressLinker:
         self.results['addresses'] = n_addresses
         self.results['withUPRN'] = self.nExistingUPRN
 
+        if self.settings['verbose']:
+            print('Input File:')
+            print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
+
     def load_addressbase(self):
         """
         A method to load a compressed version of the full AddressBase file.
 
         The information being used has been processed from a AB Epoch 39 files provided by ONS.
 
-        .. Note: this function modifies the original AB information by e.g. combining different tables. Such
+        .. Note: this method assumes that all modifications have already been carried out. This method
+                 allows the prototype to be run on the ONS utility node as the memory requirements are
+                 reduced compared to when using the load_and_process_addressbase method.
+        """
+        self.log.info('Reading in Modified Address Base Data...')
+
+        self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
+                                       dtype={'UPRN': np.int64, 'ORGANISATION_NAME': str,
+                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str,
+                                              'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
+                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str,
+                                              'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
+                                              'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str,
+                                              'postcode_in': str, 'postcode_out': str})
+        self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
+
+        self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
+
+        # set index name - needed later for merging / duplicate removal
+        self.addressBase.index.name = 'AddressBase_Index'
+
+    def load_and_process_addressbase(self):
+        """
+        A method to load a compressed version of the full AddressBase file and to process it.
+
+        .. Note: this method modifies the original AB information by e.g. combining different tables. Such
                  activities are undertaken because of the aggressive blocking the prototype linking code uses.
                  The actual production system should take AB as it is and the linking should not perform blocking
                  but rather be flexible and take into account that in NAG the information can be stored in various
@@ -320,6 +347,10 @@ class AddressLinker:
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
+
+        if self.settings['verbose']:
+            print('AddressBase:')
+            print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
 
     @staticmethod
     def _extract_postcode(string):
@@ -402,7 +433,7 @@ class AddressLinker:
         # use this for the counties so that e.g. ESSEX ROAD does not become just ROAD...
         # todo: the regex is getting ridiculous, maybe do other way around i.e. country must be followed by postcode or
         #       be the last component.
-        addRegex = '(?:\s)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH)'
+        addRegex = '(?:\s)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH|&)'
 
         # remove county from address but add a column for it
         self.toLinkAddressData['County'] = None
@@ -486,8 +517,9 @@ class AddressLinker:
                 parsed['Postcode'] = possible_postcode
 
             if parsed.get('Postcode', None) is not None:
-                # check that there is space, if not then add
-                if ' ' not in parsed['Postcode']:
+                # check that there is space, if not then add if the parsed postcode is long enough to contain a complete
+                # postcode. Some users have partial postcodes to which one should not add a space.
+                if ' ' not in parsed['Postcode'] and len(parsed['Postcode']) > 4:
                     in_code = parsed['Postcode'][-3:]
                     out_code = parsed['Postcode'].replace(in_code, '')
                     parsed['Postcode'] = out_code + ' ' + in_code
@@ -582,8 +614,8 @@ class AddressLinker:
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', ''), axis=1)
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
-        self.toLinkAddressData['FlatNumber'].fillna('-12345', inplace=True)
-        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int64)
+        self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
+        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
@@ -605,6 +637,10 @@ class AddressLinker:
 
         # drop the temp info
         self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
+
+        if self.settings['verbose']:
+            print('Parsed:')
+            print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
     def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
         """
@@ -698,6 +734,11 @@ class AddressLinker:
         compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
                        missing_value=0.5)
 
+        # add a comparison of the incode - this helps with e.g. life events addresses
+        if self.settings['expandPostcode']:
+            compare.string('postcode_in', 'postcode_in', method='jarowinkler', name='incode_dl',
+                           missing_value=0.0)
+
         # use to separate e.g. 55A from 55
         compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='jarowinkler', name='pao_suffix_dl',
                        missing_value=0.5)
@@ -734,7 +775,7 @@ class AddressLinker:
         matches = compare.vectors.loc[compare.vectors['similarity_sum'] > self.settings['limit']]
 
         # reset index
-        matches = matches.reset_index()
+        matches.reset_index(inplace=True)
 
         # to pick the most likely match we sort by the sum of the similarity and pick the top
         # sort matches by the sum of the vectors and then keep the first
@@ -765,9 +806,13 @@ class AddressLinker:
         """
         self.log.info('Merging back the original information...')
 
-        self.toLinkAddressData = self.toLinkAddressData.reset_index()
+        self.toLinkAddressData.reset_index(inplace=True)
 
         self.matches.sort_values(by='similarity_sum', ascending=False, inplace=True)
+
+        # remove those not needed from address base before merging
+        address_base_index = self.matches['AddressBase_Index'].values
+        self.addressBase = self.addressBase.loc[self.addressBase['AddressBase_Index'].isin(address_base_index)]
 
         # perform actual matching of matches and address base
         self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
@@ -856,9 +901,16 @@ class AddressLinker:
             self.log.info('False Positive Rate {}'.format(round(false_positives / total * 100., 1)))
 
             # get precision, recall and f1-score
-            precision = true_positives / (true_positives + false_positives)
+            try:
+                precision = true_positives / (true_positives + false_positives)
+            except ZeroDivisionError:
+                # in some rare cases with a few existing UPRNs it can happen that the union of new and old is empty
+                precision = 0.
             recall = true_positives / total  # note that this is not truly recall as some addresses may have no match
-            f1score = 2. * (precision * recall) / (precision + recall)
+            try:
+                f1score = 2. * (precision * recall) / (precision + recall)
+            except ZeroDivisionError:
+                f1score = 0.
 
             self.log.info('Precision = {}'.format(precision))
             self.log.info('Minimum Recall = {}'.format(recall))
@@ -900,9 +952,16 @@ class AddressLinker:
                 self.log.info('False Positives: {}'.format(false_positives))
                 self.log.info('False Positive Rate: {}'.format(false_positives / outof * 100., 1))
 
-                precision = n_true_positives / (n_true_positives + false_positives)
+                try:
+                    precision = n_true_positives / (n_true_positives + false_positives)
+                except ZeroDivisionError:
+                    # in some rare cases with a few existing UPRNs it can happen that the union of new and old is Null
+                    precision = 0.
                 recall = n_true_positives / outof
-                f1score = 2. * (precision * recall) / (precision + recall)
+                try:
+                    f1score = 2. * (precision * recall) / (precision + recall)
+                except ZeroDivisionError:
+                    f1score = 0.
 
                 self.log.info('Precision = {}'.format(precision))
                 self.log.info('Minimum Recall = {}'.format(recall))
@@ -985,7 +1044,7 @@ class AddressLinker:
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         start = time.clock()
-        self.addressBase = self.addressBase.reset_index()
+        self.addressBase.reset_index(inplace=True)
         self.merge_linked_data_and_address_base_information()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))

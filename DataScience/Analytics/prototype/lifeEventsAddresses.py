@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """
-ONS Address Index - Edge Case Testing
-=====================================
+ONS Address Index - Life Events Testing
+=======================================
 
-A simple script to test parsing and matching of edge cases - 5k dataset of different types of addresses.
+A simple script to test the life events data. In general there are no UPRNs in this data,
+hence the most one can do is the get the linking rate and clerically review whether the
+found matches are correct or not.
 
 This is a prototype code aimed for experimentation and testing. There are not unit tests.
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
@@ -17,7 +19,7 @@ Running
 
 After all requirements are satisfied, the script can be invoked using CPython interpreter::
 
-    python edgeCaseAddresses.py
+    python lifeEventsAddresses.py
 
 
 Requirements
@@ -36,16 +38,16 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 30-Nov-2016
+:version: 0.2
+:date: 14-Dec-2016
 """
 from Analytics.linking import addressLinking
 import pandas as pd
 
 
-class EdgeCaseLinker(addressLinking.AddressLinker):
+class LifeEventsLinker(addressLinking.AddressLinker):
     """
-    Address Linker for Edge Cases test data. Inherits the AddressLinker and overwrites the load_data method.
+    Address Linker for Life Events test data. Inherits the AddressLinker and overwrites the load_data method.
     """
 
     def load_data(self):
@@ -56,24 +58,27 @@ class EdgeCaseLinker(addressLinking.AddressLinker):
                                              low_memory=False)
 
         # change column names
-        self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old', 'MNEMONIC': 'Category'}, inplace=True)
+        self.toLinkAddressData.rename(columns={'AddressInput': 'ADDRESS', 'UPRN': 'UPRN_old'}, inplace=True)
 
 
-def run_edge_case_linker(**kwargs):
+def run_life_events_linker(**kwargs):
     """
-    A simple wrapper that allows running Edge Case linker.
+    A simple wrapper that allows running Life Events linker.
 
     :return: None
     """
-    settings = dict(inputFilename='EDGE_CASES_EC5K_NoPostcode.csv',
-                    inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-                    outname='EdgeCases')
+    settings = dict(inputFilename='LifeEventsConsolidated.csv',
+                    inputPath='/opt/scratch/AddressIndex/TestData/',
+                    outpath='/opt/scratch/AddressIndex/Results/',
+                    outname='LifeEvents',
+                    ABpath='/opt/scratch/AddressIndex/AddressBase/')
+
     settings.update(kwargs)
 
-    linker = EdgeCaseLinker(**settings)
+    linker = LifeEventsLinker(**settings)
     linker.run_all()
     del linker
 
 
 if __name__ == "__main__":
-    run_edge_case_linker()
+    run_life_events_linker()

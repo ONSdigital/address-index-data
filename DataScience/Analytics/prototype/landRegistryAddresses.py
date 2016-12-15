@@ -97,6 +97,7 @@ def run_land_registry_linker(**kwargs):
 
     linker = LandRegistryLinker(**settings)
     linker.run_all()
+    del linker
 
 
 if __name__ == "__main__":
