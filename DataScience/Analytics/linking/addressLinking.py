@@ -616,7 +616,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6)):
         """
         A method to link addresses against AddressBase.
 
