@@ -42,7 +42,7 @@ Version
 -------
 
 :version: 0.4
-:date: 13-Dec-2016
+:date: 15-Dec-2016
 """
 import datetime
 import os
@@ -122,7 +122,7 @@ class AddressLinker:
         self.settings = dict(inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
                              inputFilename='WelshGovernmentData21Nov2016.csv',
                              ABpath='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
-                             ABfilename='AB.csv',
+                             ABfilename='AB_modified.csv',
                              limit=0.0,
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
@@ -249,7 +249,33 @@ class AddressLinker:
 
         The information being used has been processed from a AB Epoch 39 files provided by ONS.
 
-        .. Note: this function modifies the original AB information by e.g. combining different tables. Such
+        .. Note: this method assumes that all modifications have already been carried out. This method
+                 allows the prototype to be run on the ONS utility node as the memory requirements are
+                 reduced compared to when using the load_and_process_addressbase method.
+        """
+        self.log.info('Reading in Modified Address Base Data...')
+
+        self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
+                                       dtype={'UPRN': np.int64, 'ORGANISATION_NAME': str,
+                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str,
+                                              'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
+                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str,
+                                              'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
+                                              'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str,
+                                              'postcode_in': str, 'postcode_out': str})
+        self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
+
+        self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
+
+        # set index name - needed later for merging / duplicate removal
+        self.addressBase.index.name = 'AddressBase_Index'
+
+    def load_and_process_addressbase(self):
+        """
+        A method to load a compressed version of the full AddressBase file and to process it.
+
+        .. Note: this method modifies the original AB information by e.g. combining different tables. Such
                  activities are undertaken because of the aggressive blocking the prototype linking code uses.
                  The actual production system should take AB as it is and the linking should not perform blocking
                  but rather be flexible and take into account that in NAG the information can be stored in various
@@ -616,7 +642,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
         """
         A method to link addresses against AddressBase.
 
