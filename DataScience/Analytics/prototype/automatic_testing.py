@@ -34,8 +34,8 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 13-Dec-2016
+:version: 0.4
+:date: 15-Dec-2016
 """
 import os
 import datetime
@@ -45,6 +45,7 @@ import Analytics.prototype.landRegistryAddresses as lr
 import Analytics.prototype.edgeCaseAddresses as ec
 import Analytics.prototype.patientRecordAddresses as pr
 import Analytics.prototype.lifeEventsAddresses as le
+import Analytics.prototype.companiesHouse as ch
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
@@ -87,6 +88,9 @@ def run_all_datasets():
     else:
         print('Running Life Events test locally...')
         le.run_life_events_linker(**settings)
+
+    print('Running Companies House test...')
+    ch.run_companies_house_linker(**settings)
 
     print('Running Welsh addresses test...')
     wa.run_welsh_address_linker(**settings)
