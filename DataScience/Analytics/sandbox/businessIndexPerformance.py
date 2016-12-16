@@ -38,7 +38,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def load_matching_results(filename='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/CompaniesHouse_matched.csv'):
+def load_matching_results(filename='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/BusinessIndex_matched.csv'):
     """
     Load the matching results of the business index data.
 
