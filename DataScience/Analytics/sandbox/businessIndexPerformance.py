@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """
-ONS Address Index - Companies House Performance
-===============================================
+ONS Address Index - Business Index Performance
+==============================================
 
-A simple script to compute the matching performance for the companies house data provided by the business index.
+A simple script to compute the matching performance for the companies house and charities commissions data provided
+by the business index.
 
 
 Running
@@ -11,7 +12,7 @@ Running
 
 After all requirements are satisfied, the script can be invoked using CPython interpreter::
 
-    python companiesHousePerformance.py
+    python businessIndexPerformance.py
 
 
 Requirements
@@ -39,12 +40,12 @@ import matplotlib.pyplot as plt
 
 def load_matching_results(filename='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/CompaniesHouse_matched.csv'):
     """
-    Load the matching results of the companies house data.
+    Load the matching results of the business index data.
 
     :param filename: name of the CSV file storing matches
     :type filename: str
 
-    :return: matching results for the business index companies house data
+    :return: matching results for the business index companies house and charities commissions data
     :rtype: pandas.DataFrame
     """
     data = pd.read_csv(filename, usecols=['ID', 'UPRN', 'ADDRESS'])
@@ -74,7 +75,7 @@ def compute_performance(data):
     print('Total number of entries is {}'.format(len(results.index)))
     print('UPRNs match {}'.format(results['Match'].sum()))
 
-    results.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/CompaniesHouse_performance.csv',
+    results.to_csv('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/BusinessIndex_performance.csv',
                    index=False)
 
     return results
@@ -91,7 +92,7 @@ def visualise_performance(data):
     """
     data.plot(y='Match', kind='hist', xlim=(-0.5, 1.5), xticks=(0, 1))
     plt.tight_layout()
-    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/CompaniesHouse_performance.png')
+    plt.savefig('/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/BusinessIndex_performance.png')
     plt.close()
 
 

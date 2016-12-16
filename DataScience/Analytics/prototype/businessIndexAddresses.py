@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
-ONS Address Index - Companies House Testing
-===========================================
+ONS Address Index - Business Index Testing
+==========================================
 
-A simple script to test the Companies House data received from the Business Index.
+A simple script to test the Companies House and Charities Commission data received from the Business Index.
 
 This is a prototype code aimed for experimentation and testing. There are not unit tests.
 The code has been written for speed rather than accuracy, it therefore uses fairly aggressive
@@ -17,7 +17,7 @@ Running
 
 After all requirements are satisfied, the script can be invoked using CPython interpreter::
 
-    python companiesHouse.py
+    python businessIndexAddresses.py
 
 
 Requirements
@@ -43,9 +43,9 @@ from Analytics.linking import addressLinking
 import pandas as pd
 
 
-class CompaniesHouseLinker(addressLinking.AddressLinker):
+class BusinessIndexLinker(addressLinking.AddressLinker):
     """
-    Address Linker for Companies House test data. Inherits the AddressLinker and overwrites the load_data method.
+    Address Linker for Business Index test data. Inherits the AddressLinker and overwrites the load_data method.
     """
 
     def load_data(self):
@@ -58,20 +58,20 @@ class CompaniesHouseLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'address': 'ADDRESS', 'id': 'ID'}, inplace=True)
 
 
-def run_companies_house_linker(**kwargs):
+def run_business_index_linker(**kwargs):
     """
-    A simple wrapper that allows running Companies House linker.
+    A simple wrapper that allows running Business Index linker.
 
     :return: None
     """
-    settings = dict(inputFilename='CompaniesHouse.csv', outname='CompaniesHouse')
+    settings = dict(inputFilename='BusinessIndex.csv', outname='BusinessIndex')
 
     settings.update(kwargs)
 
-    linker = CompaniesHouseLinker(**settings)
+    linker = BusinessIndexLinker(**settings)
     linker.run_all()
     del linker
 
 
 if __name__ == "__main__":
-    run_companies_house_linker()
+    run_business_index_linker()
