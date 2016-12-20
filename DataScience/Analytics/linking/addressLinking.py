@@ -266,6 +266,9 @@ class AddressLinker:
                                               'postcode_in': str, 'postcode_out': str})
         self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
 
+        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
+        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
+
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
@@ -536,11 +539,16 @@ class AddressLinker:
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
                 parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
-                parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
                 # accept suffixes that are only maximum two chars and if not hyphen
                 if len(parsed['BuildingSuffix']) > 2 and (parsed['BuildingSuffix'] != '-'):
                     parsed['BuildingSuffix'] = None
                     # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
+
+                if '-' not in parsed['BuildingName']:
+                    parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
+                else:
+                    tmp = parsed['BuildingName'].split('-')[0]
+                    parsed['pao_start_number'] = ''.join([x for x in tmp if x.isdigit()])
 
             # some addresses contain place CO place, where the CO is not part of the actual name - remove these
             # same is true for IN e.g. Road Marton IN Cleveland
@@ -617,6 +625,11 @@ class AddressLinker:
         self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
+        self.toLinkAddressData['BuildingStartNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingStartNumber'],
+                                                                      errors='coerce')
+        self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
+        self.toLinkAddressData['BuildingStartNumber'] = self.toLinkAddressData['BuildingStartNumber'].astype(np.int32)
+
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
@@ -642,7 +655,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6)):
         """
         A method to link addresses against AddressBase.
 
@@ -678,7 +691,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 5
+        :param blocking: the mode of blocking, ranging from 1 to 6
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -700,9 +713,12 @@ class AddressLinker:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['POSTCODE', 'THROUGHFARE'])
         elif blocking == 4:
+            pairs = pcl.block(left_on=['Postcode'],
+                              right_on=['POSTCODE'])
+        elif blocking == 5:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BUILDING_NAME', 'THROUGHFARE'])
-        elif blocking == 5:
+        elif blocking == 6:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
         else:
@@ -725,8 +741,7 @@ class AddressLinker:
                        missing_value=0.7)
         compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
-        compare.string('PAO_START_NUMBER', 'BuildingStartNumber', method='jarowinkler', name='pao_number_dl',
-                       missing_value=0.2)
+        compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear', name='pao_number_dl')
         compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
                        missing_value=0.6)
         compare.string('POST_TOWN', 'TownName', method='jarowinkler', name='town_dl',
@@ -762,7 +777,7 @@ class AddressLinker:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2):
+        if blocking in (1, 2, 4):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]

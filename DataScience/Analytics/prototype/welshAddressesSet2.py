@@ -54,12 +54,16 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         """
         Read in the Welsh address test data. Overwrites the method in the AddressLinker.
         """
-        self.toLinkAddressData = pd.read_excel(self.settings['inputPath'] + self.settings['inputFilename'],
-                                               encoding='iso-8859-1')
-        print(self.toLinkAddressData.info())
+        self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
+                                             encoding='utf-8')
+
+        columns = list(self.toLinkAddressData.columns.values)
+        columns.remove('uprn')
+        columns.remove('schoolCode')
 
         # fill NaNs with empty strings so that we can form a single address string
-        self.toLinkAddressData[self.toLinkAddressData.columns.list.remove('uprn')].fillna('', inplace=True)
+        self.toLinkAddressData[columns] = self.toLinkAddressData[columns].fillna('')
+
         self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['name'] + ' ' + \
                                             self.toLinkAddressData['addressLineOne'] + ' ' + \
                                             self.toLinkAddressData['addressLineTwo'] + ' ' + \
@@ -69,9 +73,7 @@ class WelshAddressLinker(addressLinking.AddressLinker):
 
         # rename postcode to postcode_orig and locality to locality_orig
         self.toLinkAddressData.rename(columns={'uprn': 'UPRN_old', 'schoolCode': 'ID'}, inplace=True)
-        self.toLinkAddressData.drop(['addressLineOne', 'addressLineTwo', 'addressLineThree',
-                                     'addressLineFour', 'postcode'], axis=1, inplace=True)
-
+        self.toLinkAddressData.drop(columns, axis=1, inplace=True)
 
 
 def run_welsh_address_linker(**kwargs):
@@ -80,10 +82,9 @@ def run_welsh_address_linker(**kwargs):
 
     :return: None
     """
-    settings = dict(inputFilename='Welsh_Gov_2nd_set.xlsx',
+    settings = dict(inputFilename='Welsh_Gov_2nd_set.csv',
                     inputPath='/Users/saminiemi/Projects/ONS/AddressIndex/data/',
-                    outname='WelshGovSet2',
-                    store=False)
+                    outname='WelshGovSet2')
     settings.update(kwargs)
 
     linker = WelshAddressLinker(**settings)
