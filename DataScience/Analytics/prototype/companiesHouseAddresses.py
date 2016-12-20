@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 ONS Address Index - Companies House Testing
-===================================+=======
+===========================================
 
 A simple script to test the Companies House data linking.
 
@@ -63,11 +63,11 @@ class CompaniesHouseLinker(addressLinking.AddressLinker):
                                              low_memory=False, usecols=usecols)
 
         self.toLinkAddressData.fillna('', inplace=True)
-        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['CompanyName'] +\
-                                            self.toLinkAddressData['RegAddress.AddressLine1'] +\
-                                            self.toLinkAddressData['RegAddress.AddressLine2'] +\
-                                            self.toLinkAddressData['RegAddress.PostTown'] +\
-                                            self.toLinkAddressData['RegAddress.County'] +\
+        self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['CompanyName'] + ' ' +\
+                                            self.toLinkAddressData['RegAddress.AddressLine1'] + ' ' +\
+                                            self.toLinkAddressData['RegAddress.AddressLine2'] + ' ' +\
+                                            self.toLinkAddressData['RegAddress.PostTown'] + ' ' +\
+                                            self.toLinkAddressData['RegAddress.County'] + ' ' +\
                                             self.toLinkAddressData['RegAddress.PostCode']
 
         self.toLinkAddressData.rename(columns={'CompanyNumber': 'ID'}, inplace=True)
