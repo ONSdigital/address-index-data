@@ -331,6 +331,9 @@ class AddressLinker:
         self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
         self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
+        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
+        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
+
         # drop some that are not needed - in the future versions these might be useful
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION',
                                'PAO_END_SUFFIX', 'PAO_END_NUMBER', 'SAO_START_SUFFIX'],
@@ -738,7 +741,7 @@ class AddressLinker:
         compare.string('PAO_TEXT', 'PAOText', method='jarowinkler', name='pao_dl',
                        missing_value=0.6)
         compare.string('BUILDING_NAME', 'BuildingName', method='jarowinkler', name='building_name_dl',
-                       missing_value=0.7)
+                       missing_value=0.8)
         compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
         compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear', name='pao_number_dl')
