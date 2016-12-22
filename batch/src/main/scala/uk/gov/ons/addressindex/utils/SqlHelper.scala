@@ -21,7 +21,7 @@ object SqlHelper {
       s"""SELECT
           $blpuTable.uprn,
           $blpuTable.postcodeLocator,
-          $blpuTable.addressbasePostal,
+          $blpuTable.addressbasePostal as addressBasePostal,
           $blpuTable.latitude,
           $blpuTable.longitude,
           $blpuTable.xCoordinate as easting,
