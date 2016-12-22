@@ -16,3 +16,4 @@ project/plugins/project/
 
 # MacOS X specific
 .DS_Store
+/batch/src/main/resources/application.conf
