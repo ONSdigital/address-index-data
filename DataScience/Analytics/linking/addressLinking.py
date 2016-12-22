@@ -410,6 +410,9 @@ class AddressLinker:
 
         # remove commas and apostrophes and insert space
         self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
+                                                                              x['ADDRESS_norm'].replace(', ', ' '),
+                                                                              axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
                                                                               x['ADDRESS_norm'].replace(',', ' '),
                                                                               axis=1)
 
@@ -662,7 +665,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7)):
         """
         A method to link addresses against AddressBase.
 
@@ -698,7 +701,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 6
+        :param blocking: the mode of blocking, ranging from 1 to 7
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -720,12 +723,15 @@ class AddressLinker:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['POSTCODE', 'THROUGHFARE'])
         elif blocking == 4:
+            pairs = pcl.block(left_on=['Postcode', 'TownName'],
+                              right_on=['POSTCODE', 'POST_TOWN'])
+        elif blocking == 5:
             pairs = pcl.block(left_on=['Postcode'],
                               right_on=['POSTCODE'])
-        elif blocking == 5:
+        elif blocking == 6:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BUILDING_NAME', 'THROUGHFARE'])
-        elif blocking == 6:
+        elif blocking == 7:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
         else:
@@ -784,7 +790,7 @@ class AddressLinker:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2, 4):
+        if blocking in (1, 2, 4, 5):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
