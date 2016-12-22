@@ -67,10 +67,9 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['name'] + ' ' + \
                                             self.toLinkAddressData['addressLineOne'] + ' ' + \
                                             self.toLinkAddressData['addressLineTwo'] + ' ' + \
+                                            self.toLinkAddressData['addressLineThree'] + ' ' + \
+                                            self.toLinkAddressData['addressLineFour'] + ' ' + \
                                             self.toLinkAddressData['postcode']
-                                            # self.toLinkAddressData['addressLineThree'] + ' ' + \
-                                            # self.toLinkAddressData['addressLineFour'] + ' ' + \
-                                            # self.toLinkAddressData['postcode']
 
         # rename postcode to postcode_orig and locality to locality_orig
         self.toLinkAddressData.rename(columns={'uprn': 'UPRN_old', 'schoolCode': 'ID'}, inplace=True)
