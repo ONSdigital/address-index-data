@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.5
-:date: 15-Dec-2016
+:version: 0.6
+:date: 16-Dec-2016
 """
 import datetime
 import os
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.5'
+__version__ = '0.6'
 
 
 class AddressLinker:
@@ -127,7 +127,7 @@ class AddressLinker:
                              outname='DataLinking',
                              outpath='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/',
                              multipleMatches=False,
-                             dropColumns=False,
+                             dropColumns=True,
                              expandSynonyms=True,
                              expandPostcode=True,
                              test=False,
@@ -143,7 +143,8 @@ class AddressLinker:
         self.toLinkAddressData = pd.DataFrame()
         self.matches = pd.DataFrame()
         self.addressBase = pd.DataFrame()
-        self.matched_addresses = pd.DataFrame()
+        self.matching_results = pd.DataFrame()
+        self.matched_results = pd.DataFrame()
 
         if self.settings['test']:
             self.settings['outname'] = 'DataLinkingTest'
@@ -843,20 +844,20 @@ class AddressLinker:
         self.addressBase = self.addressBase.loc[self.addressBase['AddressBase_Index'].isin(address_base_index)]
 
         # perform actual matching of matches and address base
-        self.matched_addresses = pd.merge(self.matches, self.toLinkAddressData, how='left', on='TestData_Index',
-                                          copy=False)
-        self.matched_addresses = pd.merge(self.matched_addresses, self.addressBase, how='left', on='AddressBase_Index',
-                                          copy=False)
-
-        # drop unnecessary columns
-        if self.settings['dropColumns']:
-            self.matched_addresses.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
+        self.matching_results = pd.merge(self.toLinkAddressData, self.matches, how='left', on='TestData_Index',
+                                         copy=False)
+        self.matching_results = pd.merge(self.matching_results, self.addressBase, how='left', on='AddressBase_Index',
+                                         copy=False)
 
         # sort by similarity, save for inspection and keep only the likeliest
         if self.settings['multipleMatches']:
-            self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_all_matches.csv',
-                                          index=False)
-            self.matched_addresses.drop_duplicates('TestData_Index', keep='first', inplace=True)
+            self.matching_results.to_csv(self.settings['outpath'] + self.settings['outname'] + '_all_matches.csv',
+                                         index=False)
+            self.matching_results.drop_duplicates('TestData_Index', keep='first', inplace=True)
+
+        # drop unnecessary columns
+        if self.settings['dropColumns']:
+            self.matching_results.drop(['TestData_Index', 'AddressBase_Index'], axis=1, inplace=True)
 
     def _run_test(self):
         """
@@ -868,7 +869,7 @@ class AddressLinker:
         self.log.info('Running test...')
 
         # pandas test whether the UPRNs are the same, ignore type and names, but require exact match
-        pdt.assert_series_equal(self.matched_addresses['UPRN_old'], self.matched_addresses['UPRN'],
+        pdt.assert_series_equal(self.matching_results['UPRN_old'], self.matching_results['UPRN'],
                                 check_dtype=False, check_exact=True, check_names=False)
 
     def check_performance(self):
@@ -883,32 +884,41 @@ class AddressLinker:
         self.log.info('Checking Performance...')
 
         # count the number of matches and the total number of addresses and write to the lod
-        n_matched = len(self.matched_addresses.index)
-        total = len(self.toLinkAddressData.index)
-        self.log.info('Matched {} entries'.format(n_matched))
-        self.log.info('Total Match Fraction {} per cent'.format(round(n_matched / total * 100., 1)))
+        total = len(self.matching_results.index)
 
         # save matched to a file for inspection
-        self.matched_addresses.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched.csv', index=False)
+        self.matching_results.to_csv(self.settings['outpath'] + self.settings['outname'] + '.csv', index=False)
+        if 'UPRN_old' in self.matching_results.columns:
+            columns = ['ID', 'UPRN_old', 'ADDRESS', 'UPRN']
+        else:
+            columns = ['ID', 'ADDRESS', 'UPRN']
+        tmp = self.matching_results[columns]
+        tmp.rename(columns={'UPRN_old': 'UPRN_prev', 'UPRN': 'UPRN_new'}, inplace=True)
+        tmp.to_csv(self.settings['outpath'] + self.settings['outname'] + '_minimal.csv', index=False)
+
+        msk = self.matching_results['UPRN'].isnull()
+        self.matched_results = self.matching_results.loc[~msk]
+        self.matched_results.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched.csv', index=False)
+        n_matched = len(self.matched_results.index)
 
         # find those without match and write to the log and file
-        IDs = self.matched_addresses['ID'].values
-        missing_msk = ~self.toLinkAddressData['ID'].isin(IDs)
-        missing = self.toLinkAddressData.loc[missing_msk]
+        missing = self.matching_results.loc[msk]
         not_found = len(missing.index)
         missing.to_csv(self.settings['outpath'] + self.settings['outname'] + '_matched_missing.csv', index=False)
 
+        self.log.info('Matched {} entries'.format(n_matched))
+        self.log.info('Total Match Fraction {} per cent'.format(round(n_matched / total * 100., 1)))
         self.log.info('{} addresses were not linked...'.format(not_found))
 
         # if UPRN_old is present then check the overlap and the number of false positives
-        if 'UPRN_old' not in self.matched_addresses.columns:
+        if 'UPRN_old' not in self.matching_results.columns:
             true_positives = -1
             false_positives = -1
             n_new_UPRNs = -1
         else:
             # find those with UPRN attached earlier and check which are the same
-            msk = self.matched_addresses['UPRN_old'] == self.matched_addresses['UPRN']
-            matches = self.matched_addresses.loc[msk]
+            msk = self.matched_results['UPRN_old'] == self.matched_results['UPRN']
+            matches = self.matched_results.loc[msk]
             true_positives = len(matches.index)
             matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_sameUPRN.csv', index=False)
 
@@ -918,8 +928,8 @@ class AddressLinker:
             self.log.info('Correctly Matched Fraction {}'.format(round(true_positives / total * 100., 1)))
 
             # find those that have previous UPRNs but do not match the new ones (filter out nulls)
-            msk = self.matched_addresses['UPRN_old'].notnull()
-            not_nulls = self.matched_addresses.loc[msk]
+            msk = self.matched_results['UPRN_old'].notnull()
+            not_nulls = self.matched_results.loc[msk]
             non_matches = not_nulls.loc[not_nulls['UPRN_old'] != not_nulls['UPRN']]
             false_positives = len(non_matches.index)
             non_matches.to_csv(self.settings['outpath'] + self.settings['outname'] + '_differentUPRN.csv', index=False)
@@ -945,7 +955,7 @@ class AddressLinker:
             self.log.info('Minimum F1-score = {}'.format(f1score))
 
             # find all newly linked - those that did not have UPRNs already attached
-            new_UPRNs = self.matched_addresses.loc[~msk]
+            new_UPRNs = self.matched_results.loc[~msk]
             n_new_UPRNs = len(new_UPRNs.index)
             new_UPRNs.to_csv(self.settings['outpath'] + self.settings['outname'] + '_newUPRN.csv', index=False)
             self.log.info('{} more addresses with UPRN...'.format(n_new_UPRNs))
@@ -958,21 +968,21 @@ class AddressLinker:
 
         # make a simple visualisation
         all_results = [total, n_matched, true_positives, n_new_UPRNs, false_positives, not_found]
-        all_results_names = ['Input', 'Linked', 'Same UPRNs', 'New UPRNs', 'False Positives', 'Not Linked']
+        all_results_names = ['Input', 'Linked', 'Same UPRNs', 'New UPRNs', 'Different UPRNs', 'Not Linked']
         self._generate_performance_figure(all_results, all_results_names)
 
         # check results for each class separately if possible
-        if 'Category' in self.matched_addresses.columns:
-            for category in sorted(set(self.matched_addresses['Category'].values)):
-                msk = (self.matched_addresses['UPRN'] == self.matched_addresses['UPRN_old']) & \
-                      (self.matched_addresses['Category'] == category)
+        if 'Category' in self.matching_results.columns:
+            for category in sorted(set(self.matched_results['Category'].values)):
+                msk = (self.matched_results['UPRN'] == self.matched_results['UPRN_old']) & \
+                      (self.matched_results['Category'] == category)
 
-                true_positives = self.matched_addresses.loc[msk]
+                true_positives = self.matched_results.loc[msk]
                 n_true_positives = len(true_positives.index)
                 outof = len(self.toLinkAddressData.loc[self.toLinkAddressData['Category'] == category].index)
                 false_positives = len(
-                    self.matched_addresses.loc[(self.matched_addresses['UPRN'] != self.matched_addresses['UPRN_old']) &
-                                               (self.matched_addresses['Category'] == category)].index)
+                    self.matched_results.loc[(self.matched_results['UPRN'] != self.matched_results['UPRN_old']) &
+                                              (self.matched_results['Category'] == category)].index)
 
                 self.log.info('Results for category {}'.format(category))
                 self.log.info('Correctly Matched: {}'.format(n_true_positives))
