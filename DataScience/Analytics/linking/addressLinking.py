@@ -186,7 +186,7 @@ class AddressLinker:
             self.results['dataset'] = 'testData.csv'
 
             self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
-                                                 low_memory=False)
+                                                 low_memory=False, comment='#')
 
             # fill NaNs with empty strings so that we can form a single address string
             self.toLinkAddressData.fillna('', inplace=True)
@@ -357,6 +357,7 @@ class AddressLinker:
         if self.settings['verbose']:
             print('AddressBase:')
             print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
+            self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv')
 
     @staticmethod
     def _extract_postcode(string):
@@ -639,7 +640,10 @@ class AddressLinker:
         msk = self.toLinkAddressData['BuildingSuffix'].isnull()
         self.toLinkAddressData.loc[msk, 'BuildingSuffix'] = 'N/A'
         msk = self.toLinkAddressData['PAOText'].isnull()
-        self.toLinkAddressData.loc[msk, 'PAOText'] = 'N/A'
+        # for some welsh addresses the building name is parsed as organisation name, so place to PAOtext if empty
+        self.toLinkAddressData.loc[msk, 'PAOText'] = self.toLinkAddressData['OrganisationName']
+        msk = self.toLinkAddressData['PAOText'].isnull()
+        self.toLinkAddressData.loc[msk, 'PAOText'] = ''
         msk = self.toLinkAddressData['SAOText'].isnull()
         self.toLinkAddressData.loc[msk, 'SAOText'] = 'N/A'
 
@@ -746,7 +750,7 @@ class AddressLinker:
                        missing_value=0.5)
         compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear', name='pao_number_dl')
         compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
-                       missing_value=0.6)
+                       missing_value=0.7)
         compare.string('POST_TOWN', 'TownName', method='jarowinkler', name='town_dl',
                        missing_value=0.2)
         compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
@@ -781,7 +785,7 @@ class AddressLinker:
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
         if blocking in (1, 2, 4):
-            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
@@ -1095,5 +1099,5 @@ class AddressLinker:
 
 
 if __name__ == "__main__":
-    linker = AddressLinker(**dict(test=True, multipleMatches=True))
+    linker = AddressLinker(**dict(test=True, multipleMatches=True, store=False, verbose=True))
     linker.run_all()
