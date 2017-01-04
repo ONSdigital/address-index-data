@@ -1,6 +1,7 @@
 package uk.gov.ons.addressindex.utils
 
 import org.scalatest.{Matchers, WordSpec}
+import uk.gov.ons.addressindex.models.HybridAddressEsDocument
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
@@ -84,6 +85,43 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondLine.getString(0) shouldBe "100010971565" // UPRN
       secondLine.getString(10) shouldBe "9402538" // USRN
       secondLine.getString(27) shouldBe "LOCALITY XYZ" // LOCALITY
+    }
+
+    "aggregate information from paf and nag to construct a single table containing grouped documents" in {
+
+      // Given
+      val paf = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val nag = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .load("batch/src/test/resources/csv/nag/hybrid_test.csv")
+
+
+      // When
+      val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 3
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe "1"
+      firstResult.lpi.size shouldBe 2
+      firstResult.paf.size shouldBe 1
+
+      firstResult.lpi(0)("lpiKey") shouldBe "1610L000056911"
+      firstResult.lpi(1)("lpiKey") shouldBe "1610L000015314"
+
+      firstResult.paf(0)("recordIdentifier") shouldBe "27"
+
+      val secondResult = result(1)
+      secondResult.uprn shouldBe "100010971565"
+      secondResult.lpi.size shouldBe 1
+      secondResult.paf shouldBe empty
+
     }
   }
 }
