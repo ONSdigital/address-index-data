@@ -22,7 +22,7 @@ For usage see below:
 
     val paf = opt[Boolean]("paf", noshort = true, descr = "Index PAF")
     val nag = opt[Boolean]("nag", noshort = true, descr = "Index NAG")
-    val hybrid = opt[Boolean]("help", noshort = true, descr = "Index hybrid PAF & NAG")
+    val hybrid = opt[Boolean]("hybrid", noshort = true, descr = "Index hybrid PAF & NAG")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
     mutuallyExclusive(paf, nag, hybrid, help)
     verify()
