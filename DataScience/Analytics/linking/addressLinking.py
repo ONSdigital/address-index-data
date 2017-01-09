@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 16-Dec-2016
+:version: 0.7
+:date: 9-Jan-2017
 """
 import datetime
 import os
@@ -64,7 +64,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.6'
+__version__ = '0.7'
 
 
 class AddressLinker:
@@ -666,7 +666,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8)):
         """
         A method to link addresses against AddressBase.
 
@@ -702,7 +702,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 7
+        :param blocking: the mode of blocking, ranging from 1 to 8
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -735,6 +735,9 @@ class AddressLinker:
         elif blocking == 7:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
+        elif blocking == 8:
+            pairs = pcl.block(left_on=['StreetName', 'TownName'],
+                              right_on=['THROUGHFARE', 'POST_TOWN'])
         else:
             pairs = pcl.block(left_on=['BuildingNumber', 'TownName'],
                               right_on=['BUILDING_NUMBER', 'POST_TOWN'])
