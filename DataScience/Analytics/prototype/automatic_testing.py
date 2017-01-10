@@ -332,7 +332,8 @@ def run_all(plot_only=False):
     """
     if not plot_only:
         run_all_datasets()
-        compute_performance()
+
+    compute_performance()
     plot_performance()
 
 
