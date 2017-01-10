@@ -94,16 +94,13 @@ def run_all_datasets():
         print('Running Life Events test locally...')
         le.run_life_events_linker(**settings)
 
-    print('Running Companies House test...')
-    ch.run_companies_house_linker(**settings)
-
     print('Running Welsh addresses test...')
     wa.run_welsh_address_linker(**settings)
 
     print('Running Welsh addresses second test set...')
     wa2.run_welsh_address_linker(**settings)
 
-    print('Running Landry Registry addresses test...')
+    print('Running Land Registry addresses test...')
     lr.run_land_registry_linker(**settings)
 
     print('Running Companies House test...')
