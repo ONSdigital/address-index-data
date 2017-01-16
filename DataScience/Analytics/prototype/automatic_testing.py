@@ -100,7 +100,7 @@ def run_all_datasets():
     print('Running Welsh addresses second test set...')
     wa2.run_welsh_address_linker(**settings)
 
-    print('Running Landry Registry addresses test...')
+    print('Running Land Registry addresses test...')
     lr.run_land_registry_linker(**settings)
 
     print('Running Companies House test...')
@@ -332,7 +332,8 @@ def run_all(plot_only=False):
     """
     if not plot_only:
         run_all_datasets()
-        compute_performance()
+
+    compute_performance()
     plot_performance()
 
 
