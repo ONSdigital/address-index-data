@@ -34,8 +34,8 @@ Author
 Version
 -------
 
-:version: 0.5
-:date: 22-Dec-2016
+:version: 0.6
+:date: 20-Jan-2017
 """
 import os
 import datetime
@@ -63,6 +63,11 @@ elif 'cdhut-d03-' in os.uname().nodename:
     ABpath = '/opt/scratch/AddressIndex/AddressBase/'
     outpath = '/opt/scratch/AddressIndex/Results/'
     inputPath = '/opt/scratch/AddressIndex/TestData/'
+    local = False
+elif 'localhost.' in os.uname().nodename:
+    ABpath = '/home/niemis/AddressIndex/AddressBase/'
+    outpath = '/home/niemis/AddressIndex/Results/'
+    inputPath = '/home/niemis/AddressIndex/TestData/'
     local = False
 else:
     raise ConnectionError('ERROR: cannot access AddressBase or connect to the SQLite3 database')

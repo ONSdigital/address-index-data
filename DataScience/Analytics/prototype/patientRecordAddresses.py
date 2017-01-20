@@ -73,10 +73,10 @@ def run_patient_record_address_linker(**kwargs):
     :return: None
     """
     settings = dict(inputFilename='RW100K.xlsx',
-                    inputPath='/opt/scratch/AddressIndex/TestData/',
-                    outpath='/opt/scratch/AddressIndex/Results/',
+                    inputPath='/home/niemis/AddressIndex/TestData/',
+                    outpath='/home/niemis/AddressIndex/Results/',
                     outname='PatientRecord',
-                    ABpath='/opt/scratch/AddressIndex/AddressBase/')
+                    ABpath='/home/niemis/AddressIndex/AddressBase/')
     settings.update(kwargs)
 
     linker = PatientRecordsAddressLinker(**settings)
