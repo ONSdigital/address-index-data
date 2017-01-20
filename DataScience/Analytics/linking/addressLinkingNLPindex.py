@@ -180,8 +180,26 @@ class AddressLinkerNLPindex:
         one column named ADDRESS. The index of this DataFrame should be called 'TestData_Index' as it is used
         in the class to join the information with AddressBase information.
         """
-        self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
-        raise NotImplementedError
+        if self.settings['test']:
+            self.log.warning('Reading in test data...')
+            self.settings['inputFilename'] = 'testPostalAddressData.csv'
+
+            # update results so that can be filtered out from the database
+            self.results['name'] = 'TEST'
+            self.results['dataset'] = self.settings['inputFilename']
+
+            self.toLinkAddressData = pd.read_csv(self.settings['inputPath'] + self.settings['inputFilename'],
+                                                 low_memory=False, comment='#')
+
+            self.toLinkAddressData['ID'] = self.toLinkAddressData['UPRN'].copy()
+            self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old'}, inplace=True)
+
+            # convert original UPRN to numeric
+            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(
+                convert_numeric=True)
+        else:
+            self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
+            raise NotImplementedError
 
     def check_loaded_data(self):
         """
@@ -224,6 +242,9 @@ class AddressLinkerNLPindex:
         A method to load the NLP index file and to process it.
         """
         self.log.info('Reading in NLP Index data...')
+
+        if self.settings['test']:
+            self.settings['ABfilename'] = 'NLPindex_test.csv'
 
         self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
                                        dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION': str,
@@ -542,6 +563,11 @@ class AddressLinkerNLPindex:
         self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['BuildingStartNumber'] = self.toLinkAddressData['BuildingStartNumber'].astype(np.int32)
 
+        # SDDFSSDF
+        msk = (self.toLinkAddressData['FlatNumber'] == -12345) &\
+              (~self.toLinkAddressData['BuildingStartNumber'].isnull())
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
+
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
@@ -671,8 +697,6 @@ class AddressLinkerNLPindex:
 
         # the following is good for flats and apartments than have been numbered
         compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
-        compare.numeric('SAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear',
-                        name='building_number2_dl')
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION', 'OrganisationName', method='jarowinkler', name='organisation_dl',
                        missing_value=0.1)
