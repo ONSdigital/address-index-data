@@ -57,6 +57,7 @@ class PostalAddressLinker(addressLinkingNLPindex.AddressLinkerNLPindex):
                                              low_memory=False)
 
         self.toLinkAddressData['ID'] = self.toLinkAddressData['UPRN'].copy()
+        self.toLinkAddressData.rename(columns={'UPRN': 'UPRN_old'}, inplace=True)
 
 
 def run_postal_addresses_linker(**kwargs):

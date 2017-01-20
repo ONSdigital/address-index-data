@@ -671,7 +671,8 @@ class AddressLinkerNLPindex:
 
         # the following is good for flats and apartments than have been numbered
         compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
-
+        compare.numeric('SAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear',
+                        name='building_number2_dl')
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION', 'OrganisationName', method='jarowinkler', name='organisation_dl',
                        missing_value=0.1)
