@@ -502,6 +502,8 @@ class AddressLinkerNLPindex:
                     tmp = parsed['BuildingName'].split('-')[0]
                     parsed['pao_start_number'] = ''.join([x for x in tmp if x.isdigit()])
                     # todo: should capture the other part to pao_end_number
+                if len(parsed['pao_start_number']) < 1:
+                    parsed['pao_start_number'] = None
 
             # some addresses contain place CO place, where the CO is not part of the actual name - remove these
             # same is true for IN e.g. Road Marton IN Cleveland
@@ -556,6 +558,11 @@ class AddressLinkerNLPindex:
             else:
                 self.toLinkAddressData['postcode_in'] = None
                 self.toLinkAddressData['postcode_out'] = None
+
+        # if building number is empty and subBuildingName is a only numbrer, add
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+', na=False, case=False) & \
+              self.toLinkAddressData['BuildingStartNumber'].isnull()
+        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
