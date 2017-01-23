@@ -263,7 +263,6 @@ class AddressLinkerNLPindex:
         self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
         self.addressBase['PAO_NUMBER'] = self.addressBase['PAO_START_NUMBER'].copy()
-
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
 
@@ -274,8 +273,11 @@ class AddressLinkerNLPindex:
             self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
 
         # remove street records from the list of potential matches
-        msk = self.addressBase['PAO_TEXT'] != 'STREET RECORD'
-        self.addressBase = self.addressBase.loc[msk]
+        exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
+        exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
+        exclude += 'PONDS \d+M FROM|SUB STATION|CAR PARK'
+        msk = self.addressBase['PAO_TEXT'].str.contains(exclude, na=False, case=False)
+        self.addressBase = self.addressBase.loc[~msk]
 
         self.log.info('Using {} addresses from NLP index for matching...'.format(len(self.addressBase.index)))
 
@@ -547,13 +549,19 @@ class AddressLinkerNLPindex:
                 self.toLinkAddressData['postcode_in'] = None
                 self.toLinkAddressData['postcode_out'] = None
 
-        # # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
+        # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
         self.toLinkAddressData['FlatNumber'] = None
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment', na=False, case=False)
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
-                                                  replace('FLAT', '').replace('APARTMENT', ''), axis=1)
+                                                  replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
+                                                  axis=1)
+        # flat ranges are stored in NLP side as sao_start_number
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('/', na=False, case=False)
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
+            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\/\d+', '')
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
         self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
@@ -563,10 +571,14 @@ class AddressLinkerNLPindex:
         self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['BuildingStartNumber'] = self.toLinkAddressData['BuildingStartNumber'].astype(np.int32)
 
-        # SDDFSSDF
+        # some addresses like "44 ORCHARD HOUSE"
         msk = (self.toLinkAddressData['FlatNumber'] == -12345) &\
               (~self.toLinkAddressData['BuildingStartNumber'].isnull())
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
+
+        # if street name empty but building name exists, then add
+        msk = (self.toLinkAddressData['StreetName'].isnull()) & (~self.toLinkAddressData['BuildingName'].isnull())
+        self.toLinkAddressData.loc[msk, 'StreetName'] = self.toLinkAddressData.loc[msk, 'BuildingName']
 
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()

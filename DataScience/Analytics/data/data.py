@@ -25,7 +25,7 @@ Version
 -------
 
 :version: 0.9
-:date: 19-Jan-2016
+:date: 23-Jan-2016
 """
 import glob
 import os
@@ -339,7 +339,7 @@ def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRE
 
     columns = {'BLPU': ['UPRN', 'POSTCODE_LOCATOR'],
                'LPI': ['UPRN', 'USRN', 'LANGUAGE', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX', 'PAO_END_NUMBER',
-                       'PAO_END_SUFFIX','SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX'],
+                       'PAO_END_SUFFIX','SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX', 'OFFICIAL_FLAG'],
                'STREET_DESC': ['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY'],
                'ORGANISATION': ['UPRN', 'ORGANISATION']}
 
@@ -354,8 +354,12 @@ def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRE
                 tmp = pd.read_csv(file, dtype=str, usecols=columns[keys])
                 data_frames[keys] = tmp
 
+    # remove non-official addresses from LPI; these can include e.g. ponds, sub stations, cctvs, public phones, etc.
+    msk = data_frames['LPI']['OFFICIAL_FLAG'] == 'Y'
+    data_frames['LPI'] = data_frames['LPI'].loc[msk]
+
     print('joining the individual data frames...')
-    data = pd.merge(data_frames['BLPU'], data_frames['LPI'], how='left', on='UPRN')
+    data = pd.merge(data_frames['BLPU'], data_frames['LPI'], how='right', on='UPRN')
     data = pd.merge(data, data_frames['ORGANISATION'], how='left', on=['UPRN'])
     data = pd.merge(data, data_frames['STREET_DESC'], how='left', on=['USRN', 'LANGUAGE'])
 
