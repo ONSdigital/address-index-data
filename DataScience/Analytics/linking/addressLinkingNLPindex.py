@@ -432,6 +432,7 @@ class AddressLinkerNLPindex:
         organisation = []
         department = []
         sub_building = []
+        flat_number = []
         building_name = []
         building_number = []
         pao_start_number = []
@@ -473,20 +474,30 @@ class AddressLinkerNLPindex:
                 if 'LONDON' in parsed['TownName']:
                     parsed = self._fix_london_boroughs(parsed, os.path.join(self.currentDirectory, '../../data/'))
 
+            # if delivery point address is e.g. "5 BEST HOUSE", then the "5" refers likely to FLAT 5
+            if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
+                tmp = parsed['BuildingName'].split(' ')
+                if len(tmp) > 1:
+                    try:
+                        _ = int(tmp[0])
+                        parsed['BuildingName'] = parsed['BuildingName'].replace(tmp[0], '')
+                        parsed['FlatNumber'] = tmp[0]
+                    except ValueError:
+                        pass
+
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
                 parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
                 # accept suffixes that are only maximum two chars and if not hyphen
-                if len(parsed['BuildingSuffix']) > 2 or (parsed['BuildingSuffix'] != '-') or\
-                        (parsed['BuildingSuffix'] == '/'):
+                if len(parsed['BuildingSuffix']) > 2 or parsed['BuildingSuffix'] == '-' or \
+                                parsed['BuildingSuffix'] == '/':
                     parsed['BuildingSuffix'] = None
-                    # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
-
                 if '-' not in parsed['BuildingName']:
                     parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
                 else:
                     tmp = parsed['BuildingName'].split('-')[0]
                     parsed['pao_start_number'] = ''.join([x for x in tmp if x.isdigit()])
+                    # todo: should capture the other part to pao_end_number
 
             # some addresses contain place CO place, where the CO is not part of the actual name - remove these
             # same is true for IN e.g. Road Marton IN Cleveland
@@ -497,14 +508,14 @@ class AddressLinkerNLPindex:
                     parsed['Locality'] = parsed['Locality'].replace(' IN', '')
 
             # sometimes building number gets placed at building name, take it and add to building name
-            if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-                tmp = parsed['BuildingName'].split(' ')
-                if len(tmp) > 1:
-                    try:
-                        _ = int(tmp[0])
-                        parsed['BuildingNumber'] = tmp[0]
-                    except ValueError:
-                        pass
+            # if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
+                # tmp = parsed['BuildingName'].split(' ')
+                # if len(tmp) > 1:
+                #     try:
+                #         _ = int(tmp[0])
+                #         parsed['BuildingNumber'] = tmp[0]
+                #     except ValueError:
+                #         pass
 
             # if pao_start_number is Null then add BuildingNumber to it
             if parsed.get('pao_start_number', None) is None and parsed.get('BuildingNumber', None) is not None:
@@ -526,6 +537,7 @@ class AddressLinkerNLPindex:
             postcode.append(parsed.get('Postcode', None))
             building_suffix.append(parsed.get('BuildingSuffix', None))
             pao_start_number.append(parsed.get('pao_start_number', None))
+            flat_number.append(parsed.get('FlatNumber', None))
 
         # add the parsed information to the dataframe
         self.toLinkAddressData['OrganisationName'] = organisation
@@ -539,6 +551,7 @@ class AddressLinkerNLPindex:
         self.toLinkAddressData['Postcode'] = postcode
         self.toLinkAddressData['BuildingSuffix'] = building_suffix
         self.toLinkAddressData['BuildingStartNumber'] = pao_start_number
+        self.toLinkAddressData['FlatNumber'] = flat_number
 
         if self.settings['expandPostcode']:
             # if valid postcode information found then split between in and outcode
@@ -551,7 +564,6 @@ class AddressLinkerNLPindex:
                 self.toLinkAddressData['postcode_out'] = None
 
         # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
-        self.toLinkAddressData['FlatNumber'] = None
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
@@ -559,24 +571,34 @@ class AddressLinkerNLPindex:
                                                   replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
                                                   axis=1)
 
-        #  some addresses have / as the separator for buildings and flats
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('/', na=False, case=False)
-        tmp = self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.split('/', expand=True)
-        tmp.rename(columns={0: 'BNumber', 1: 'FNumber'}, inplace=True)
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = tmp['Fnumber']
-        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = tmp['BNumber']
+        # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
+        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' +\
+                                                             self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
-        # self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-        # self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
-        #     self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\/\d+', '/\d+').replace('\/', '')
+        # if SubBuildingName contains only numbers, then place also to the flat number field as likely to be flat
+        msk = self.toLinkAddressData['SubBuildingName'].str.isnumeric()
+        msk[msk.isnull()] = False
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
+
+        # some addresses, e.g. "5B ELIZABETH AVENUE", have FLAT implicitly even if not spelled -> add "FLAT X"
+        msk = (~self.toLinkAddressData['BuildingSuffix'].isnull()) &\
+              (self.toLinkAddressData['SubBuildingName'].isnull())
+        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + self.toLinkAddressData.loc[msk, 'BuildingSuffix']
+
+        # in some other cases / is in the BuildingName field - now this separates the building and flat
+        # the first part refers to the building number and the second to the flat
+        msk = self.toLinkAddressData['BuildingName'].str.contains('\d+\/\d+', na=False, case=False)
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
+            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\d+\/', '')
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
         self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
-        # msk = msk & (self.toLinkAddressData['BuildingStartNumber'].isnull())
-        # self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-        # self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] =\
-        #     self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].str.replace('\/\d+', '/\').replace('\/', '')
+        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
+        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] =\
+            self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].str.replace('\/\d+', '')
         self.toLinkAddressData['BuildingStartNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingStartNumber'],
                                                                       errors='coerce')
         self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
