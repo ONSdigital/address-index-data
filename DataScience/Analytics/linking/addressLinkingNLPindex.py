@@ -266,6 +266,10 @@ class AddressLinkerNLPindex:
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
 
+        # the NLP index does not really have organisations, sometimes these are in the PAO_TEXT
+        msk = self.addressBase['ORGANISATION'].isnull() & (~self.addressBase['PAO_TEXT'].isnull())
+        self.addressBase.loc[msk, 'ORGANISATION'] = self.addressBase.loc[msk, 'PAO_TEXT']
+
         # split postcode to in and outcode - useful for doing blocking in different ways
         if self.settings['expandPostcode']:
             postcodes = self.addressBase['POSTCODE_LOCATOR'].str.split(' ', expand=True)
@@ -507,16 +511,6 @@ class AddressLinkerNLPindex:
                 if parsed['Locality'].strip().endswith(' IN'):
                     parsed['Locality'] = parsed['Locality'].replace(' IN', '')
 
-            # sometimes building number gets placed at building name, take it and add to building name
-            # if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-                # tmp = parsed['BuildingName'].split(' ')
-                # if len(tmp) > 1:
-                #     try:
-                #         _ = int(tmp[0])
-                #         parsed['BuildingNumber'] = tmp[0]
-                #     except ValueError:
-                #         pass
-
             # if pao_start_number is Null then add BuildingNumber to it
             if parsed.get('pao_start_number', None) is None and parsed.get('BuildingNumber', None) is not None:
                 parsed['pao_start_number'] = parsed['BuildingNumber']
@@ -571,13 +565,18 @@ class AddressLinkerNLPindex:
                                                   replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
                                                   axis=1)
 
+        # sometimes subBuildingName is e.g. C2 where to number refers to the flat number
+        msk = self.toLinkAddressData['FlatNumber'].str.contains('[A-Z]\d+', na=False, case=False)
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
+            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('[A-Z]', '')
+
         # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' +\
                                                              self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # if SubBuildingName contains only numbers, then place also to the flat number field as likely to be flat
-        msk = self.toLinkAddressData['SubBuildingName'].str.isnumeric()
+        msk = self.toLinkAddressData['SubBuildingName'].str.isnumeric() & self.toLinkAddressData['FlatNumber'].isnull()
         msk[msk.isnull()] = False
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
@@ -588,7 +587,8 @@ class AddressLinkerNLPindex:
 
         # in some other cases / is in the BuildingName field - now this separates the building and flat
         # the first part refers to the building number and the second to the flat
-        msk = self.toLinkAddressData['BuildingName'].str.contains('\d+\/\d+', na=False, case=False)
+        msk = self.toLinkAddressData['BuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
+              self.toLinkAddressData['FlatNumber'].isnull()
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
         self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
             self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\d+\/', '')
@@ -750,7 +750,7 @@ class AddressLinkerNLPindex:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2, 4, 5):
+        if blocking in (1, 2, 4):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
