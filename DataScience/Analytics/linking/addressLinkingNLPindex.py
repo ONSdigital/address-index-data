@@ -477,7 +477,8 @@ class AddressLinkerNLPindex:
             if parsed.get('BuildingName', None) is not None:
                 parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
                 # accept suffixes that are only maximum two chars and if not hyphen
-                if len(parsed['BuildingSuffix']) > 2 and (parsed['BuildingSuffix'] != '-'):
+                if len(parsed['BuildingSuffix']) > 2 or (parsed['BuildingSuffix'] != '-') or\
+                        (parsed['BuildingSuffix'] == '/'):
                     parsed['BuildingSuffix'] = None
                     # todo: if the identified suffix is hyphen, then actually a number range and should separate start from stop
 
@@ -557,21 +558,31 @@ class AddressLinkerNLPindex:
             self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
                                                   replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
                                                   axis=1)
-        # flat ranges are stored in NLP side as sao_start_number
+
+        #  some addresses have / as the separator for buildings and flats
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('/', na=False, case=False)
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
-            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\/\d+', '')
+        tmp = self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.split('/', expand=True)
+        tmp.rename(columns={0: 'BNumber', 1: 'FNumber'}, inplace=True)
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = tmp['Fnumber']
+        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = tmp['BNumber']
+
+        # self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
+        # self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
+        #     self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\/\d+', '/\d+').replace('\/', '')
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
         self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
+        # msk = msk & (self.toLinkAddressData['BuildingStartNumber'].isnull())
+        # self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
+        # self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] =\
+        #     self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].str.replace('\/\d+', '/\').replace('\/', '')
         self.toLinkAddressData['BuildingStartNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingStartNumber'],
                                                                       errors='coerce')
         self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['BuildingStartNumber'] = self.toLinkAddressData['BuildingStartNumber'].astype(np.int32)
 
-        # some addresses like "44 ORCHARD HOUSE"
+        # for some addresses like "44 ORCHARD HOUSE" the number actually refers to the flat number
         msk = (self.toLinkAddressData['FlatNumber'] == -12345) &\
               (~self.toLinkAddressData['BuildingStartNumber'].isnull())
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
@@ -952,6 +963,7 @@ class AddressLinkerNLPindex:
         plt.title('Prototype Linking Code (version={})'.format(__version__))
         ax = fig.add_subplot(1, 1, 1)
 
+        max_bar_length = max(all_results)
         plt.barh(location, all_results, width, color='g', alpha=0.6)
 
         for patch in ax.patches:
@@ -959,8 +971,9 @@ class AddressLinkerNLPindex:
                 continue
 
             n_addresses = int(patch.get_width())
+            ratio = n_addresses / max_bar_length
 
-            if n_addresses > 500:
+            if ratio > 0.3:
                 ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                             xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
             else:

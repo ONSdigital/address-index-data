@@ -354,14 +354,14 @@ def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRE
                 tmp = pd.read_csv(file, dtype=str, usecols=columns[keys])
                 data_frames[keys] = tmp
 
-    # remove non-official addresses from LPI; these can include e.g. ponds, sub stations, cctvs, public phones, etc.
-    msk = data_frames['LPI']['OFFICIAL_FLAG'] == 'Y'
-    data_frames['LPI'] = data_frames['LPI'].loc[msk]
-
     print('joining the individual data frames...')
-    data = pd.merge(data_frames['BLPU'], data_frames['LPI'], how='right', on='UPRN')
+    data = pd.merge(data_frames['BLPU'], data_frames['LPI'], how='left', on='UPRN')
     data = pd.merge(data, data_frames['ORGANISATION'], how='left', on=['UPRN'])
     data = pd.merge(data, data_frames['STREET_DESC'], how='left', on=['USRN', 'LANGUAGE'])
+
+    # remove non-official addresses from LPI; these can include e.g. ponds, sub stations, cctvs, public phones, etc.
+    msk = data['OFFICIAL_FLAG'] == 'Y'
+    data = data.loc[msk]
 
     # drop if all null
     data.dropna(inplace=True, how='all')
