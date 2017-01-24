@@ -43,7 +43,7 @@ Version
 -------
 
 :version: 0.1
-:date: 19-Jan-2017
+:date: 24-Jan-2017
 """
 import datetime
 import os
@@ -258,7 +258,7 @@ class AddressLinkerNLPindex:
         # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
         msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
         self.addressBase.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
-            self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
+            self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'), errors='coerce')
         self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
         self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
@@ -576,6 +576,12 @@ class AddressLinkerNLPindex:
         msk = self.toLinkAddressData['FlatNumber'].str.contains('[A-Z]\d+', na=False, case=False)
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('[A-Z]', '')
+
+        # deal with addresses that are of type 5/7 4 whatever road...
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) &\
+              self.toLinkAddressData['FlatNumber'].isnull() & ~self.toLinkAddressData['BuildingNumber'].isnull()
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
+            self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
 
         # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
