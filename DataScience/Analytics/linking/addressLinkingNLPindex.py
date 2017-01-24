@@ -626,6 +626,10 @@ class AddressLinkerNLPindex:
         msk = (self.toLinkAddressData['StreetName'].isnull()) & (~self.toLinkAddressData['BuildingName'].isnull())
         self.toLinkAddressData.loc[msk, 'StreetName'] = self.toLinkAddressData.loc[msk, 'BuildingName']
 
+        # because in NLP organisation names can also be in SAO_TEXT, lets place it there if nothing already
+        msk = self.toLinkAddressData['SubBuildingName'].isnull() & ~self.toLinkAddressData['OrganisationName'].isnull()
+        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = self.toLinkAddressData.loc[msk, 'OrganisationName']
+
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
@@ -1010,7 +1014,7 @@ class AddressLinkerNLPindex:
 
             if ratio > 0.3:
                 ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                            xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
+                            xytext=(-95, 18), textcoords='offset points', color='white', fontsize=24)
             else:
                 ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                             xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
