@@ -651,6 +651,9 @@ class AddressLinkerNLPindex:
         msk = self.toLinkAddressData['SubBuildingName'].isnull() & ~self.toLinkAddressData['OrganisationName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = self.toLinkAddressData.loc[msk, 'OrganisationName']
 
+        msk = ~self.toLinkAddressData['SubBuildingName'].isnull() & self.toLinkAddressData['BuildingName'].isnull()
+        self.toLinkAddressData.loc[msk, 'BuildingName'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
+
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
