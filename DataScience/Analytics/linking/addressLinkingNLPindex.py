@@ -444,6 +444,7 @@ class AddressLinkerNLPindex:
         building_name = []
         building_number = []
         pao_start_number = []
+        pao_end_number = []
         building_suffix = []
         street = []
         locality = []
@@ -495,19 +496,25 @@ class AddressLinkerNLPindex:
 
             # if BuildingName is e.g. 55A then should get the number and suffix separately
             if parsed.get('BuildingName', None) is not None:
+
+                parsed['pao_end_number'] = None
+
+                if '-' in parsed['BuildingName']:
+                    tmp = parsed['BuildingName'].split('-')
+                    parsed['pao_start_number'] = ''.join([x for x in tmp[0] if x.isdigit()])
+                    parsed['pao_end_number'] = ''.join([x for x in tmp[-1] if x.isdigit()])
+                else:
+                    parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
+
+                if len(parsed['pao_start_number']) < 1:
+                    parsed['pao_start_number'] = None
+
                 parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
+
                 # accept suffixes that are only maximum two chars and if not hyphen
                 if len(parsed['BuildingSuffix']) > 2 or parsed['BuildingSuffix'] == '-' or \
                                 parsed['BuildingSuffix'] == '/':
                     parsed['BuildingSuffix'] = None
-                if '-' not in parsed['BuildingName']:
-                    parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
-                else:
-                    tmp = parsed['BuildingName'].split('-')[0]
-                    parsed['pao_start_number'] = ''.join([x for x in tmp if x.isdigit()])
-                    # todo: should capture the other part to pao_end_number
-                if len(parsed['pao_start_number']) < 1:
-                    parsed['pao_start_number'] = None
 
             # some addresses contain place CO place, where the CO is not part of the actual name - remove these
             # same is true for IN e.g. Road Marton IN Cleveland
@@ -537,6 +544,7 @@ class AddressLinkerNLPindex:
             postcode.append(parsed.get('Postcode', None))
             building_suffix.append(parsed.get('BuildingSuffix', None))
             pao_start_number.append(parsed.get('pao_start_number', None))
+            pao_end_number.append(parsed.get('pao_end_number', None))
             flat_number.append(parsed.get('FlatNumber', None))
 
         # add the parsed information to the dataframe
@@ -551,6 +559,7 @@ class AddressLinkerNLPindex:
         self.toLinkAddressData['Postcode'] = postcode
         self.toLinkAddressData['BuildingSuffix'] = building_suffix
         self.toLinkAddressData['BuildingStartNumber'] = pao_start_number
+        self.toLinkAddressData['BuildingEndNumber'] = pao_end_number
         self.toLinkAddressData['FlatNumber'] = flat_number
 
         if self.settings['expandPostcode']:
@@ -626,8 +635,13 @@ class AddressLinkerNLPindex:
               (~self.toLinkAddressData['BuildingStartNumber'].isnull())
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
 
-        # for time being, assume that end number is the same as start number
-        self.toLinkAddressData['BuildingEndNumber'] = self.toLinkAddressData['BuildingStartNumber'].copy()
+        # if no end number, then use the start number as sometimes the same
+        msk = self.toLinkAddressData['BuildingEndNumber'].isnull() &\
+              ~self.toLinkAddressData['BuildingStartNumber'].isnull()
+        self.toLinkAddressData.loc[msk, 'BuildingEndNumber'] =\
+            self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].copy()
+        self.toLinkAddressData['BuildingEndNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingEndNumber'],
+                                                                    errors='coerce')
 
         # if street name empty but building name exists, then add
         msk = (self.toLinkAddressData['StreetName'].isnull()) & (~self.toLinkAddressData['BuildingName'].isnull())
