@@ -254,6 +254,13 @@ class AddressLinkerNLPindex:
                                               'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str})
         self.log.info('Found {} addresses from NLP index...'.format(len(self.addressBase.index)))
 
+        # remove street records from the list of potential matches
+        exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
+        exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
+        exclude += 'PONDS \d+M FROM|SUB STATION|CAR PARK'
+        msk = self.addressBase['PAO_TEXT'].str.contains(exclude, na=False, case=False)
+        self.addressBase = self.addressBase.loc[~msk]
+
         # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
         # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
         msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
@@ -266,6 +273,9 @@ class AddressLinkerNLPindex:
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
 
+        self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
+        self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
+
         # the NLP index does not really have organisations, sometimes these are in the PAO_TEXT
         msk = self.addressBase['ORGANISATION'].isnull() & (~self.addressBase['PAO_TEXT'].isnull())
         self.addressBase.loc[msk, 'ORGANISATION'] = self.addressBase.loc[msk, 'PAO_TEXT']
@@ -276,12 +286,6 @@ class AddressLinkerNLPindex:
             postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
             self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
 
-        # remove street records from the list of potential matches
-        exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
-        exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
-        exclude += 'PONDS \d+M FROM|SUB STATION|CAR PARK'
-        msk = self.addressBase['PAO_TEXT'].str.contains(exclude, na=False, case=False)
-        self.addressBase = self.addressBase.loc[~msk]
 
         self.log.info('Using {} addresses from NLP index for matching...'.format(len(self.addressBase.index)))
 
@@ -622,6 +626,9 @@ class AddressLinkerNLPindex:
               (~self.toLinkAddressData['BuildingStartNumber'].isnull())
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
 
+        # for time being, assume that end number is the same as start number
+        self.toLinkAddressData['BuildingEndNumber'] = self.toLinkAddressData['BuildingStartNumber'].copy()
+
         # if street name empty but building name exists, then add
         msk = (self.toLinkAddressData['StreetName'].isnull()) & (~self.toLinkAddressData['BuildingName'].isnull())
         self.toLinkAddressData.loc[msk, 'StreetName'] = self.toLinkAddressData.loc[msk, 'BuildingName']
@@ -741,6 +748,8 @@ class AddressLinkerNLPindex:
                        missing_value=0.8)
         compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear',
                         name='building_number_dl')
+        compare.numeric('PAO_END_NUMBER', 'BuildingEndNumber', threshold=0.1, method='linear',
+                        name='building_end_number_dl')
         compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_dl',
                        missing_value=0.7)
         compare.string('TOWN_NAME', 'TownName', method='jarowinkler', name='town_dl',
