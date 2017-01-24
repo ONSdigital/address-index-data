@@ -784,7 +784,7 @@ class AddressLinkerNLPindex:
         compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION', 'OrganisationName', method='jarowinkler', name='organisation_dl',
-                       missing_value=0.1)
+                       missing_value=0.3)
 
         # execute the comparison model
         compare.run()
@@ -795,6 +795,9 @@ class AddressLinkerNLPindex:
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
+
+        # scale up organisation name
+        compare.vectors['organisation_dl'] *= 3.
 
         # compute probabilities
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
@@ -1043,7 +1046,8 @@ class AddressLinkerNLPindex:
                             xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
 
         plt.xlabel('Number of Addresses')
-        plt.yticks(location + width / 2., all_results_names)
+        # plt.yticks(location + width / 2., all_results_names)
+        plt.yticks(location, all_results_names)
         plt.xlim(0, ax.get_xlim()[1] * 1.02)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
