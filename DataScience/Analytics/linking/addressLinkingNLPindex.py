@@ -273,6 +273,9 @@ class AddressLinkerNLPindex:
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
 
+        msk = (self.addressBase['SAO_START_NUMBER'] == -12345) & (self.addressBase['PAO_START_NUMBER'] != -12345)
+        self.addressBase.loc[msk, 'SAO_START_NUMBER'] = self.addressBase.loc[msk, 'PAO_START_NUMBER']
+
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
 
