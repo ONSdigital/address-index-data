@@ -1029,6 +1029,7 @@ class AddressLinker:
         plt.title('Prototype Linking Code (version={})'.format(__version__))
         ax = fig.add_subplot(1, 1, 1)
 
+        max_bar_length = max(all_results)
         plt.barh(location, all_results, width, color='g', alpha=0.6)
 
         for patch in ax.patches:
@@ -1036,16 +1037,18 @@ class AddressLinker:
                 continue
 
             n_addresses = int(patch.get_width())
+            ratio = n_addresses / max_bar_length
 
-            if n_addresses > 500:
+            if ratio > 0.3:
                 ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                            xytext=(-90, 18), textcoords='offset points', color='white', fontsize=24)
+                            xytext=(-95, 18), textcoords='offset points', color='white', fontsize=24)
             else:
                 ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                             xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
 
         plt.xlabel('Number of Addresses')
-        plt.yticks(location + width / 2., all_results_names)
+        # plt.yticks(location + width / 2., all_results_names)
+        plt.yticks(location, all_results_names)
         plt.xlim(0, ax.get_xlim()[1] * 1.02)
         plt.tight_layout()
         plt.savefig(self.settings['outpath'] + self.settings['outname'] + '.png')
