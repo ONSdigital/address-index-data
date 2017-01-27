@@ -719,27 +719,6 @@ class AddressLinker:
         self.toLinkAddressData['BuildingEndNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['BuildingEndNumber'] = self.toLinkAddressData['BuildingEndNumber'].astype(np.int32)
 
-        # # for some addresses like "44 ORCHARD HOUSE" the number actually refers to the flat number
-        # msk = (self.toLinkAddressData['FlatNumber'] == -12345) &\
-        #       (~self.toLinkAddressData['BuildingStartNumber'].isnull())
-        # self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingStartNumber']
-
-        # # if no end number, then use the start number as sometimes the same
-        # msk = self.toLinkAddressData['BuildingEndNumber'].isnull() &\
-        #       ~self.toLinkAddressData['BuildingStartNumber'].isnull()
-        # self.toLinkAddressData.loc[msk, 'BuildingEndNumber'] =\
-        #     self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].copy()
-        # self.toLinkAddressData['BuildingEndNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingEndNumber'],
-        #                                                             errors='coerce')
-
-        # # maybe remove
-        # # because in NLP organisation names can also be in SAO_TEXT, lets place it there if nothing already
-        # msk = self.toLinkAddressData['SubBuildingName'].isnull() & ~self.toLinkAddressData['OrganisationName'].isnull()
-        # self.toLinkAddressData.loc[msk, 'SubBuildingName'] = self.toLinkAddressData.loc[msk, 'OrganisationName']
-        #
-        # msk = ~self.toLinkAddressData['SubBuildingName'].isnull() & self.toLinkAddressData['BuildingName'].isnull()
-        # self.toLinkAddressData.loc[msk, 'BuildingName'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-
         # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
         msk = self.toLinkAddressData['SubBuildingName'].isnull()
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
