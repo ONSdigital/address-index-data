@@ -267,7 +267,6 @@ class AddressLinker:
                                               'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
                                               'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str,
                                               'postcode_in': str, 'postcode_out': str})
-        self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
 
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
@@ -368,7 +367,8 @@ class AddressLinker:
         if self.settings['verbose']:
             print('AddressBase:')
             print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
-            self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv', index=False)
+            if not self.settings['test']:
+                self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv', index=False)
 
     @staticmethod
     def _extract_postcode(string):
@@ -1154,7 +1154,6 @@ class AddressLinker:
                             xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
 
         plt.xlabel('Number of Addresses')
-        # plt.yticks(location + width / 2., all_results_names)
         plt.yticks(location, all_results_names)
         plt.xlim(0, ax.get_xlim()[1] * 1.02)
         plt.tight_layout()
