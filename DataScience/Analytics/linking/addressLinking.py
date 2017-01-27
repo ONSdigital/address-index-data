@@ -368,7 +368,7 @@ class AddressLinker:
         if self.settings['verbose']:
             print('AddressBase:')
             print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
-            self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv')
+            self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv', index=False)
 
     @staticmethod
     def _extract_postcode(string):
