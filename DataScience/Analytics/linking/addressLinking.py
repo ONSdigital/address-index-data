@@ -858,7 +858,7 @@ class AddressLinker:
         compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='jarowinkler', name='pao_suffix_dl',
                        missing_value=0.5)
 
-        # the following is good for flats and apartments than have been numbered
+        # the following is good for flats and apartments, which have been numbered
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
                        missing_value=0.6)
         compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
@@ -877,11 +877,14 @@ class AddressLinker:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2, 4, 5):
+        if blocking in (1, 2, 4):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
+        elif blocking == 5:
+            msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
+            compare.vectors = compare.vectors.loc[msk]
 
         # scale up organisation name
         compare.vectors['organisation_dl'] *= 3.
