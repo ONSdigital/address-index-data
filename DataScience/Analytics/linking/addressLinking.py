@@ -42,7 +42,7 @@ Version
 -------
 
 :version: 0.8
-:date: 27-Jan-2017
+:date: 30-Jan-2017
 """
 import datetime
 import os
@@ -877,12 +877,12 @@ class AddressLinker:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2, 4):
+        if blocking in (1, 2):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking == 3:
             compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
-        elif blocking == 5:
+        elif blocking in (4, 5):
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
 
