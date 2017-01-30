@@ -435,9 +435,8 @@ class AddressLinker:
         # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
         # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
         # is space around the hyphen
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
-                                                                              x['ADDRESS_norm'].replace(' - ', '-'),
-                                                                              axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = \
+            self.toLinkAddressData.apply(lambda x: x['ADDRESS_norm'].replace('\d+ - \d+', '\d+-\d+'), axis=1)
 
         # synonyms to expand - read from a file with format (from, to)
         synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values
@@ -888,6 +887,7 @@ class AddressLinker:
 
         # scale up organisation name
         compare.vectors['organisation_dl'] *= 3.
+        compare.vectors['pao_dl'] *= 3.
 
         # compute the sum of similarities
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
