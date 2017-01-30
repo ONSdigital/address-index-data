@@ -675,14 +675,14 @@ class AddressLinker:
             self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('[A-Z]', '')
 
         # deal with addresses that are of type 5/7 4 whatever road...
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) &\
+        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
               self.toLinkAddressData['FlatNumber'].isnull() & ~self.toLinkAddressData['BuildingNumber'].isnull()
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
 
         # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
-        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' +\
+        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + \
                                                              self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # if SubBuildingName contains only numbers, then place also to the flat number field as likely to be flat
@@ -691,7 +691,7 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # some addresses, e.g. "5B ELIZABETH AVENUE", have FLAT implicitly even if not spelled -> add "FLAT X"
-        msk = (~self.toLinkAddressData['BuildingSuffix'].isnull()) &\
+        msk = (~self.toLinkAddressData['BuildingSuffix'].isnull()) & \
               (self.toLinkAddressData['SubBuildingName'].isnull())
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + self.toLinkAddressData.loc[msk, 'BuildingSuffix']
 
@@ -700,14 +700,14 @@ class AddressLinker:
         msk = self.toLinkAddressData['BuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
               self.toLinkAddressData['FlatNumber'].isnull()
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] =\
+        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\d+\/', '')
         self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
         self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
         self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
 
         self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
-        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] =\
+        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = \
             self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].str.replace('\/\d+', '')
         self.toLinkAddressData['BuildingStartNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingStartNumber'],
                                                                       errors='coerce')
