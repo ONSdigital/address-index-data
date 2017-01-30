@@ -71,6 +71,10 @@ class CQCAddressLinker(addressLinking.AddressLinker):
         self.toLinkAddressData.rename(columns={'uprn': 'UPRN_old', 'cqc_loc_id': 'ID'}, inplace=True)
         self.toLinkAddressData.drop(columns, axis=1, inplace=True)
 
+        # GeoPlace has placed 0 when no UPRN was found, change these to missing
+        msk = self.toLinkAddressData['UPRN_old'] == 0
+        self.toLinkAddressData.loc[msk, 'UPRN_old'] = None
+
 
 def run_CQC_address_linker(**kwargs):
     """
