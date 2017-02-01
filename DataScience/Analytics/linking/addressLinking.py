@@ -320,6 +320,9 @@ class AddressLinker:
         msk = self.addressBase['BUILDING_NUMBER'].isnull()
         self.addressBase.loc[msk, 'BUILDING_NUMBER'] = self.addressBase.loc[msk, 'PAO_START_NUMBER']
 
+        msk = self.addressBase['BUILDING_NAME'].isnull()
+        self.addressBase.loc[msk, 'BUILDING_NAME'] = self.addressBase.loc[msk, 'PAO_TEXT']
+
         msk = self.addressBase['ORGANISATION_NAME'].isnull()
         self.addressBase.loc[msk, 'ORGANISATION_NAME'] = self.addressBase.loc[msk, 'ORGANISATION']
 
@@ -331,6 +334,9 @@ class AddressLinker:
 
         msk = self.addressBase['POST_TOWN'].isnull()
         self.addressBase.loc[msk, 'POST_TOWN'] = self.addressBase.loc[msk, 'TOWN_NAME']
+
+        msk = self.addressBase['POSTCODE'].isnull()
+        self.addressBase.loc[msk, 'POSTCODE'] = self.addressBase.loc[msk, 'POSTCODE_LOCATOR']
 
         msk = self.addressBase['LOCALITY'].isnull()
         self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
