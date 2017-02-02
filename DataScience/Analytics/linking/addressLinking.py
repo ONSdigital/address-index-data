@@ -899,7 +899,7 @@ class AddressLinker:
             compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
         elif blocking in (3, 4):
-            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.5]
         elif blocking in (6, 7):
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
