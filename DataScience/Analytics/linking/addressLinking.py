@@ -910,6 +910,7 @@ class AddressLinker:
         if blocking in (1, 2):
             compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
         elif blocking in (3, 4):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.5]
         elif blocking in (5, 6, 7):
