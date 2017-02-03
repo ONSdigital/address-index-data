@@ -343,7 +343,7 @@ class AddressLinker:
 
         # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
         # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
-        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (self.addressBase['SAO_TEXT'].isnotnull())
+        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (self.addressBase['SAO_TEXT'].notnull())
         self.addressBase.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
             self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
         self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
@@ -681,7 +681,7 @@ class AddressLinker:
 
         # deal with addresses that are of type 5/7 4 whatever road...
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
-              self.toLinkAddressData['FlatNumber'].isnull() & self.toLinkAddressData['BuildingNumber'].isnotnull()
+              self.toLinkAddressData['FlatNumber'].isnull() & self.toLinkAddressData['BuildingNumber'].notnull()
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
 
@@ -696,7 +696,7 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # some addresses, e.g. "5B ELIZABETH AVENUE", have FLAT implicitly even if not spelled -> add "FLAT X"
-        msk = (self.toLinkAddressData['BuildingSuffix'].isnotnull()) & \
+        msk = (self.toLinkAddressData['BuildingSuffix'].notnull()) & \
               (self.toLinkAddressData['SubBuildingName'].isnull())
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + self.toLinkAddressData.loc[msk, 'BuildingSuffix']
 
