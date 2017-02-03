@@ -24,17 +24,17 @@ Author
 Version
 -------
 
-:version: 0.8
-:date: 21-Nov-2016
+:version: 0.9
+:date: 23-Jan-2016
 """
-import pandas as pd
+import glob
+import os
+import re
+import sqlite3
 import numpy as np
+import pandas as pd
 from sqlalchemy import create_engine
 from tqdm import tqdm
-import re
-import glob
-import sqlite3
-import os
 
 if os.environ.get('LC_CTYPE', '') == 'UTF-8':
     os.environ['LC_CTYPE'] = 'en_US.UTF-8'
@@ -73,8 +73,10 @@ def getPostcode(string):
     :rtype: str
     """
     try:
-        tmp = re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA', string)[0]
-    except:
+        tmp = \
+        re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
+                   string)[0]
+    except ValueError:
         tmp = None
 
     return tmp
@@ -101,6 +103,10 @@ def _removePostcode(row, column='address', postcode='postcode'):
 
 
 def testParsing():
+    """
+
+    :return:
+    """
     testQuery = 'SELECT address, uprn FROM addresses limit 10'
     df = queryDB(testQuery)
     df['postcode'] = df.apply(_getPostcode, axis=1)
@@ -108,6 +114,10 @@ def testParsing():
 
 
 def _simpleTest():
+    """
+
+    :return:
+    """
     testQuery = 'SELECT COUNT(*) FROM abp_blpu'
     df = queryDB(testQuery)
     print(df)
@@ -314,11 +324,101 @@ def convertCSVtoSQLite(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADD
         df.to_sql('ab', cnx, index=False, if_exists='replace')
 
 
+def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/', filename='NLPindex.csv'):
+    """
+    Read in all the Address Base Epoch 39 CSV files and combine to a single NLP index.
+
+    :param path: location of the AddressBase CSV files
+    :type path: str
+    :param filename: name of the output file
+    :type filename: str
+
+    :return: None
+    """
+    files = glob.glob(path + 'ABP_E39_*.csv')
+
+    columns = {'BLPU': ['UPRN', 'POSTCODE_LOCATOR'],
+               'LPI': ['UPRN', 'USRN', 'LANGUAGE', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX', 'PAO_END_NUMBER',
+                       'PAO_END_SUFFIX','SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX', 'OFFICIAL_FLAG'],
+               'STREET_DESC': ['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY'],
+               'ORGANISATION': ['UPRN', 'ORGANISATION']}
+
+    data_frames = {}
+    for file in tqdm(files):
+        if 'CLASSIFICATION' in file or 'STREET.csv' in file or 'DELIVERY_POINT' in file:
+            continue
+
+        print('Reading in', file)
+        for keys in columns:
+            if keys in file:
+                tmp = pd.read_csv(file, dtype=str, usecols=columns[keys])
+                data_frames[keys] = tmp
+
+    print('joining the individual data frames...')
+    data = pd.merge(data_frames['BLPU'], data_frames['LPI'], how='left', on='UPRN')
+    data = pd.merge(data, data_frames['ORGANISATION'], how='left', on=['UPRN'])
+    data = pd.merge(data, data_frames['STREET_DESC'], how='left', on=['USRN', 'LANGUAGE'])
+
+    # remove non-official addresses from LPI; these can include e.g. ponds, sub stations, cctvs, public phones, etc.
+    msk = data['OFFICIAL_FLAG'] == 'Y'
+    data = data.loc[msk]
+
+    # drop if all null
+    data.dropna(inplace=True, how='all')
+
+    # change uprn to int
+    data['UPRN'] = data['UPRN'].astype(int)
+
+    # drop if no UPRN
+    data = data[np.isfinite(data['UPRN'].values)]
+
+    # drop some that are not needed
+    data.drop(['LANGUAGE', 'USRN'], axis=1, inplace=True)
+
+    print(data.info())
+    print(len(data.index), 'addresses')
+
+    print('storing to a CSV file...')
+    data.to_csv(path + filename, index=False)
+
+
+def create_random_sample_of_delivery_point_addresses(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                                                     size=100000):
+    """
+
+    :param path:
+    :param size:
+    :return:
+    """
+    # read in delivery point table
+    delivery_point = pd.read_csv(path + 'ABP_E39_DELIVERY_POINT.csv',  dtype=str)
+    delivery_point['UPRN'] = delivery_point['UPRN'].astype(np.int64)
+    print(len(delivery_point.index), 'delivery point addresses...')
+
+    # read in the UPRNs from NLP index
+    nlp_index = pd.read_csv(path + 'NLPindex.csv', usecols=['UPRN', ])
+    nlp_index.drop_duplicates('UPRN', inplace=True)
+    print(len(nlp_index.index), 'NLP index entries...')
+
+    # make an inner join between delivery point and NLP
+    data = pd.merge(delivery_point, nlp_index, how='inner', on='UPRN', suffixes=('', '_duplicate'))
+    print(data.info())
+    print(len(data.index), 'addresses...')
+
+    # pick random sample and drop column
+    data = data.sample(n=size, random_state=42)
+
+    # write to a file - UPRN and a single string address from the delivery point
+    data = data.fillna('')
+    data['ADDRESS'] = data["ORGANISATION_NAME"] + ' ' + data["DEPARTMENT_NAME"] + ' ' + data["SUB_BUILDING_NAME"] + ' '\
+                      + data["BUILDING_NAME"] + ' ' + data["BUILDING_NUMBER"] + ' ' + data["THROUGHFARE"] + ' ' +\
+                      data["POST_TOWN"] + ' ' + data["POSTCODE"]
+
+    data = data[['UPRN', 'ADDRESS']]
+    print('Storing single string delivery point addresses to a file...')
+    data.to_csv(path + 'delivery_point_addresses.csv', index=False)
+
+
 if __name__ == "__main__":
-    # _simpleTest()
-    # testParsing()
-    # processPostcodeFile()
-    # combineMiniABtestingData()
-    # combineAddressBaseData()
-    # modifyEdgeCasesData()
-    convertCSVtoSQLite()
+    create_NLP_index()
+    create_random_sample_of_delivery_point_addresses()
