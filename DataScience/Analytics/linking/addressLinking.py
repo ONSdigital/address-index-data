@@ -274,6 +274,12 @@ class AddressLinker:
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
 
+        # normalise street names so that st. is always st and 's is always s - PAF and NLP has differences
+        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
+        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
+
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
@@ -354,6 +360,12 @@ class AddressLinker:
 
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
+
+        # normalise street names so that st. is always st and 's is always s
+        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
+        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
 
         # drop some that are not needed - in the future versions these might be useful
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION'],
@@ -900,13 +912,18 @@ class AddressLinker:
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
         elif blocking in (3, 4):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.5]
+        elif blocking in (5, 6, 7):
+            compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
         elif blocking in (6, 7):
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
 
-        # scale up organisation name
+        # upweight organisation name and building numbers
         compare.vectors['organisation_dl'] *= 3.
-        compare.vectors['pao_dl'] *= 3.
+        compare.vectors['pao_dl'] *= 2.
+        compare.vectors['building_number_dl'] *= 2.
+        compare.vectors['pao_number_dl'] *= 2.
+        compare.vectors['building_end_number_dl'] *= 2.
 
         # compute the sum of similarities
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
