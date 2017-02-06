@@ -251,8 +251,10 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     msk = np.in1d(index_values, random_rows, assume_unique=True)
     training = data.loc[msk]
     holdout = data.loc[np.invert(msk)]
-    print('Length of training data:', len(training.index))
-    print('Length of holdout data:', len(holdout.index))
+    print('Training data:')
+    print(training.info())
+    print('Holdout data:')
+    print(holdout.info())
 
     print('\nWriting full training data to an XML file...')
     fh = open(out_path + outfile, mode='w')
