@@ -47,7 +47,7 @@ import numpy as np
 import pandas as pd
 
 # set the random seed so that we get the same training and holdout data even if rerun
-np.random.seed(seed=42)
+seed = np.random.seed(seed=42)
 # turn of pandas chaining warning
 pd.options.mode.chained_assignment = None
 
@@ -193,13 +193,37 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     data = data.loc[msk]
     print('After removing PO boxes', len(data.index), 'addresses remain')
 
-    print('Replacing English spelling for Welsh names for those addresses where Welsh is available')
+    print('Replacing English spelling with Welsh names for those addresses where Welsh is available')
     msk = data['WELSH_THOROUGHFARE'].notnull() & data['WELSH_DEPENDENT_LOCALITY'].notnull() & \
           data['WELSH_POST_TOWN'].notnull()
     data.loc[msk, 'THROUGHFARE'] = data.loc[msk, 'WELSH_THOROUGHFARE']
     data.loc[msk, 'DEPENDENT_LOCALITY'] = data.loc[msk, 'WELSH_DEPENDENT_LOCALITY']
     data.loc[msk, 'POST_TOWN'] = data.loc[msk, 'WELSH_POST_TOWN']
     print(len(data.loc[msk].index), 'addresses with Welsh spelled street name')
+
+    # set up sampling weight for Welsh addresses
+    data['WELSH_weights'] = 1.
+    data.loc[msk, 'WELSH_weights'] = 5.
+
+    # down sample to the required size
+    total_sample_size = training_sample_size + holdout_sample_size
+    if len(data.index) > total_sample_size:
+        data = data.sample(n=total_sample_size, weights='WELSH_weights', random_state=seed)
+    else:
+        print('ERROR: sum of training and holdout sample sizes exceeds the data size')
+
+    print('Mushing 5 per cent of postcodes together by removing the white space between in and outcodes')
+    rows = np.random.choice(data.index.values, int(total_sample_size * 0.05))
+    msk = np.in1d(data.index.values, rows)
+    data.loc[msk, 'POSTCODE'] = data.loc[msk, 'POSTCODE'].str.replace(' ', '')
+
+    data = _remove_fraction_of_labels(data, 'POSTCODE', total_sample_size, fraction=0.05)
+
+    data = _remove_fraction_of_labels(data, 'THROUGHFARE', total_sample_size, fraction=0.05)
+
+    data = _remove_fraction_of_labels(data, 'POST_TOWN', total_sample_size, fraction=0.05)
+
+    data = _remove_fraction_of_labels(data, 'BUILDING_NAME', total_sample_size, fraction=0.05)
 
     print('\nRenaming and re-ordering the columns to match the order expected in an address...')
     data.rename(columns=columns, inplace=True)
@@ -221,39 +245,10 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
         data[col] = data[col].str.replace(r'&', 'AND', case=False)
 
     print('\nDeriving training and holdout data...')
-    if len(data.index) > training_sample_size:
-        rows = np.random.choice(data.index.values, training_sample_size)
-        msk = np.in1d(data.index.values, rows)
-        training = data.loc[msk]
-        holdout = data.loc[~msk]
-
-        if len(holdout.index) > holdout_sample_size:
-            holdout = holdout.sample(n=holdout_sample_size)
-    else:
-        print('ERROR: only', len(data.index), 'addresses, using all for training!')
-        training = data
-        holdout = None
-
-    print('Mushing 5 per cent of postcodes together by removing the white space between in and outcodes')
-    rows = np.random.choice(training.index.values, int(training_sample_size * 0.05))
-    msk = np.in1d(training.index.values, rows)
-    training.loc[msk, 'Postcode'] = training.loc[msk, 'Postcode'].str.replace(' ', '')
-
-    rows = np.random.choice(holdout.index.values, int(holdout_sample_size * 0.05))
-    msk = np.in1d(holdout.index.values, rows)
-    holdout.loc[msk, 'Postcode'] = holdout.loc[msk, 'Postcode'].str.replace(' ', '')
-
-    training = _remove_fraction_of_labels(training, 'Postcode', training_sample_size, fraction=0.05)
-    holdout = _remove_fraction_of_labels(holdout, 'Postcode', holdout_sample_size, fraction=0.05)
-
-    training = _remove_fraction_of_labels(training, 'StreetName', training_sample_size, fraction=0.05)
-    holdout = _remove_fraction_of_labels(holdout, 'StreetName', holdout_sample_size, fraction=0.05)
-
-    training = _remove_fraction_of_labels(training, 'TownName', training_sample_size, fraction=0.05)
-    holdout = _remove_fraction_of_labels(holdout, 'TownName', holdout_sample_size, fraction=0.05)
-
-    training = _remove_fraction_of_labels(training, 'BuildingName', training_sample_size, fraction=0.05)
-    holdout = _remove_fraction_of_labels(holdout, 'BuildingName', holdout_sample_size, fraction=0.05)
+    rows = np.random.choice(data.index.values, training_sample_size)
+    msk = np.in1d(data.index.values, rows)
+    training = data.loc[msk]
+    holdout = data.loc[~msk]
 
     print('\nWriting full training data to an XML file...')
     fh = open(out_path + outfile, mode='w')
