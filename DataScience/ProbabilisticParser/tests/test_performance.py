@@ -26,19 +26,19 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 22-Oct-2016
+:version: 0.7
+:date: 6-Feb-2017
 """
-from ProbabilisticParser import parser
-import ProbabilisticParser.common.tokens as t
-import ProbabilisticParser.common.metrics as metric
-import sklearn_crfsuite
-from sklearn_crfsuite import metrics
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 from collections import Counter
 
+import ProbabilisticParser.common.metrics as metric
+import ProbabilisticParser.common.tokens as t
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import sklearn_crfsuite
+from ProbabilisticParser import parser
+from sklearn_crfsuite import metrics
 
 # set seaborn style
 sns.set_style("whitegrid")
@@ -96,9 +96,9 @@ def cm2inch(*tupl):
     """
     inch = 2.54
     if type(tupl[0]) == tuple:
-        return tuple(i/inch for i in tupl[0])
+        return tuple(i / inch for i in tupl[0])
     else:
-        return tuple(i/inch for i in tupl)
+        return tuple(i / inch for i in tupl)
 
 
 def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40,
@@ -167,8 +167,8 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     fig.set_size_inches(cm2inch(figure_width, figure_height))
 
 
-def plotClassificationReport(classification_report, title='Classification report ', cmap='RdBu',
-                             outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
+def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu',
+                               outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
     """
     Visualise a classification report. Assumes that the report is in the scikit-learn format.
 
@@ -188,7 +188,7 @@ def plotClassificationReport(classification_report, title='Classification report
     lines = classification_report.split('\n')
 
     classes = []
-    plotMat = []
+    plot_matrix = []
     support = []
     class_names = []
 
@@ -203,38 +203,38 @@ def plotClassificationReport(classification_report, title='Classification report
         classes.append(t[0])
         support.append(int(t[-1]))
         class_names.append(t[0])
-        plotMat.append(v)
+        plot_matrix.append(v)
 
     xlabel = 'Metrics'
     ylabel = 'Address Tokens'
     xticklabels = ['Precision', 'Recall', 'F1-score']
-    yticklabels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup  in enumerate(support)]
+    yticklabels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup in enumerate(support)]
     figure_width = 25
     figure_height = len(class_names) + 7
     correct_orientation = False
 
-    heatmap(np.array(plotMat), title, xlabel, ylabel, xticklabels, yticklabels,
+    heatmap(np.array(plot_matrix), title, xlabel, ylabel, xticklabels, yticklabels,
             figure_width, figure_height, correct_orientation, cmap=cmap)
 
     plt.savefig(outpath + 'tokenParsingPerformanceReport.pdf', dpi=200, bbox_inches='tight')
     plt.close()
 
 
-def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
+def plot_performance(correct_counts, all_counts, outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
     """
     Generate a simple bar chart showing the performance of the parser.
 
-    :param countsCorrect:
-    :param countsAll:
-    :param outpath:
+    :param correct_counts:
+    :param all_counts:
+    :param outpath: location of the output data
 
     :return:
     """
     # compute the fractions
     frac = []
     labels = []
-    for token in countsCorrect.keys():
-        frac.append(float(countsCorrect[token])/countsAll[token]*100.)
+    for token in correct_counts.keys():
+        frac.append(float(correct_counts[token]) / all_counts[token] * 100.)
         labels.append(token)
 
     # sort frac and then labels
@@ -256,51 +256,50 @@ def plotPerformance(countsCorrect, countsAll, outpath='/Users/saminiemi/Projects
                     xytext=(-40, 4), textcoords='offset points', color='white', fontsize=14)
 
     plt.xlabel('Percent of the Sample Correctly Labelled')
-    plt.yticks(location + width/2., labels)
+    plt.yticks(location + width / 2., labels)
     plt.xlim(0, 100.1)
     plt.tight_layout()
     plt.savefig(outpath + 'tokenParsingPerformance.pdf')
     plt.close()
 
 
-
-def printTransitions(transFeatures):
+def print_transitions(transition_features):
     """
     Outputs the token transitions and the associated weight.
 
-    :param transFeatures: counter of model instance transition features
+    :param transition_features: counter of model instance transition features
 
     :return: None
     """
-    for (label_from, label_to), weight in transFeatures:
+    for (label_from, label_to), weight in transition_features:
         print("%-6s -> %-7s %0.6f" % (label_from, label_to, weight))
 
 
-def printStateFeatures(stateFeatures):
+def print_state_features(state_features):
     """
     Outputs the features that help to predict a label.
 
-    :param stateSeatures: counter of model instance state features
+    :param state_features: counter of model instance state features
 
     :return: None
     """
-    for (attr, label), weight in stateFeatures:
+    for (attr, label), weight in state_features:
         print("%0.6f %-8s %s" % (weight, label, attr))
 
 
-def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml'):
+def check_performance(holdout_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/original/holdout.xml'):
     """
     Checks the performance of the trained model using given holdout data.
     Computes weighted f1-score, sequence accuracy, and a classification report.
     Visualises the classification report.
 
-    :param holdoutfile: location and name of the holdout XML data file
-    :type holdoutfile: str
+    :param holdout_file: location and name of the holdout XML data file
+    :type holdout_file: str
 
     :return: None
     """
     crf = sklearn_crfsuite.CRF(model_filename=t.MODEL_PATH + t.MODEL_FILE, verbose=True)
-    X_test, y_test = t.readData(holdoutfile)
+    X_test, y_test = t.readData(holdout_file)
 
     # store labels
     labels = list(crf.classes_)
@@ -323,28 +322,28 @@ def checkPerformance(holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/dat
     report = metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3)
     print(report)
 
-    print('Generating a plot...')
-    plotClassificationReport(report)
+    print('\nGenerating a plot...')
+    plot_classification_report(report)
 
-    print("Likeliest transitions:")
-    printTransitions(Counter(crf.transition_features_).most_common(15))
+    print("\nLikeliest transitions:")
+    print_transitions(Counter(crf.transition_features_).most_common(15))
 
-    print("Least likely transitions:")
-    printTransitions(Counter(crf.transition_features_).most_common()[-15:])
+    print("\nLeast likely transitions:")
+    print_transitions(Counter(crf.transition_features_).most_common()[-15:])
 
-    print("Top 30 positive features:")
-    printStateFeatures(Counter(crf.state_features_).most_common(30))
+    print("\nTop 30 positive features:")
+    print_state_features(Counter(crf.state_features_).most_common(30))
 
-    print("Top 30 negative features:")
-    printStateFeatures(Counter(crf.state_features_).most_common()[-30:])
+    print("\nTop 30 negative features:")
+    print_state_features(Counter(crf.state_features_).most_common()[-30:])
 
 
-def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrectlyParsed.csv'):
+def _manual(output_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrectlyParsed.csv'):
     """
     Predict the tokens for the holdout data and check the performance.
 
-    :param outputfile: name of the output file to store incorrectly parsed addresses
-    :type outputfile: str
+    :param output_file: name of the output file to store incorrectly parsed addresses
+    :type output_file: str
 
     :return: None
     """
@@ -390,22 +389,18 @@ def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrec
 
     print('Holdout Addresses:', all)
     print('All Tokens Correct:', correct)
-    print('Percent of Correct:', float(correct)/all*100.)
+    print('Percent of Correct:', float(correct) / all * 100.)
     print('Correct Tokens:', correctItems)
-    print('Percent of Tokens Correct:', float(correctItems)/allItems*100.)
+    print('Percent of Tokens Correct:', float(correctItems) / allItems * 100.)
 
     for token in countsCorrect.keys():
-        print(float(countsCorrect[token])/countsAll[token]*100.,'percent of', token, 'were correct')
-
-    # # add the all tokens to the dictionaries so that can plot them as well
-    # countsAll['All'] = allItems
-    # countsCorrect['All'] = correctItems
+        print(float(countsCorrect[token]) / countsAll[token] * 100., 'percent of', token, 'were correct')
 
     print('Generating plots')
-    plotPerformance(countsCorrect, countsAll)
+    plot_performance(countsCorrect, countsAll)
 
     print('Outputting the incorrect ones to a file...')
-    fh = open(outputfile, mode='w')
+    fh = open(output_file, mode='w')
     fh.write('raw, true, predicted\n')
     for line in store:
         fh.write('%s,"%s","%s"\n' % (line[0], line[1], line[2]))
@@ -413,4 +408,4 @@ def _manual(outputfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorrec
 
 
 if __name__ == "__main__":
-    checkPerformance()
+    check_performance()
