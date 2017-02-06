@@ -205,16 +205,18 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     data['WELSH_weights'] = 1.
     data.loc[msk, 'WELSH_weights'] = 5.
 
-    # down sample to the required size
+    # down sample to the required size and reset the index
     total_sample_size = training_sample_size + holdout_sample_size
     if len(data.index) > total_sample_size:
         data = data.sample(n=total_sample_size, weights='WELSH_weights', random_state=seed)
     else:
         print('ERROR: sum of training and holdout sample sizes exceeds the data size')
+    data.reset_index(inplace=True)
+    index_values = data.index.values
 
     print('Mushing 5 per cent of postcodes together by removing the white space between in and outcodes')
-    rows = np.random.choice(data.index.values, int(total_sample_size * 0.05))
-    msk = np.in1d(data.index.values, rows)
+    random_rows = np.random.choice(index_values, size=int(total_sample_size * 0.05), replace=False)
+    msk = np.in1d(data.index.values, random_rows, assume_unique=True)
     data.loc[msk, 'POSTCODE'] = data.loc[msk, 'POSTCODE'].str.replace(' ', '')
 
     data = _remove_fraction_of_labels(data, 'POSTCODE', total_sample_size, fraction=0.05)
@@ -244,11 +246,13 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     for col in data.columns.values.tolist():
         data[col] = data[col].str.replace(r'&', 'AND', case=False)
 
-    print('\nDeriving training and holdout data...')
-    rows = np.random.choice(data.index.values, training_sample_size)
-    msk = np.in1d(data.index.values, rows)
+    print('\nDeriving training and holdout samples...')
+    random_rows = np.random.choice(index_values, size=training_sample_size, replace=False)
+    msk = np.in1d(index_values, random_rows, assume_unique=True)
     training = data.loc[msk]
-    holdout = data.loc[~msk]
+    holdout = data.loc[np.invert(msk)]
+    print('Length of training data:', len(training.index))
+    print('Length of holdout data:', len(holdout.index))
 
     print('\nWriting full training data to an XML file...')
     fh = open(out_path + outfile, mode='w')
@@ -258,12 +262,11 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     fh.close()
 
     print('Writing the holdout data to an XML file...')
-    if holdout is not None:
-        fh = open(out_path + holdout_file, mode='w')
-        fh.write('<AddressCollection>')
-        fh.write(''.join(holdout.apply(_toXML, axis=1)))
-        fh.write('\n</AddressCollection>')
-        fh.close()
+    fh = open(out_path + holdout_file, mode='w')
+    fh.write('<AddressCollection>')
+    fh.write(''.join(holdout.apply(_toXML, axis=1)))
+    fh.write('\n</AddressCollection>')
+    fh.close()
 
     # take smaller samples - useful for testing the impact of training data
     for sample_size in training_subsamples:
