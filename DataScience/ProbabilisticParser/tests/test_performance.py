@@ -296,7 +296,7 @@ def print_state_features(state_features):
         print("%0.6f %-8s %s" % (weight, label, attr))
 
 
-def check_performance(holdout_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/original/holdout.xml'):
+def check_performance(holdout_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml'):
     """
     Checks the performance of the trained model using given holdout data.
     Computes weighted f1-score, sequence accuracy, and a classification report.
