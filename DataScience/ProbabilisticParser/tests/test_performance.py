@@ -41,7 +41,7 @@ Version
 from collections import Counter
 
 import ProbabilisticParser.common.metrics as metric
-import ProbabilisticParser.common.tokens as t
+import ProbabilisticParser.common.tokens as tkns
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -307,8 +307,8 @@ def check_performance(holdout_file='/Users/saminiemi/Projects/ONS/AddressIndex/d
 
     :return: None
     """
-    crf = sklearn_crfsuite.CRF(model_filename=t.MODEL_PATH + t.MODEL_FILE, verbose=True)
-    X_test, y_test = t.readData(holdout_file)
+    crf = sklearn_crfsuite.CRF(model_filename=tkns.MODEL_PATH + tkns.MODEL_FILE, verbose=True)
+    X_test, y_test = tkns.readData(holdout_file)
 
     # store labels
     labels = list(crf.classes_)
@@ -365,7 +365,7 @@ def _manual(output_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorre
     store = []
 
     print('Predicting holdout data...')
-    for raw_string, components in t.readXML('holdout.xml'):
+    for raw_string, components in tkns.readXML('holdout.xml'):
         all += 1
 
         # get the true labels
@@ -390,7 +390,7 @@ def _manual(output_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/incorre
                 correctItems += 1
 
             # check for each token separately and store to a dictionary
-            for token in t.LABELS:
+            for token in tkns.LABELS:
                 if token == b:
                     countsAll[token] = countsAll.get(token, 0) + 1
                     if a == b:

@@ -216,7 +216,7 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     data = data[new_order]
     print(data.info())
 
-    print('changing ampersands to AND...') # if not done, will create problems in the training phase
+    print('changing ampersands to AND...')  # if not done, will create problems in the training phase
     for col in data.columns.values.tolist():
         data[col] = data[col].str.replace(r'&', 'AND', case=False)
 
@@ -239,13 +239,21 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     msk = np.in1d(training.index.values, rows)
     training.loc[msk, 'Postcode'] = training.loc[msk, 'Postcode'].str.replace(' ', '')
 
+    rows = np.random.choice(holdout.index.values, int(holdout_sample_size * 0.05))
+    msk = np.in1d(holdout.index.values, rows)
+    holdout.loc[msk, 'Postcode'] = holdout.loc[msk, 'Postcode'].str.replace(' ', '')
+
     training = _remove_fraction_of_labels(training, 'Postcode', training_sample_size, fraction=0.05)
+    holdout = _remove_fraction_of_labels(holdout, 'Postcode', holdout_sample_size, fraction=0.05)
 
     training = _remove_fraction_of_labels(training, 'StreetName', training_sample_size, fraction=0.05)
+    holdout = _remove_fraction_of_labels(holdout, 'StreetName', holdout_sample_size, fraction=0.05)
 
     training = _remove_fraction_of_labels(training, 'TownName', training_sample_size, fraction=0.05)
+    holdout = _remove_fraction_of_labels(holdout, 'TownName', holdout_sample_size, fraction=0.05)
 
     training = _remove_fraction_of_labels(training, 'BuildingName', training_sample_size, fraction=0.05)
+    holdout = _remove_fraction_of_labels(holdout, 'BuildingName', holdout_sample_size, fraction=0.05)
 
     print('\nWriting full training data to an XML file...')
     fh = open(out_path + outfile, mode='w')
