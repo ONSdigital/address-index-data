@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Test the Performance of the Probabilistic Parser
 ====================================================================
@@ -15,6 +16,14 @@ Requirements
 :requires: seaborn
 :requires: matplotlib
 :requires: numpy
+
+
+Running
+-------
+
+After all requirements are satisfied and a model has been trained, the script can be invoked using CPython interpreter::
+
+    python test_performance.py
 
 
 Author
