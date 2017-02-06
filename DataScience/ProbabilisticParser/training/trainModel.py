@@ -47,7 +47,7 @@ import sklearn_crfsuite
 from sklearn_crfsuite import metrics
 
 
-def read_data(training_data_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training100000.xml',
+def read_data(training_data_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training1M.xml',
               holdout_data_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml',
               verbose=True):
     """
