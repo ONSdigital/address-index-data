@@ -48,6 +48,8 @@ import pandas as pd
 
 # set the random seed so that we get the same training and holdout data even if rerun
 np.random.seed(seed=42)
+# turn of pandas chaining warning
+pd.options.mode.chained_assignment = None
 
 
 def _toXML(row):
@@ -84,7 +86,7 @@ def _toXML(row):
                     t = tmp.split(' ')
                     for component in t:
                         xml.append('<{0}>{1}</{0}> '.format(field, component))
-                except:
+                except ValueError:
                     xml.append('<{0}>{1}</{0}> '.format(field, tmp))
 
     xml[-1] = xml[-1][:-1]
@@ -93,12 +95,39 @@ def _toXML(row):
     return ''.join(xml)
 
 
+def _remove_fraction_of_labels(data, label, sample_total_size, fraction=0.05):
+    """
+    Remove a given fraction of the entries in a given label. Does not check whether
+    the label contains an entry or is Null.
+
+    :param data: input data
+    :type data: pandas.DataFrame
+    :param label: name of the data frame column
+    :type label: str
+    :param sample_total_size: size of the dataset
+    :type sample_total_size: int
+    :param fraction: fraction of the sample size to remove
+    :type fraction: float
+
+    :return: input data but a given fraction of the inputs set to None
+    :rtype: pandas.DataFrame
+    """
+    print('Dropping', fraction * 100., 'per cent of', label, 'entries')
+
+    rows = np.random.choice(data.index.values, int(sample_total_size * fraction))
+    msk = np.in1d(data.index.values, rows)
+
+    data.loc[msk, label] = None
+
+    return data
+
+
 def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
                                                    filename='ABP_E39_DELIVERY_POINT.csv',
-                                                   training_sample_size=10000000, holdout_sample_size=100000,
-                                                   training_subsamples=(1000000, 100000, 10000, 1000),
+                                                   training_sample_size=1000000, holdout_sample_size=100000,
+                                                   training_subsamples=(100000, 10000, 1000),
                                                    out_path='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/',
-                                                   outfile='training10M.xml', holdout_file='holdout.xml'):
+                                                   outfile='training1M.xml', holdout_file='holdout.xml'):
     """
     Create training and holdout files for the probabilistic parser. Takes a pandas DataFrame
     as an input, re-orders the information, splits it to training and holdout data, and finally
@@ -130,6 +159,7 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
 
     :return: None
     """
+    # delivery point information used for training a probabilistic parser
     columns = {'ORGANISATION_NAME': 'OrganisationName',
                'DEPARTMENT_NAME': 'DepartmentName',
                'SUB_BUILDING_NAME': 'SubBuildingName',
@@ -138,42 +168,65 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
                'THROUGHFARE': 'StreetName',
                'DEPENDENT_LOCALITY': 'Locality',
                'POST_TOWN': 'TownName',
-               'POSTCODE': 'Postcode'}
+               'POSTCODE': 'Postcode',
+               'WELSH_THOROUGHFARE': 'WelshStreetName',
+               'WELSH_DEPENDENT_LOCALITY': 'WelshLocality',
+               'WELSH_POST_TOWN': 'WelshTownName',
+               'PO_BOX_NUMBER': 'PObox'}
 
-    data = pd.read_csv(path + filename, dtype=str, usecols=columns.values())
+    data = pd.read_csv(path + filename, dtype=str, usecols=columns.keys())
 
-    print('Renaming columns...')
+    print('Data source contains', len(data.index), 'addresses')
+    print('removing STREET RECORDs, PARKING SPACEs, PONDs etc...')
+    # remove street records from the list of potential matches - this makes the search space slightly smaller
+    exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
+    exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
+    exclude += 'PONDS \d+M FROM|SUB STATION|PARKING SPACE'
+    msk = data['BUILDING_NAME'].str.contains(exclude, na=False, case=False) | \
+          data['THROUGHFARE'].str.contains(exclude, na=False, case=False)
+    data = data.loc[~msk]
+    print('After removing parking spaces etc.', len(data.index), 'addresses remain')
+
+    # remove PO BOXes
+    # todo: confirm what to do with PO BOXes - separate process of part of the parser? Latter -> new label
+    msk = data['PO_BOX_NUMBER'].isnull()
+    data = data.loc[msk]
+    print('After removing PO boxes', len(data.index), 'addresses remain')
+
+    print('Replacing English spelling for Welsh names for those addresses where Welsh is available')
+    msk = data['WELSH_THOROUGHFARE'].notnull() & data['WELSH_DEPENDENT_LOCALITY'].notnull() & \
+          data['WELSH_POST_TOWN'].notnull()
+    data.loc[msk, 'THROUGHFARE'] = data.loc[msk, 'WELSH_THOROUGHFARE']
+    data.loc[msk, 'DEPENDENT_LOCALITY'] = data.loc[msk, 'WELSH_DEPENDENT_LOCALITY']
+    data.loc[msk, 'POST_TOWN'] = data.loc[msk, 'WELSH_POST_TOWN']
+    print(len(data.loc[msk].index), 'addresses with Welsh spelled street name')
+
+    print('\nRenaming and re-ordering the columns to match the order expected in an address...')
     data.rename(columns=columns, inplace=True)
 
-    print('re-ordering the columns to match the order expected in an address...')
-    neworder = ['OrganisationName',
-                'DepartmentName',
-                'SubBuildingName',
-                'BuildingName',
-                'BuildingNumber',
-                'StreetName',
-                'Locality',
-                'TownName',
-                'Postcode']
-    data = data[neworder]
+    new_order = ['OrganisationName',
+                 'DepartmentName',
+                 'SubBuildingName',
+                 'BuildingName',
+                 'BuildingNumber',
+                 'StreetName',
+                 'Locality',
+                 'TownName',
+                 'Postcode']
+    data = data[new_order]
     print(data.info())
 
-    print('Initial length', len(data.index))
-    print('remove those with STREET RECORD, PARKING SPACE, or POND in BuildingName...')
-    msk = data['BuildingName'].str.contains('STREET RECORD|PARKING SPACE|POND', na=False)
-    data = data.loc[~msk]
-    print('After removing parking spaces etc.', len(data.index))
-
-    print('changing ampersands to AND...')
+    print('changing ampersands to AND...') # if not done, will create problems in the training phase
     for col in data.columns.values.tolist():
         data[col] = data[col].str.replace(r'&', 'AND', case=False)
 
-    print('Deriving training and holdout data...')
+    print('\nDeriving training and holdout data...')
     if len(data.index) > training_sample_size:
         rows = np.random.choice(data.index.values, training_sample_size)
         msk = np.in1d(data.index.values, rows)
         training = data.loc[msk]
         holdout = data.loc[~msk]
+
         if len(holdout.index) > holdout_sample_size:
             holdout = holdout.sample(n=holdout_sample_size)
     else:
@@ -181,24 +234,27 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
         training = data
         holdout = None
 
-    print('Removing 5 per cent of postcodes and mushing 5 per cent together')
+    print('Mushing 5 per cent of postcodes together by removing the white space between in and outcodes')
     rows = np.random.choice(training.index.values, int(training_sample_size * 0.05))
     msk = np.in1d(training.index.values, rows)
     training.loc[msk, 'Postcode'] = training.loc[msk, 'Postcode'].str.replace(' ', '')
-    rows = np.random.choice(training.index.values, int(training_sample_size * 0.05))
-    msk = np.in1d(training.index.values, rows)
-    training.loc[msk, 'Postcode'] = None
 
-    # todo: maybe on should drop randomly also building number or street name from some addresses?
+    training = _remove_fraction_of_labels(training, 'Postcode', training_sample_size, fraction=0.05)
 
-    print('writing full training data to an XML file...')
+    training = _remove_fraction_of_labels(training, 'StreetName', training_sample_size, fraction=0.05)
+
+    training = _remove_fraction_of_labels(training, 'TownName', training_sample_size, fraction=0.05)
+
+    training = _remove_fraction_of_labels(training, 'BuildingName', training_sample_size, fraction=0.05)
+
+    print('\nWriting full training data to an XML file...')
     fh = open(out_path + outfile, mode='w')
     fh.write('<AddressCollection>')
     fh.write(''.join(training.apply(_toXML, axis=1)))
     fh.write('\n</AddressCollection>')
     fh.close()
 
-    print('writing the holdout data to an XML file...')
+    print('Writing the holdout data to an XML file...')
     if holdout is not None:
         fh = open(out_path + holdout_file, mode='w')
         fh.write('<AddressCollection>')
@@ -211,7 +267,7 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
         print('Drawing randomly', sample_size, 'samples from the training data...')
         sample = training.sample(n=sample_size)
         print('writing small training data of', sample_size, 'to an XML file...')
-        fh = open(out_path + outfile.replace('10M', str(sample_size)), mode='w')
+        fh = open(out_path + outfile.replace('1M', str(sample_size)), mode='w')
         fh.write('<AddressCollection>')
         fh.write(''.join(sample.apply(_toXML, axis=1)))
         fh.write('\n</AddressCollection>')
