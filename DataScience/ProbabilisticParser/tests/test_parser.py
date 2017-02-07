@@ -65,6 +65,16 @@ class TestParser(unittest.TestCase):
         assert parser.parse('Statistics Ltd') == [('Statistics', 'OrganisationName'), ('Ltd', 'OrganisationName')]
         assert parser.tag('THE GLENSIDE HOSPITAL FOR NEURO REHABILITATION') == \
                OrderedDict([('OrganisationName', 'THE GLENSIDE HOSPITAL FOR NEURO REHABILITATION')])
+        assert parser.tag('st albans care home') == OrderedDict([('OrganisationName', 'st albans care home')])
+        assert parser.tag('HILLTOP CARE HOME') == OrderedDict([('OrganisationName', 'HILLTOP CARE HOME')])
+        assert parser.tag('SANDYLEAZE CARE HOME') == OrderedDict([('OrganisationName', 'SANDYLEAZE CARE HOME')])
+        assert parser.tag('ST. MARGARETS RESIDENTIAL HOME') == OrderedDict([('OrganisationName',
+                                                                             'ST. MARGARETS RESIDENTIAL HOME')])
+        assert parser.tag('WOODCROFT HOSPITAL') == OrderedDict([('OrganisationName', 'WOODCROFT HOSPITAL')])
+        assert parser.tag('durham university') == OrderedDict([('OrganisationName', 'durham university')])
+        assert parser.tag('best hotel') == OrderedDict([('OrganisationName', 'best hotel')])
+        assert parser.tag('SUNNYBANK Bed and Breakfast') == OrderedDict([('OrganisationName',
+                                                                          'SUNNYBANK Bed and Breakfast')])
 
     def test_only_town(self):
         assert parser.parse('Oxford') == [('Oxford', 'TownName')]
@@ -137,6 +147,23 @@ class TestParser(unittest.TestCase):
                                                                            ('StreetName', 'brooks road'),
                                                                            ('TownName', 'street'),
                                                                            ('Postcode', 'ba16 0pp')])
+        assert parser.tag('BASEMENT FLAT 28 ALEXANDRA ROAD POOLE BH14') == \
+               OrderedDict([('SubBuildingName', 'BASEMENT FLAT'),
+                            ('BuildingNumber', '28'),
+                            ('StreetName', 'ALEXANDRA ROAD'),
+                            ('TownName', 'POOLE'),
+                            ('Postcode', 'BH14')])
+        assert parser.tag('FLAT 14.12 ARAGON TOWER GEORGE BEARD ROAD LONDON') == \
+               OrderedDict([('SubBuildingName', 'FLAT 14.12'),
+                            ('BuildingName', 'ARAGON TOWER'),
+                            ('StreetName', 'GEORGE BEARD ROAD'),
+                            ('TownName', 'LONDON')])
+        assert parser.tag('ROYAL MENCAP SOCIETY 15-17 KEW GARDENS BOGNOR REGIS PO21 5RD') == \
+               OrderedDict([('OrganisationName', 'ROYAL MENCAP SOCIETY'),
+                            ('BuildingName', '15-17'),
+                            ('StreetName', 'KEW GARDENS'),
+                            ('TownName', 'BOGNOR REGIS'),
+                            ('Postcode', 'PO21 5RD')])
 
 
 if __name__ == '__main__':
