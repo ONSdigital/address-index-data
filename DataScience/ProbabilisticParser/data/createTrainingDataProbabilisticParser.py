@@ -202,13 +202,17 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     print(len(data.loc[msk].index), 'addresses with Welsh spelled street name')
 
     # set up sampling weight for Welsh addresses
-    data['WELSH_weights'] = 1.
-    data.loc[msk, 'WELSH_weights'] = 5.
+    data['weights'] = 1.
+    data.loc[msk, 'weights'] = 10.
+
+    # up weight those with town name is Street as these help to separate streets from the town
+    msk = data['POST_TOWN'] == 'STREET'
+    data.loc[msk, 'weights'] = 2.
 
     # down sample to the required size and reset the index
     total_sample_size = training_sample_size + holdout_sample_size
     if len(data.index) > total_sample_size:
-        data = data.sample(n=total_sample_size, weights='WELSH_weights', random_state=seed, replace=False)
+        data = data.sample(n=total_sample_size, weights='weights', random_state=seed, replace=False)
     else:
         print('ERROR: sum of training and holdout sample sizes exceeds the data size')
     data.reset_index(inplace=True)
