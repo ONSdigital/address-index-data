@@ -22,15 +22,15 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 25-Nov-2016
+:version: 0.3
+:date: 7-Feb-2017
 """
+import os
+import sys
+from collections import OrderedDict
+
 import ProbabilisticParser.common.tokens as tok
 import pycrfsuite
-from collections import OrderedDict
-import sys
-import os
-
 
 try:
     TAGGER = pycrfsuite.Tagger()
@@ -60,6 +60,58 @@ def parse(raw_string):
     tags = TAGGER.tag(features)
 
     return list(zip(tokens, tags))
+
+
+def parse_with_marginal_probability(raw_string):
+    """
+    Parse the given input string using a trained model.
+    Returns a list of tokens, labels, and marginal probabilities.
+
+    :param raw_string: input string to parse
+    :type raw_string: str
+
+    :return: a list of tokens, labels, and marginal probabilities
+    :rtype: list
+    """
+    tokens = tok.tokenize(raw_string)
+    if not tokens:
+        return []
+
+    features = tok.tokens2features(tokens)
+
+    tags = TAGGER.tag(features)
+
+    marginals = [TAGGER.marginal(tag, i) for i, tag in enumerate(tags)]
+
+    return list(zip(tokens, tags, marginals))
+
+
+def parse_with_probabilities(raw_string):
+    """
+    Parse the given input string using a trained model.
+    Returns a dictionary with
+
+    :param raw_string: input string to parse
+    :type raw_string: str
+
+    :return: a dictionary holding the results
+    :rtype: OrderedDict
+    """
+    tokens = tok.tokenize(raw_string)
+    if not tokens:
+        return []
+
+    features = tok.tokens2features(tokens)
+
+    tags = TAGGER.tag(features)
+
+    marginals = [TAGGER.marginal(tag, i) for i, tag in enumerate(tags)]
+    sequence_probability = TAGGER.probability(tags)
+
+    out = OrderedDict(tokens=tokens, tags=tags, marginal_probabilites=marginals,
+                      sequence_probability=sequence_probability)
+
+    return out
 
 
 def tag(raw_string):
@@ -113,9 +165,9 @@ def test(raw_string='ONS LIMITED FLAT 1 12 OXFORD STREET STREET ST1 2FW', verbos
     print('Inferred tags:', tags)
 
     print('Probability of the sequence:', round(TAGGER.probability(tags), 6))
-    assert round(TAGGER.probability(tags), 6) == 0.956658, 'Sequence probability not correct'
+    assert round(TAGGER.probability(tags), 6) == 0.992256, 'Sequence probability not correct'
 
-    results = [0.999988, 0.999987, 0.998692, 0.956739, 0.999973, 0.999999, 0.999963, 0.999990, 1., 1.]
+    results = [0.999999, 0.999999, 0.999846, 0.993642, 0.999728, 1., 1., 0.998874, 1., 1.]
     for i, tg in enumerate(tags):
         prob = round(TAGGER.marginal(tg, i), 6)
         print('Marginal probability of', tg, 'in position', i, 'is', prob)
