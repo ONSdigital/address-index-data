@@ -94,7 +94,7 @@ def train_new_model(X_train, y_train, X_test, y_test, LBFGS=True):
         crf = sklearn_crfsuite.CRF(algorithm='lbfgs',
                                    c1=0.25,
                                    c2=0.005,
-                                   min_freq=0.005,
+                                   min_freq=0.001,
                                    all_possible_transitions=True,
                                    keep_tempfiles=True,
                                    model_filename=tkns.MODEL_FILE,
@@ -103,7 +103,7 @@ def train_new_model(X_train, y_train, X_test, y_test, LBFGS=True):
         crf = sklearn_crfsuite.CRF(algorithm='ap',
                                    max_iterations=5000,
                                    epsilon=1e-4,
-                                   min_freq=0.005,
+                                   min_freq=0.001,
                                    keep_tempfiles=True,
                                    model_filename=tkns.MODEL_FILE,
                                    verbose=True)

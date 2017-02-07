@@ -208,7 +208,7 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     # down sample to the required size and reset the index
     total_sample_size = training_sample_size + holdout_sample_size
     if len(data.index) > total_sample_size:
-        data = data.sample(n=total_sample_size, weights='WELSH_weights', random_state=seed)
+        data = data.sample(n=total_sample_size, weights='WELSH_weights', random_state=seed, replace=False)
     else:
         print('ERROR: sum of training and holdout sample sizes exceeds the data size')
     data.reset_index(inplace=True)
@@ -273,7 +273,7 @@ def create_training_data_from_delivery_point_table(path='/Users/saminiemi/Projec
     # take smaller samples - useful for testing the impact of training data
     for sample_size in training_subsamples:
         print('Drawing randomly', sample_size, 'samples from the training data...')
-        sample = training.sample(n=sample_size)
+        sample = training.sample(n=sample_size, replace=False)
         print('writing small training data of', sample_size, 'to an XML file...')
         fh = open(out_path + outfile.replace('1M', str(sample_size)), mode='w')
         fh.write('<AddressCollection>')
