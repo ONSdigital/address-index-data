@@ -41,6 +41,7 @@ Version
 """
 import pickle
 
+import ProbabilisticParser.common.metrics as metric
 import ProbabilisticParser.common.tokens as tkns
 import matplotlib.pyplot as plt
 import sklearn_crfsuite
@@ -110,7 +111,7 @@ def plot_search_space(rs, param1='c1', param2='c2', output_path='/Users/saminiem
     plt.close()
 
 
-def perform_cv_model_optimisation(X_train, y_train, X_test, y_test):
+def perform_cv_model_optimisation(X_train, y_train, X_test, y_test, sequence_optimisation=True):
     """
     Randomised search to optimise the regularisation and other parameters of the CRF model.
     The regularisation parameters are drawn from exponential distributions.
@@ -118,7 +119,8 @@ def perform_cv_model_optimisation(X_train, y_train, X_test, y_test):
     :param X_train: training data in 2D array
     :param y_train: training data labels
     :param X_test: holdout data in 2D array
-    :type y_test: holdout data true labels
+    :param y_test: holdout data true labels
+    :param sequence_optimisation: whether to use the full sequence accuracy as the score or individual labels
 
     :return: None
     """
@@ -132,9 +134,11 @@ def perform_cv_model_optimisation(X_train, y_train, X_test, y_test):
     labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
               'Locality', 'TownName', 'Postcode']
 
-    # use (flattened) f1-score for evaluation
-    # todo: should one use complete sequence rather than f1?
-    f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
+    if sequence_optimisation:
+        scorer = make_scorer(metric.sequence_accuracy_score)
+    else:
+        # use (flattened) f1-score for evaluation
+        scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
 
     print('Performing randomised search using cross-validations...')
     rs = RandomizedSearchCV(crf, params_space,
@@ -142,7 +146,7 @@ def perform_cv_model_optimisation(X_train, y_train, X_test, y_test):
                             verbose=1,
                             n_jobs=-1,
                             n_iter=50,
-                            scoring=f1_scorer)
+                            scoring=scorer)
     rs.fit(X_train, y_train)
 
     print('saving the optimisation results to a pickled file...')
