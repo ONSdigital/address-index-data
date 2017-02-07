@@ -34,6 +34,7 @@ class TestParser(unittest.TestCase):
         assert parser.tag('Flat 5') == OrderedDict([('SubBuildingName', 'Flat 5')])
         assert parser.tag('Apartment 1C') == OrderedDict([('SubBuildingName', 'Apartment 1C')])
         assert parser.tag('Unit A') == OrderedDict([('SubBuildingName', 'Unit A')])
+        assert parser.tag('Unit C3') == OrderedDict([('SubBuildingName', 'Unit C3')])
 
     def test_only_building_name(self):
         assert parser.tag('5C') == OrderedDict([('BuildingName', '5C')])
@@ -66,6 +67,9 @@ class TestParser(unittest.TestCase):
 
     def test_only_town(self):
         assert parser.parse('Oxford') == [('Oxford', 'TownName')]
+        assert parser.tag('STOKE-ON-TRENT') == OrderedDict([('TownName', 'STOKE-ON-TRENT')])
+        assert parser.tag('ABERTAWE') == OrderedDict([('TownName', 'ABERTAWE')])
+        assert parser.tag('CHESTER LE STREET') == OrderedDict([('TownName', 'CHESTER LE STREET')])
 
     def test_addresses(self):
         assert parser.tag('FLAT 1 7 DENZIL AVENUE SOUTHAMPTON') == OrderedDict([('SubBuildingName', 'FLAT 1'),
