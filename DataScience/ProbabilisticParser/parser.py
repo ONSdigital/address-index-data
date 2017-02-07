@@ -41,6 +41,29 @@ except IOError:
     sys.exit(-9)
 
 
+def _parse(raw_string):
+    """
+    Private function to parse strings using a trained model.
+    Should not be called directly, but rather using parse and other functions.
+
+    :param raw_string: input string to parse
+    :type raw_string: str
+
+    :return: a tuple of tokens and labels
+    :rtype: tuple
+    """
+    tokens = tok.tokenize(raw_string)
+
+    if not tokens:
+        return []
+
+    features = tok.tokens2features(tokens)
+
+    tags = TAGGER.tag(features)
+
+    return tokens, tags
+
+
 def parse(raw_string):
     """
     Parse the given input string using a trained model. Returns a list of tokens and labels.
@@ -51,13 +74,7 @@ def parse(raw_string):
     :return: a list of tokens and labels
     :rtype: list
     """
-    tokens = tok.tokenize(raw_string)
-    if not tokens:
-        return []
-
-    features = tok.tokens2features(tokens)
-
-    tags = TAGGER.tag(features)
+    tokens, tags = _parse(raw_string)
 
     return list(zip(tokens, tags))
 
@@ -73,13 +90,7 @@ def parse_with_marginal_probability(raw_string):
     :return: a list of tokens, labels, and marginal probabilities
     :rtype: list
     """
-    tokens = tok.tokenize(raw_string)
-    if not tokens:
-        return []
-
-    features = tok.tokens2features(tokens)
-
-    tags = TAGGER.tag(features)
+    tokens, tags = _parse(raw_string)
 
     marginals = [TAGGER.marginal(tag, i) for i, tag in enumerate(tags)]
 
@@ -97,13 +108,7 @@ def parse_with_probabilities(raw_string):
     :return: a dictionary holding the results
     :rtype: OrderedDict
     """
-    tokens = tok.tokenize(raw_string)
-    if not tokens:
-        return []
-
-    features = tok.tokens2features(tokens)
-
-    tags = TAGGER.tag(features)
+    tokens, tags = _parse(raw_string)
 
     marginals = [TAGGER.marginal(tag, i) for i, tag in enumerate(tags)]
     sequence_probability = TAGGER.probability(tags)
