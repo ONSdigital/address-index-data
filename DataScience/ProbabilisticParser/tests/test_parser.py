@@ -75,6 +75,10 @@ class TestParser(unittest.TestCase):
         assert parser.tag('best hotel') == OrderedDict([('OrganisationName', 'best hotel')])
         assert parser.tag('SUNNYBANK Bed and Breakfast') == OrderedDict([('OrganisationName',
                                                                           'SUNNYBANK Bed and Breakfast')])
+        assert parser.tag('College of St Barnabas') == OrderedDict([('OrganisationName', 'College of St Barnabas')])
+        assert parser.tag('Maiden Law Hospital') == OrderedDict([('OrganisationName', 'Maiden Law Hospital')])
+        assert parser.tag('Ley Community Drug Services') == OrderedDict([('OrganisationName',
+                                                                          'Ley Community Drug Services')])
 
     def test_only_town(self):
         assert parser.parse('Oxford') == [('Oxford', 'TownName')]
