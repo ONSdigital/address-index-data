@@ -128,24 +128,25 @@ def _check_performance(data):
     print('Top Ranking Match is Correct:', len(correct.index))
 
     # find those ids where the highest scored match is not the correct match
-    top_id_is_not_correct = deduped.loc[~mask]['ID']
+    top_id_is_not_correct = deduped.loc[~mask & deduped['id'].notnull()]['ID']
 
-    correct_in_set = []
-    incorrect = []
-    for not_correct_id in top_id_is_not_correct.values:
-        # check if the correct answer is within the set
-        values = data.loc[data['ID'] == not_correct_id]
-        sum_of_matches = np.sum(values['matches'].values)
+    if len(top_id_is_not_correct.values) > 0:
+        correct_in_set = []
+        incorrect = []
+        for not_correct_id in top_id_is_not_correct.values:
+            # check if the correct answer is within the set
+            values = data.loc[data['ID'] == not_correct_id]
+            sum_of_matches = np.sum(values['matches'].values)
 
-        if sum_of_matches >= 1:
-            correct_in_set.append(not_correct_id)
-        else:
-            incorrect.append(not_correct_id)
+            if sum_of_matches >= 1:
+                correct_in_set.append(not_correct_id)
+            else:
+                incorrect.append(not_correct_id)
 
-    print('Correct Match in the Set of Returned Addresses:', len(correct_in_set))
-    print(correct_in_set)
-    print('Correct Match not in the Set:', len(incorrect))
-    print(incorrect)
+        print('Correct Match in the Set of Returned Addresses:', len(correct_in_set))
+        print(correct_in_set)
+        print('Correct Match not in the Set:', len(incorrect))
+        print(incorrect)
 
 
 def main(path):
