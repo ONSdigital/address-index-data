@@ -34,8 +34,8 @@ Author
 Version
 -------
 
-:version: 0.6
-:date: 20-Jan-2017
+:version: 0.7
+:date: 3-Feb-2017
 """
 import os
 import datetime
@@ -48,6 +48,7 @@ import Analytics.prototype.patientRecordAddresses as pr
 import Analytics.prototype.lifeEventsAddresses as le
 import Analytics.prototype.companiesHouseAddresses as ch
 import Analytics.prototype.businessIndexAddresses as bi
+import Analytics.prototype.CQCAddresses as cq
 import pandas as pd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
@@ -110,6 +111,9 @@ def run_all_datasets():
 
     print('Running Companies House test...')
     ch.run_companies_house_linker(**settings)
+
+    print('Running CQC test...')
+    cq.run_CQC_address_linker(**settings)
 
 
 def _load_welsh_data():

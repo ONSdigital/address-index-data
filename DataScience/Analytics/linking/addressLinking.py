@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.8
-:date: 30-Jan-2017
+:version: 0.9
+:date: 1-Feb-2017
 """
 import datetime
 import os
@@ -65,7 +65,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.8'
+__version__ = '0.9'
 
 
 class AddressLinker:
@@ -274,6 +274,12 @@ class AddressLinker:
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
 
+        # normalise street names so that st. is always st and 's is always s - PAF and NLP has differences
+        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
+        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
+
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
@@ -320,6 +326,9 @@ class AddressLinker:
         msk = self.addressBase['BUILDING_NUMBER'].isnull()
         self.addressBase.loc[msk, 'BUILDING_NUMBER'] = self.addressBase.loc[msk, 'PAO_START_NUMBER']
 
+        msk = self.addressBase['BUILDING_NAME'].isnull()
+        self.addressBase.loc[msk, 'BUILDING_NAME'] = self.addressBase.loc[msk, 'PAO_TEXT']
+
         msk = self.addressBase['ORGANISATION_NAME'].isnull()
         self.addressBase.loc[msk, 'ORGANISATION_NAME'] = self.addressBase.loc[msk, 'ORGANISATION']
 
@@ -332,12 +341,15 @@ class AddressLinker:
         msk = self.addressBase['POST_TOWN'].isnull()
         self.addressBase.loc[msk, 'POST_TOWN'] = self.addressBase.loc[msk, 'TOWN_NAME']
 
+        msk = self.addressBase['POSTCODE'].isnull()
+        self.addressBase.loc[msk, 'POSTCODE'] = self.addressBase.loc[msk, 'POSTCODE_LOCATOR']
+
         msk = self.addressBase['LOCALITY'].isnull()
         self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
 
         # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
         # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
-        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (~self.addressBase['SAO_TEXT'].isnull())
+        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (self.addressBase['SAO_TEXT'].notnull())
         self.addressBase.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
             self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
         self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
@@ -348,6 +360,12 @@ class AddressLinker:
 
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
+
+        # normalise street names so that st. is always st and 's is always s
+        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
+        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
+        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
 
         # drop some that are not needed - in the future versions these might be useful
         self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION'],
@@ -435,9 +453,8 @@ class AddressLinker:
         # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
         # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
         # is space around the hyphen
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
-                                                                              x['ADDRESS_norm'].replace(' - ', '-'),
-                                                                              axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = \
+            self.toLinkAddressData.apply(lambda x: x['ADDRESS_norm'].replace('\d+ - \d+', '\d+-\d+'), axis=1)
 
         # synonyms to expand - read from a file with format (from, to)
         synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values
@@ -676,7 +693,7 @@ class AddressLinker:
 
         # deal with addresses that are of type 5/7 4 whatever road...
         msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
-              self.toLinkAddressData['FlatNumber'].isnull() & ~self.toLinkAddressData['BuildingNumber'].isnull()
+              self.toLinkAddressData['FlatNumber'].isnull() & self.toLinkAddressData['BuildingNumber'].notnull()
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
             self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
 
@@ -691,7 +708,7 @@ class AddressLinker:
         self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
 
         # some addresses, e.g. "5B ELIZABETH AVENUE", have FLAT implicitly even if not spelled -> add "FLAT X"
-        msk = (~self.toLinkAddressData['BuildingSuffix'].isnull()) & \
+        msk = (self.toLinkAddressData['BuildingSuffix'].notnull()) & \
               (self.toLinkAddressData['SubBuildingName'].isnull())
         self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + self.toLinkAddressData.loc[msk, 'BuildingSuffix']
 
@@ -747,7 +764,7 @@ class AddressLinker:
             print('Parsed:')
             print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)):
         """
         A method to link addresses against AddressBase.
 
@@ -796,27 +813,33 @@ class AddressLinker:
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
+            pairs = pcl.block(left_on=['OrganisationName', 'TownName', 'BuildingNumber'],
+                              right_on=['ORGANISATION_NAME', 'POST_TOWN', 'BUILDING_NUMBER'])
+        elif blocking == 2:
+            pairs = pcl.block(left_on=['OrganisationName', 'TownName'],
+                              right_on=['ORGANISATION_NAME', 'POST_TOWN'])
+        elif blocking == 3:
             pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
                               right_on=['POSTCODE', 'BUILDING_NAME'])
-        elif blocking == 2:
+        elif blocking == 4:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
                               right_on=['POSTCODE', 'BUILDING_NUMBER'])
-        elif blocking == 3:
+        elif blocking == 5:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['POSTCODE', 'THROUGHFARE'])
-        elif blocking == 4:
+        elif blocking == 6:
             pairs = pcl.block(left_on=['Postcode', 'TownName'],
                               right_on=['POSTCODE', 'POST_TOWN'])
-        elif blocking == 5:
+        elif blocking == 7:
             pairs = pcl.block(left_on=['Postcode'],
                               right_on=['POSTCODE'])
-        elif blocking == 6:
+        elif blocking == 8:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BUILDING_NAME', 'THROUGHFARE'])
-        elif blocking == 7:
+        elif blocking == 9:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
-        elif blocking == 8:
+        elif blocking == 10:
             pairs = pcl.block(left_on=['StreetName', 'TownName'],
                               right_on=['THROUGHFARE', 'POST_TOWN'])
         else:
@@ -839,7 +862,8 @@ class AddressLinker:
                        missing_value=0.8)
         compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
-        compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear', name='pao_number_dl')
+        compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear',
+                        name='pao_number_dl')
         compare.numeric('PAO_END_NUMBER', 'BuildingEndNumber', threshold=0.1, method='linear',
                         name='building_end_number_dl')
         compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
@@ -852,6 +876,12 @@ class AddressLinker:
         # add a comparison of the incode - this helps with e.g. life events addresses
         if self.settings['expandPostcode']:
             compare.string('postcode_in', 'postcode_in', method='jarowinkler', name='incode_dl',
+                           missing_value=0.0)
+            compare.string('postcode_out', 'postcode_out', method='jarowinkler', name='outcode_dl',
+                           missing_value=0.0)
+
+        if blocking in (1, 2, 8, 9, 10):
+            compare.string('POSTCODE', 'Postcode', method='jarowinkler', name='postcode_dl',
                            missing_value=0.0)
 
         # use to separate e.g. 55A from 55
@@ -878,16 +908,23 @@ class AddressLinker:
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
         if blocking in (1, 2):
+            compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
+            compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
-        elif blocking == 3:
-            compare.vectors = compare.vectors.loc[compare.vectors['building_name_dl'] >= 0.5]
-            compare.vectors = compare.vectors.loc[compare.vectors['building_number_dl'] >= 0.5]
-        elif blocking in (4, 5):
+        elif blocking in (3, 4):
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.5]
+        elif blocking in (5, 6, 7):
+            compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
+        elif blocking in (6, 7):
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
 
-        # scale up organisation name
+        # upweight organisation name and building numbers
         compare.vectors['organisation_dl'] *= 3.
+        compare.vectors['pao_dl'] *= 2.
+        compare.vectors['building_number_dl'] *= 2.
+        compare.vectors['pao_number_dl'] *= 2.
+        compare.vectors['building_end_number_dl'] *= 2.
 
         # compute the sum of similarities
         compare.vectors['similarity_sum'] = compare.vectors.sum(axis=1)
