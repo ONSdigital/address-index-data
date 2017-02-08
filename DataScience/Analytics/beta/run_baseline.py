@@ -1,8 +1,18 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Run Baseline
 ================================
 
-A simple script to t
+A simple script to run baselines using the Beta matching service.
+
+
+Running
+-------
+
+After all requirements are satisfied and the _minimal.csv files are available,
+the script can be invoked using CPython interpreter::
+
+    python run_baseline.py
 
 
 Requirements
@@ -21,44 +31,91 @@ Version
 -------
 
 :version: 0.1
-:date: 7-Feb-2017
+:date: 8-Feb-2017
 """
+import glob
+
 import pandas as pd
 import requests
-import json
 
 
 def read_data(filename):
     """
+    Read in the file. Assumes that the CSV contains at least two columns named ID and ADDRESS.
 
-    :param filename:
-    :return:
+    Converts the input data to a dictionary format, which can be passed on the server.
+    The ideal input is the prototype _minimal.csv output file.
+
+    :param filename: name of the CSV to read in and process
+    :type filename: str
+
+    :return: dictionary with addresses and ids
+    :rtype: dict
     """
-    data = pd.read_csv(filename, )
+    data = pd.read_csv(filename, usecols=['ID', 'ADDRESS'], dtype={'ID': str, 'ADDRESS': str})
+    data.rename(columns={'ID': 'id', 'ADDRESS': 'address'}, inplace=True)
+
+    data = data.to_dict(orient='records')
+    data = {'addresses': data}
+
+    return data
 
 
-
-def query_elastic(data, uri='https://addressindex-api.apps.cfnpt.ons.statistics.gov.uk:80/bulk'):
+def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.gov.uk:80/bulk',
+                  verbose=True):
     """
+    Post the given data to the given uri, which should be the API bulk endpoint.
 
-    :param data:
+    :param data: input addresses
+    :type data: dict
     :param uri:
-    :return:
+    :type uri: str
+    :param verbose: whether or not to print out the API response
+    :type verbose: bool
+
+    :return: API response
     """
-    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=json.dumps(data))
+    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data)
+
+    if verbose:
+        print(response)
 
     return response
 
 
-def run_baseline(filename):
+def _run_baseline(filename):
+    """
+    Process a single CSV file, execute bulk point query, and output the response text to a file.
+
+    :param filename: name of the CSV file to process
+    :type filename: str
+
+    :return: None
+    """
+    print('Processing', filename)
+
     data = read_data(filename)
     results = query_elastic(data)
 
-    print(results)
-
-    fh = open(filename.replace('.json', '_response.json'), 'w')
-    fh.write(results)
+    fh = open(filename.replace('_minimal.csv', '_response.json'), 'w')
+    fh.write(results.text)
     fh.close()
 
+
+def run_all_baselines():
+    """
+    Run baselines for all _minimal CSV files present in the working directory.
+
+    The files are processed sequentially not to blast the ElasticSearch server with
+    a large number of simultaneous queries. The execution could be done in parallel
+    trivially using e.g. multiprocessing library.
+
+    :return: None
+    """
+    files = glob.glob('*_minimal.csv')
+    for file in files:
+        _run_baseline(file)
+
+
 if __name__ == '__main__':
-    run_baseline('EdgeCases_minimal.csv')
+    run_all_baselines()
