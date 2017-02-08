@@ -34,6 +34,7 @@ Version
 :date: 8-Feb-2017
 """
 import glob
+import time
 
 import pandas as pd
 import requests
@@ -75,9 +76,15 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
 
     :return: API response
     """
-    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data)
+    if verbose:
+        start = time.clock()
+        print('Starting to execute Elastic query...')
+
+    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data, timeout=1000000.)
 
     if verbose:
+        stop = time.clock()
+        print('Finished in {} seconds...'.format(round((stop - start), 1)))
         print(response)
 
     return response
