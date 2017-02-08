@@ -19,6 +19,7 @@ Requirements
 ------------
 
 :requires: requests
+:requires: pandas
 
 
 Author
