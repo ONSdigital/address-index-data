@@ -19,6 +19,8 @@ Requirements
 ------------
 
 :requires: pandas
+:requires: numpy
+:requires: matplotlib
 
 
 Author
@@ -36,9 +38,11 @@ Version
 import json
 import glob
 import sys
+import datetime
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def _read_input_data(filename):
@@ -130,19 +134,32 @@ def _check_performance(data):
 
     :return: None
     """
+    results = []
+
+    # all addresses
+    number_of_entries = len(data.drop_duplicates(subset='ID', keep='first').index)
+    results.append(number_of_entries)
+
+    # find those that were not matched
+    tmp = data.drop_duplicates(subset='ID', keep='first').copy()
+    not_matched = len(tmp.loc[tmp['id'].isnull()].index)
+    results.append(not_matched)
+
     # find the top matches for each id and check which match the input UPRN
     deduped = data.drop_duplicates(subset='id', keep='first')
     mask = deduped['matches'] == True
     correct = deduped.loc[mask]
+    number_of_correct = len(correct.index)
 
-    print('Top Ranking Match is Correct:', len(correct.index))
+    print('Top Ranking Match is Correct:', number_of_correct)
+    results.append(number_of_correct)
 
     # find those ids where the highest scored match is not the correct match
     top_id_is_not_correct = deduped.loc[~mask & deduped['id'].notnull()]['ID']
 
+    correct_in_set = []
+    incorrect = []
     if len(top_id_is_not_correct.values) > 0:
-        correct_in_set = []
-        incorrect = []
         for not_correct_id in top_id_is_not_correct.values:
             # check if the correct answer is within the set
             values = data.loc[data['ID'] == not_correct_id]
@@ -158,6 +175,53 @@ def _check_performance(data):
         print('Correct Match not in the Set:', len(incorrect))
         print(incorrect)
 
+    results.append(len(correct_in_set))
+    results.append(len(incorrect))
+
+    return results
+
+
+def _generate_performance_figure(all_results, filename, width=0.35):
+    """
+    Generate a simple bar chart to show the results
+
+    :param all_results:
+    :param filename:
+    :param width:
+
+    :return: None
+    """
+    all_results_names = ['Input Addresses', 'Not Matched', 'Top Ranking Match', 'Within the Set', 'Incorrect']
+    location = np.arange(len(all_results))
+
+    fig = plt.figure(figsize=(12, 10))
+    plt.title('Beta Linking Service ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H%M%S")))
+    ax = fig.add_subplot(1, 1, 1)
+
+    max_bar_length = max(all_results)
+    plt.barh(location, all_results, width, color='g', alpha=0.6)
+
+    for patch in ax.patches:
+        if patch.get_x() < 0:
+            continue
+
+        n_addresses = int(patch.get_width())
+        ratio = n_addresses / max_bar_length
+
+        if ratio > 0.3:
+            ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
+                        xytext=(-95, 18), textcoords='offset points', color='white', fontsize=24)
+        else:
+            ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
+                        xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
+
+    plt.xlabel('Number of Addresses')
+    plt.yticks(location, all_results_names)
+    plt.xlim(0, ax.get_xlim()[1] * 1.02)
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
 
 def main(path):
     """
@@ -171,13 +235,16 @@ def main(path):
 
         address_file = response_file.replace('_response.json', '_minimal.csv')
         output_file = response_file.replace('_response.json', '_beta.csv')
+        output_figure_file = response_file.replace('_response.json', '_performance.png')
 
         input_data = _read_input_data(address_file)
         beta_data = _read_response_data(response_file)
 
         results = _join_data(input_data, beta_data, output_file)
 
-        _check_performance(results)
+        results = _check_performance(results)
+
+        _generate_performance_figure(results, output_figure_file)
 
 
 if __name__ == '__main__':
