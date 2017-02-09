@@ -30,11 +30,12 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 8-Feb-2017
+:version: 0.2
+:date: 9-Feb-2017
 """
 import json
 import glob
+import sys
 
 import numpy as np
 import pandas as pd
@@ -51,7 +52,16 @@ def _read_input_data(filename):
     :rtype: dict
     """
     data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': str, 'ADDRESS': str, 'UPRN_new': str})
-    data.rename(columns={'UPRN_prev': 'UPRN_original', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
+    
+    if ('UPRN_prev' in data) and ('UPRN_new' in data):
+        data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
+    elif 'UPRN_prev' in data:
+        data.rename(columns={'UPRN_prev': 'UPRN_comparison'}, inplace=True)
+    elif 'UPRN_new' in data:
+        data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
+    else:
+        print('No comparison UPRNs available, will exit')
+        sys.exit(-9)
 
     print('Input contains', len(data.index), 'addresses')
 
@@ -99,7 +109,7 @@ def _join_data(original, results, output_file):
     # merge and sort by id and score, add boolean column to identify matches
     data = pd.merge(original, results, how='left', left_on='ID', right_on='id')
     data.sort_values(by=['id', 'score'], ascending=[True, False], inplace=True)
-    data['matches'] = data['UPRN_original'] == data['UPRN_beta']
+    data['matches'] = data['UPRN_comparison'] == data['UPRN_beta']
 
     data.to_csv(output_file)
 
