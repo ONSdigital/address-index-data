@@ -35,14 +35,14 @@ Version
 :version: 0.2
 :date: 9-Feb-2017
 """
-import json
-import glob
-import sys
 import datetime
+import glob
+import json
+import sys
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
 def _read_input_data(filename):
@@ -56,7 +56,7 @@ def _read_input_data(filename):
     :rtype: dict
     """
     data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': str, 'ADDRESS': str, 'UPRN_new': str})
-    
+
     if ('UPRN_prev' in data) and ('UPRN_new' in data):
         data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
     elif 'UPRN_prev' in data:
@@ -183,11 +183,14 @@ def _check_performance(data):
 
 def _generate_performance_figure(all_results, filename, width=0.35):
     """
-    Generate a simple bar chart to show the results
+    Generate a simple bar chart to show the results.
 
-    :param all_results:
-    :param filename:
-    :param width:
+    :param all_results: a list containing all the results as computed by the _check_performance method
+    :type all_results: list
+    :param filename: name of the output file
+    :type filename: str
+    :param width: fractional width of the bars
+    :type width: float
 
     :return: None
     """
@@ -225,6 +228,8 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
 def main(path):
     """
+    Execute all steps needed to read in original data, beta response, join the tables and finally
+    to compute simple performance numbers and to generate a simple bar chart.
 
     :return:
     """
@@ -245,6 +250,7 @@ def main(path):
         results = _check_performance(results)
 
         _generate_performance_figure(results, output_figure_file)
+        # todo: add computation of presision, recall, and f1 score
 
 
 if __name__ == '__main__':
