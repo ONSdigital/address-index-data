@@ -67,6 +67,8 @@ def _read_input_data(filename):
         print('No comparison UPRNs available, will exit')
         sys.exit(-9)
 
+    data.rename(columns={'ID': 'ID_original'}, inplace=True)
+
     print('Input contains', len(data.index), 'addresses')
 
     return data
@@ -90,7 +92,10 @@ def _read_response_data(filename):
     data['id'] = data['id'].astype(str)
     data['uprn'] = data['uprn'].astype(str)
 
-    data.rename(columns={'uprn': 'UPRN_beta'}, inplace=True)
+    # set empty strings to NaN
+    data.replace(r'', np.nan, regex=True, inplace=True)
+
+    data.rename(columns={'uprn': 'UPRN_beta', 'id': 'id_response'}, inplace=True)
 
     return data
 
@@ -111,16 +116,18 @@ def _join_data(original, results, output_file):
     :rtype: pandas.DataFrame
     """
     # merge and sort by id and score, add boolean column to identify matches
-    data = pd.merge(original, results, how='left', left_on='ID', right_on='id')
-    data.sort_values(by=['id', 'score'], ascending=[True, False], inplace=True)
+    data = pd.merge(original, results, how='left', left_on='ID_original', right_on='id_response')
+    data.sort_values(by=['id_response', 'score'], ascending=[True, False], inplace=True)
     data['matches'] = data['UPRN_comparison'] == data['UPRN_beta']
 
-    data.to_csv(output_file)
+    data.reset_index(inplace=True)
+
+    data.to_csv(output_file, index=False)
 
     return data
 
 
-def _check_performance(data):
+def _check_performance(data, verbose=True):
     """
     Computes the performance on the joined data frame.
 
@@ -131,38 +138,42 @@ def _check_performance(data):
 
     :param data: joined data with beta matches and expected UPRNs
     :type data: pandas.DataFrame
+    :param verbose: whether or not to output the partial and non-matche IDs
+    :type verbose: bool
 
     :return: None
     """
     results = []
 
-    # all addresses
-    number_of_entries = len(data.drop_duplicates(subset='ID', keep='first').index)
+    # all addresses with unique original id -- assumes uniqueness
+    number_of_entries = data['ID_original'].nunique()
     results.append(number_of_entries)
+    print('Input addresses (unique IDs):', number_of_entries)
 
     # find those that were not matched
-    tmp = data.drop_duplicates(subset='ID', keep='first').copy()
-    not_matched = len(tmp.loc[tmp['id'].isnull()].index)
+    msk = data['UPRN_beta'].isnull()
+    not_matched = data.loc[msk, 'ID_original'].nunique()
     results.append(not_matched)
+    print('Not matched:', not_matched)
 
     # find the top matches for each id and check which match the input UPRN
-    deduped = data.drop_duplicates(subset='id', keep='first')
-    mask = deduped['matches'] == True
-    correct = deduped.loc[mask]
+    deduped = data.copy().drop_duplicates(subset='id_response', keep='first')
+    msk = deduped['matches'] == True
+    correct = deduped.loc[msk]
     number_of_correct = len(correct.index)
 
     print('Top Ranking Match is Correct:', number_of_correct)
     results.append(number_of_correct)
 
-    # find those ids where the highest scored match is not the correct match
-    top_id_is_not_correct = deduped.loc[~mask & deduped['id'].notnull()]['ID']
+    # find those ids where the highest scored match is not the correct match and UPRNs were found
+    top_id_is_not_correct = deduped.loc[~msk & deduped['UPRN_beta'].notnull()]['ID_original']
 
     correct_in_set = []
     incorrect = []
     if len(top_id_is_not_correct.values) > 0:
         for not_correct_id in top_id_is_not_correct.values:
             # check if the correct answer is within the set
-            values = data.loc[data['ID'] == not_correct_id]
+            values = data.loc[data['ID_original'] == not_correct_id]
             sum_of_matches = np.sum(values['matches'].values)
 
             if sum_of_matches >= 1:
@@ -171,12 +182,14 @@ def _check_performance(data):
                 incorrect.append(not_correct_id)
 
         print('Correct Match in the Set of Returned Addresses:', len(correct_in_set))
-        print(correct_in_set)
         print('Correct Match not in the Set:', len(incorrect))
-        print(incorrect)
 
     results.append(len(correct_in_set))
     results.append(len(incorrect))
+
+    if verbose:
+        print(correct_in_set)
+        print(incorrect)
 
     return results
 
