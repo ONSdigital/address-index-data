@@ -92,9 +92,9 @@ def train_new_model(X_train, y_train, X_test, y_test, LBFGS=True):
     if LBFGS:
         # note that the values for the regularisation terms have been optimised using a smaller dataset
         crf = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                                   c1=0.25,
-                                   c2=0.005,
-                                   min_freq=0.0001,
+                                   c1=0.3,
+                                   c2=0.001,
+                                   min_freq=0.001,
                                    all_possible_transitions=True,
                                    keep_tempfiles=True,
                                    model_filename=tkns.MODEL_FILE,
