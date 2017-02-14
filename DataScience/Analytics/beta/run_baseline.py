@@ -126,7 +126,24 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
 
     if mini_batch:
         data_chunks = _create_chunks(data, batch_size=batch_size)
-        results = [query_elastic(data_chunk).json()['resp'] for data_chunk in data_chunks]
+        results = []
+
+        for i, data_chunk in enumerate(data_chunks):
+            response = query_elastic(data_chunk)
+
+            try:
+                fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), 'w')
+                fh.write(response.text)
+                fh.close()
+            except ValueError:
+                pass
+
+            try:
+                results.append(response.json()['resp'])
+            except ConnectionError:
+                print('Chunk', i, 'failed')
+                print(response)
+
         data_frames = [pd.DataFrame.from_dict(result) for result in results]
         data_frame = pd.concat(data_frames)
     else:
