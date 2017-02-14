@@ -47,14 +47,13 @@ def read_data(filename):
     """
     Read in the file. Assumes that the CSV contains at least two columns named ID and ADDRESS.
 
-    Converts the input data to a dictionary format, which can be passed on the server.
     The ideal input is the prototype _minimal.csv output file.
 
     :param filename: name of the CSV to read in and process
     :type filename: str
 
-    :return: dictionary with addresses and ids
-    :rtype: dict
+    :return: a data frame with with addresses and ids
+    :rtype: pandas.DataFrame
     """
     data = pd.read_csv(filename, usecols=['ID', 'ADDRESS'], dtype={'ID': str, 'ADDRESS': str})
     data.rename(columns={'ID': 'id', 'ADDRESS': 'address'}, inplace=True)
@@ -67,8 +66,10 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
     """
     Post the given data to the given uri, which should be the API bulk endpoint.
 
-    :param data: input addresses
-    :type data: dict
+    Converts the input data frame to dictionary format and posts to the uri.
+
+    :param data: data frame containing input addresses
+    :type data: pandas.DataFrame
     :param uri:
     :type uri: str
     :param verbose: whether or not to print out the API response
@@ -97,12 +98,13 @@ def _create_chunks(data, batch_size=1000):
     """
     Creates arrays of roughly equal size from input data frames.
 
-    :param data: pandas dataframe that need to be split to roughly equal size chunks
+    :param data: pandas data frame that need to be split to roughly equal size chunks
     :type data: pandas.DataFrame
     :param batch_size: approximate size of the requested chunk
     :type batch_size: int
 
-    :return:
+    :return: array of roughly equal size data frames
+    :rtype: np.ndarray
     """
     splits = int(len(data.index) / batch_size)
     chunks = np.array_split(data, splits)
