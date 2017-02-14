@@ -138,7 +138,8 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
                 fh.write(response.text)
                 fh.close()
             except ValueError:
-                pass
+                print('Chunk', i, 'has not return text')
+                print(response)
 
             try:
                 results.append(response.json()['resp'])
