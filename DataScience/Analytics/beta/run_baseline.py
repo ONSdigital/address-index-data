@@ -20,6 +20,7 @@ Requirements
 
 :requires: requests
 :requires: pandas
+:requires: numpy
 
 
 Author
@@ -31,13 +32,14 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 8-Feb-2017
+:version: 0.2
+:date: 14-Feb-2017
 """
 import glob
 import time
 
 import pandas as pd
+import numpy as np
 import requests
 
 
@@ -57,9 +59,6 @@ def read_data(filename):
     data = pd.read_csv(filename, usecols=['ID', 'ADDRESS'], dtype={'ID': str, 'ADDRESS': str})
     data.rename(columns={'ID': 'id', 'ADDRESS': 'address'}, inplace=True)
 
-    data = data.to_dict(orient='records')
-    data = {'addresses': data}
-
     return data
 
 
@@ -77,6 +76,9 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
 
     :return: API response
     """
+    data = data.to_dict(orient='records')
+    data = {'addresses': data}
+
     if verbose:
         start = time.clock()
         print('Starting to execute Elastic query...')
@@ -91,23 +93,47 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
     return response
 
 
-def _run_baseline(filename):
+def _create_chunks(data, batch_size=1000):
+    """
+    Creates arrays of roughly equal size from input data frames.
+
+    :param data: pandas dataframe that need to be split to roughly equal size chunks
+    :type data: pandas.DataFrame
+    :param batch_size: approximate size of the requested chunk
+    :type batch_size: int
+
+    :return:
+    """
+    splits = int(len(data.index) / batch_size)
+    chunks = np.array_split(data, splits)
+
+    return chunks
+
+
+def _run_baseline(filename, mini_batch=True, batch_size=1000):
     """
     Process a single CSV file, execute bulk point query, and output the response text to a file.
 
     :param filename: name of the CSV file to process
     :type filename: str
+    :param mini_batch: whether to chunk the queries to batches
 
     :return: None
     """
     print('Processing', filename)
 
     data = read_data(filename)
-    results = query_elastic(data)
 
-    fh = open(filename.replace('_minimal.csv', '_response.json'), 'w')
-    fh.write(results.text)
-    fh.close()
+    if mini_batch:
+        data_chunks = _create_chunks(data, batch_size=batch_size)
+        results = [query_elastic(data_chunk).json()['resp'] for data_chunk in data_chunks]
+        data_frames = [pd.DataFrame.from_dict(result) for result in results]
+        data_frame = pd.concat(data_frames)
+    else:
+        results = query_elastic(data).json()['resp']
+        data_frame = pd.DataFrame.from_dict(results)
+
+    data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False)
 
 
 def run_all_baselines():

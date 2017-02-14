@@ -32,8 +32,8 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 9-Feb-2017
+:version: 0.3
+:date: 14-Feb-2017
 """
 import datetime
 import glob
@@ -86,14 +86,10 @@ def _read_response_data(filename):
     :return: response data in a tabular format with potentially multiple matches
     :rtype: pandas.DataFrame
     """
-    json_data = open(filename, 'r').read()
-    data = pd.read_json(json.dumps(json.loads(json_data)['resp']), orient='records')
+    data = pd.read_csv(filename)
 
     data['id'] = data['id'].astype(str)
     data['uprn'] = data['uprn'].astype(str)
-
-    # set empty strings to NaN
-    data.replace(r'', np.nan, regex=True, inplace=True)
 
     data.rename(columns={'uprn': 'UPRN_beta', 'id': 'id_response'}, inplace=True)
 
@@ -246,14 +242,14 @@ def main(path):
 
     :return:
     """
-    response_files = glob.glob(path + '*_response.json')
+    response_files = glob.glob(path + '*_response.csv')
 
     for response_file in response_files:
         print('Processing', response_file)
 
-        address_file = response_file.replace('_response.json', '_minimal.csv')
-        output_file = response_file.replace('_response.json', '_beta.csv')
-        output_figure_file = response_file.replace('_response.json', '_performance.png')
+        address_file = response_file.replace('_response.csv', '_minimal.csv')
+        output_file = response_file.replace('_response.csv', '_beta.csv')
+        output_figure_file = response_file.replace('_response.csv', '_performance.png')
 
         input_data = _read_input_data(address_file)
         beta_data = _read_response_data(response_file)
