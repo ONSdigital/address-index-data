@@ -37,7 +37,6 @@ Version
 """
 import datetime
 import glob
-import json
 import sys
 
 import matplotlib.pyplot as plt
@@ -210,7 +209,7 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
     :return: None
     """
-    all_results_names = ['Input Addresses', 'Existing UPRNs',  'Top Ranking Match', 'In the Set', 'Different UPRNs',
+    all_results_names = ['Input Addresses', 'Existing UPRNs', 'Top Ranking Match', 'In the Set', 'Different UPRNs',
                          'Not Matched']
     location = np.arange(len(all_results))
 
