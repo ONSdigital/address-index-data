@@ -135,7 +135,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
 
             try:
                 fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), 'w')
-                fh.write(response.text)
+                fh.write(response.text.encode('utf-8'))
                 fh.close()
             except ValueError:
                 print('Chunk', i, 'has not return text')
@@ -153,7 +153,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
         results = query_elastic(data).json()['resp']
         data_frame = pd.DataFrame.from_dict(results)
 
-    data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False)
+    data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False, encoding='utf-8')
 
 
 def run_all_baselines():
