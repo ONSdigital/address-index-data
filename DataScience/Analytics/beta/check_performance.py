@@ -32,8 +32,8 @@ Author
 Version
 -------
 
-:version: 0.3
-:date: 14-Feb-2017
+:version: 0.4
+:date: 15-Feb-2017
 """
 import datetime
 import glob
@@ -55,7 +55,7 @@ def _read_input_data(filename):
     :return: dictionary with addresses and ids
     :rtype: dict
     """
-    data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': str, 'ADDRESS': str, 'UPRN_new': str})
+    data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': str})
 
     if ('UPRN_prev' in data) and ('UPRN_new' in data):
         data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
@@ -86,10 +86,10 @@ def _read_response_data(filename):
     :return: response data in a tabular format with potentially multiple matches
     :rtype: pandas.DataFrame
     """
-    data = pd.read_csv(filename)
+    data = pd.read_csv(filename, low_memory=False)
 
     data['id'] = data['id'].astype(str)
-    data['uprn'] = data['uprn'].astype(str)
+    data['uprn'] = data['uprn'].astype(np.float64)
 
     data.rename(columns={'uprn': 'UPRN_beta', 'id': 'id_response'}, inplace=True)
 
@@ -146,10 +146,16 @@ def _check_performance(data, verbose=True):
     results.append(number_of_entries)
     print('Input addresses (unique IDs):', number_of_entries)
 
+    # existing UPRN
+    deduped = data.copy().drop_duplicates(subset='ID_original', keep='first')
+    msk = deduped['UPRN_comparison'].notnull()
+    existing_uprns = len(deduped.loc[msk].index)
+    print(existing_uprns, 'of the input addresses have UPRNs attached')
+    results.append(existing_uprns)
+
     # find those that were not matched
     msk = data['UPRN_beta'].isnull()
     not_matched = data.loc[msk, 'ID_original'].nunique()
-    results.append(not_matched)
     print('Not matched:', not_matched)
 
     # find the top matches for each id and check which match the input UPRN
@@ -182,6 +188,7 @@ def _check_performance(data, verbose=True):
 
     results.append(len(correct_in_set))
     results.append(len(incorrect))
+    results.append(not_matched)
 
     if verbose:
         print(correct_in_set)
@@ -203,11 +210,12 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
     :return: None
     """
-    all_results_names = ['Input Addresses', 'Not Matched', 'Top Ranking Match', 'Within the Set', 'Incorrect']
+    all_results_names = ['Input Addresses', 'Existing UPRNs',  'Top Ranking Match', 'In the Set', 'Different UPRNs',
+                         'Not Matched']
     location = np.arange(len(all_results))
 
     fig = plt.figure(figsize=(12, 10))
-    plt.title('Beta Linking Service ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H%M%S")))
+    plt.title('Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H%M%S")))
     ax = fig.add_subplot(1, 1, 1)
 
     max_bar_length = max(all_results)
@@ -222,10 +230,10 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
         if ratio > 0.3:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                        xytext=(-95, 18), textcoords='offset points', color='white', fontsize=24)
+                        xytext=(-95, 11), textcoords='offset points', color='white', fontsize=24)
         else:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                        xytext=(10, 18), textcoords='offset points', color='black', fontsize=24)
+                        xytext=(10, 11), textcoords='offset points', color='black', fontsize=24)
 
     plt.xlabel('Number of Addresses')
     plt.yticks(location, all_results_names)
