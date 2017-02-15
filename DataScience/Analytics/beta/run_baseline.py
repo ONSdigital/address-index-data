@@ -134,7 +134,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
             response = query_elastic(data_chunk)
 
             try:
-                fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), 'w')
+                fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), mode='wb')
                 fh.write(response.text.encode('utf-8'))
                 fh.close()
             except ValueError:
