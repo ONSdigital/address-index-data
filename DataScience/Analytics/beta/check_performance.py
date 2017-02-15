@@ -215,7 +215,7 @@ def _generate_performance_figure(all_results, filename, width=0.35):
     location = np.arange(len(all_results))
 
     fig = plt.figure(figsize=(12, 10))
-    plt.title('Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H%M%S")))
+    plt.title('Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     ax = fig.add_subplot(1, 1, 1)
 
     max_bar_length = max(all_results)
