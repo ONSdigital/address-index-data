@@ -54,7 +54,7 @@ def _read_input_data(filename):
     :return: dictionary with addresses and ids
     :rtype: dict
     """
-    data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': str})
+    data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': np.float64})
 
     if ('UPRN_prev' in data) and ('UPRN_new' in data):
         data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
