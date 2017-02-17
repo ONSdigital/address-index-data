@@ -471,7 +471,7 @@ class AddressLinker:
         # use this for the counties so that e.g. ESSEX ROAD does not become just ROAD...
         # todo: the regex is getting ridiculous, maybe do other way around i.e. country must be followed by postcode or
         #       be the last component.
-        addRegex = '(?:\s)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH|&)'
+        addRegex = r'(?:\s|$)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH|&)'
 
         # remove county from address but add a column for it
         self.toLinkAddressData['County'] = None
