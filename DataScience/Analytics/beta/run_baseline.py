@@ -84,7 +84,7 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
         start = time.clock()
         print('Starting to execute Elastic query...')
 
-    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data, timeout=1000000.)
+    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data, timeout=10000000.)
 
     if verbose:
         stop = time.clock()
