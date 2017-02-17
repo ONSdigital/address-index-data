@@ -112,7 +112,7 @@ def _join_data(original, results, output_file):
     """
     # merge and sort by id and score, add boolean column to identify matches
     data = pd.merge(original, results, how='left', left_on='ID_original', right_on='id_response')
-    data.sort_values(by=['id_response', 'score'], ascending=[True, False], inplace=True)
+    data.sort_values(by=['ID_original', 'score'], ascending=[True, False], inplace=True)
     data['matches'] = data['UPRN_comparison'] == data['UPRN_beta']
 
     data.reset_index(inplace=True)
@@ -140,34 +140,40 @@ def _check_performance(data, verbose=True):
     """
     results = []
 
-    # all addresses with unique original id -- assumes uniqueness
-    number_of_entries = data['ID_original'].nunique()
+    deduped_original = data.copy().drop_duplicates(subset='ID_original', keep='first')
+
+    number_of_entries = len(deduped_original['UPRN_comparison'].index)
     results.append(number_of_entries)
     print('Input addresses (unique IDs):', number_of_entries)
 
     # existing UPRN
-    deduped = data.copy().drop_duplicates(subset='ID_original', keep='first')
-    msk = deduped['UPRN_comparison'].notnull()
-    existing_uprns = len(deduped.loc[msk].index)
+    msk = deduped_original['UPRN_comparison'].notnull()
+    existing_uprns = len(deduped_original.loc[msk].index)
     print(existing_uprns, 'of the input addresses have UPRNs attached')
     results.append(existing_uprns)
 
     # find those that were not matched
-    msk = data['UPRN_beta'].isnull()
-    not_matched = data.loc[msk, 'ID_original'].nunique()
+    msk = deduped_original['UPRN_beta'].isnull()
+    not_matched = len(deduped_original.loc[msk].index)
     print('Not matched:', not_matched)
 
     # find the top matches for each id and check which match the input UPRN
-    deduped = data.copy().drop_duplicates(subset='id_response', keep='first')
-    msk = deduped['matches'] == True
-    correct = deduped.loc[msk]
-    number_of_correct = len(correct.index)
+    msk = deduped_original['UPRN_beta'].notnull()
+    number_of_correct = deduped_original.loc[msk, 'matches'].sum()
 
     print('Top Ranking Match is Correct:', number_of_correct)
     results.append(number_of_correct)
 
+    # find those without existing UPRN but with new
+    msk = deduped_original['UPRN_comparison'].isnull() & deduped_original['UPRN_beta'].notnull()
+    new_uprns = len(deduped_original.loc[msk].index)
+    print('New UPRNs:', new_uprns)
+
     # find those ids where the highest scored match is not the correct match and UPRNs were found
-    top_id_is_not_correct = deduped.loc[~msk & deduped['UPRN_beta'].notnull()]['ID_original']
+    deduped_original = deduped_original.loc[deduped_original['UPRN_beta'].notnull()]
+    msk =  deduped_original['matches'] == False
+    top_id_is_not_correct = deduped_original.loc[msk, 'ID_original']
+    print('Top ranking is incorrect:', len(top_id_is_not_correct.index))
 
     correct_in_set = []
     incorrect = []
@@ -186,12 +192,13 @@ def _check_performance(data, verbose=True):
         print('Correct Match not in the Set:', len(incorrect))
 
     results.append(len(correct_in_set))
+    results.append(new_uprns)
     results.append(len(incorrect))
     results.append(not_matched)
 
-    if verbose:
-        print(correct_in_set)
-        print(incorrect)
+    # if verbose:
+    #     print(correct_in_set)
+    #     print(incorrect)
 
     return results
 
@@ -209,8 +216,8 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
     :return: None
     """
-    all_results_names = ['Input Addresses', 'Existing UPRNs', 'Top Ranking Match', 'In the Set', 'Different UPRNs',
-                         'Not Matched']
+    all_results_names = ['Input Addresses', 'Existing UPRNs', 'Top Ranking Match', 'In the Set', 'New UPRNs',
+                         'Different UPRNs', 'Not Matched']
     location = np.arange(len(all_results))
 
     fig = plt.figure(figsize=(12, 10))
@@ -229,10 +236,10 @@ def _generate_performance_figure(all_results, filename, width=0.35):
 
         if ratio > 0.3:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                        xytext=(-95, 11), textcoords='offset points', color='white', fontsize=24)
+                        xytext=(-95, 8), textcoords='offset points', color='white', fontsize=24)
         else:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
-                        xytext=(10, 11), textcoords='offset points', color='black', fontsize=24)
+                        xytext=(10, 8), textcoords='offset points', color='black', fontsize=24)
 
     plt.xlabel('Number of Addresses')
     plt.yticks(location, all_results_names)
@@ -270,4 +277,4 @@ def main(path):
 
 
 if __name__ == '__main__':
-    main(path='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/')
+    main(path='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/E*')
