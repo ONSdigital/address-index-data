@@ -64,10 +64,6 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         # fill NaNs with empty strings so that we can form a single address string
         self.toLinkAddressData[columns] = self.toLinkAddressData[columns].fillna('')
 
-        # check if Service Name is the same as Line 1, if so, set Line 1 to empty
-        msk = self.toLinkAddressData['Service_Name'] == self.toLinkAddressData['Line1']
-        self.toLinkAddressData.loc[msk, 'Line1'] = ''
-
         self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Service_Name'] + ' ' + \
                                             self.toLinkAddressData['Line1'] + ' ' + \
                                             self.toLinkAddressData['Line2'] + ' ' + \
