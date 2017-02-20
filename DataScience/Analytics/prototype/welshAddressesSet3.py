@@ -38,11 +38,11 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 21-Dec-2016
+:version: 0.2
+:date: 20-Feb-2017
 """
-from Analytics.linking import addressLinking
 import pandas as pd
+from Analytics.linking import addressLinking
 
 
 class WelshAddressLinker(addressLinking.AddressLinker):
@@ -63,6 +63,10 @@ class WelshAddressLinker(addressLinking.AddressLinker):
 
         # fill NaNs with empty strings so that we can form a single address string
         self.toLinkAddressData[columns] = self.toLinkAddressData[columns].fillna('')
+
+        # check if Service Name is the same as Line 1, if so, set Line 1 to empty
+        msk = self.toLinkAddressData['Service_Name'] == self.toLinkAddressData['Line1']
+        self.toLinkAddressData.loc[msk, 'Line1'] = ''
 
         self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Service_Name'] + ' ' + \
                                             self.toLinkAddressData['Line1'] + ' ' + \
