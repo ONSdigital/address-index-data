@@ -140,38 +140,40 @@ def _check_performance(data, verbose=True):
     """
     results = []
 
+    # drop duplicates to check how many were matched and for how many of the highest ranking match is correct
     deduped_original = data.copy().drop_duplicates(subset='ID_original', keep='first')
 
     number_of_entries = len(deduped_original['UPRN_comparison'].index)
     results.append(number_of_entries)
     print('Input addresses (unique IDs):', number_of_entries)
 
-    # existing UPRN
+    # how many entries have existing UPRN in data
     msk = deduped_original['UPRN_comparison'].notnull()
     existing_uprns = len(deduped_original.loc[msk].index)
     print(existing_uprns, 'of the input addresses have UPRNs attached')
     results.append(existing_uprns)
 
-    # find those that were not matched
+    # find those that were not matched and remove from the data
     msk = deduped_original['UPRN_beta'].isnull()
     not_matched = len(deduped_original.loc[msk].index)
     print('Not matched:', not_matched)
 
-    # find the top matches for each id and check which match the input UPRN
+    # find the top matches for each id and check which match the input UPRN by computing the sum of the boolean
     msk = deduped_original['UPRN_beta'].notnull()
-    number_of_correct = deduped_original.loc[msk, 'matches'].sum()
+    deduped_original = deduped_original.loc[msk]
+    number_of_correct = deduped_original['matches'].sum()
 
     print('Top Ranking Match is Correct:', number_of_correct)
     results.append(number_of_correct)
 
-    # find those without existing UPRN but with new
-    msk = deduped_original['UPRN_comparison'].isnull() & deduped_original['UPRN_beta'].notnull()
+    # find those without existing UPRN but with new beta one found
+    msk = deduped_original['UPRN_comparison'].isnull()
     new_uprns = len(deduped_original.loc[msk].index)
     print('New UPRNs:', new_uprns)
 
-    # find those ids where the highest scored match is not the correct match and UPRNs were found
-    deduped_original = deduped_original.loc[deduped_original['UPRN_beta'].notnull()]
-    msk =  deduped_original['matches'] == False
+    # find those ids where the highest scored match is not the correct match
+    deduped_original = deduped_original.loc[~msk]
+    msk = deduped_original['matches'] == False
     top_id_is_not_correct = deduped_original.loc[msk, 'ID_original']
     print('Top ranking is incorrect:', len(top_id_is_not_correct.index))
 
@@ -196,9 +198,9 @@ def _check_performance(data, verbose=True):
     results.append(len(incorrect))
     results.append(not_matched)
 
-    # if verbose:
-    #     print(correct_in_set)
-    #     print(incorrect)
+    if verbose:
+        print(correct_in_set)
+        print(incorrect)
 
     return results
 
@@ -277,4 +279,4 @@ def main(path):
 
 
 if __name__ == '__main__':
-    main(path='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/E*')
+    main(path='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/')
