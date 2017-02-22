@@ -149,14 +149,14 @@ def _check_performance(data, verbose=True):
 
     # how many entries have existing UPRN in data
     msk = deduped_original['UPRN_comparison'].notnull()
-    existing_uprns = len(deduped_original.loc[msk].index)
-    print(existing_uprns, 'of the input addresses have UPRNs attached')
-    results.append(existing_uprns)
+    existing_uprns_count = len(deduped_original.loc[msk].index)
+    print(existing_uprns_count, 'of the input addresses have UPRNs attached')
+    results.append(existing_uprns_count)
 
     # find those that were not matched and remove from the data
     msk = deduped_original['UPRN_beta'].isnull()
-    not_matched = len(deduped_original.loc[msk].index)
-    print('Not matched:', not_matched)
+    not_matched_count = len(deduped_original.loc[msk].index)
+    print('Not matched:', not_matched_count)
 
     # find the top matches for each id and check which match the input UPRN by computing the sum of the boolean
     msk = deduped_original['UPRN_beta'].notnull()
@@ -168,8 +168,8 @@ def _check_performance(data, verbose=True):
 
     # find those without existing UPRN but with new beta one found
     msk = deduped_original['UPRN_comparison'].isnull()
-    new_uprns = len(deduped_original.loc[msk].index)
-    print('New UPRNs:', new_uprns)
+    new_uprns_count = len(deduped_original.loc[msk].index)
+    print('New UPRNs:', new_uprns_count)
 
     # find those ids where the highest scored match is not the correct match
     deduped_original = deduped_original.loc[~msk]
@@ -194,9 +194,9 @@ def _check_performance(data, verbose=True):
         print('Correct Match not in the Set:', len(incorrect))
 
     results.append(len(correct_in_set))
-    results.append(new_uprns)
+    results.append(new_uprns_count)
     results.append(len(incorrect))
-    results.append(not_matched)
+    results.append(not_matched_count)
 
     if verbose:
         print(correct_in_set)
