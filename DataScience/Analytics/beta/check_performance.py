@@ -51,8 +51,8 @@ def _read_input_data(filename):
     :param filename: name of the CSV to read in and process
     :type filename: str
 
-    :return: dictionary with addresses and ids
-    :rtype: dict
+    :return: dataframe containing the input data used for the Beta request
+    :rtype: pandas.DataFrame
     """
     data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': np.float64})
 
