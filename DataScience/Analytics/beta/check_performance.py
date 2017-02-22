@@ -37,7 +37,6 @@ Version
 """
 import datetime
 import glob
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -60,7 +59,7 @@ def _read_input_data(filename, use_prototype=False):
 
     if use_prototype:
         if 'UPRN_prev' in data:
-            data.rename(columns={'UPRN_prev': 'UPRN_comparison'}, inplace=True)
+            data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
         else:
             print('Prototype UPRNs not found, will skip...')
             return None
@@ -270,11 +269,11 @@ def main(path):
     for response_file in response_files:
         print('Processing', response_file)
         address_file = response_file.replace('_response.csv', '_minimal.csv')
-        output_file = response_file.replace('_response.csv', '_beta.csv')
 
         for name in ('Existing', 'Prototype'):
             print('Calculating Performance using', name, 'UPRNs')
             output_figure_file = response_file.replace('_response.csv', '_performance_' + name + '.png')
+            output_file = response_file.replace('_response.csv', '_beta_' + name + '.csv')
 
             if 'Prototype' in name:
                 input_data = _read_input_data(address_file, use_prototype=True)
