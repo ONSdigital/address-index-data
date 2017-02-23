@@ -36,7 +36,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
       // Then
-      result shouldBe "department CIBO FLAT E COTTAGE PO BOX 6 1000 throughfare welsh1 SOME_STREET welsh2 locality welsh3 STIXTON welsh4 LONDON welsh5 POSTCODE"
+      result shouldBe "department CIBO FLAT E COTTAGE 6 1000 throughfare welsh1 SOME_STREET welsh2 locality welsh3 STIXTON welsh4 LONDON welsh5 POSTCODE"
     }
 
     "concatenate the required paf fields and handle empty strings" in {
@@ -98,7 +98,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
       // Then
-      result shouldBe "department CIBO FLAT E COTTAGE PO BOX 6 1000 throughfare welsh1 SOME_STREET welsh2 locality STIXTON LONDON welsh5 POSTCODE"
+      result shouldBe "department CIBO FLAT E COTTAGE 6 1000 throughfare welsh1 SOME_STREET welsh2 locality STIXTON LONDON welsh5 POSTCODE"
     }
 
     "concatenate the required paf fields for English and Welsh with matching Welsh values" in {
@@ -129,7 +129,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
       // Then
-      result shouldBe "department CIBO FLAT E COTTAGE PO BOX 6 1000 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
+      result shouldBe "department CIBO FLAT E COTTAGE 6 1000 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
     }
 
     "concatenate the required nag fields" in {

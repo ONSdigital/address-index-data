@@ -57,8 +57,6 @@ object SparkProvider {
                 welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
                 postTown: String, welshPostTown: String, postcode: String): String = {
 
-    val poBoxNumberFormatted = if (poBoxNumber.isEmpty) "" else s"PO BOX $poBoxNumber"
-
     val langDependentThoroughfare = if (dependentThoroughfare == welshDependentThoroughfare)
       s"$dependentThoroughfare" else s"$dependentThoroughfare $welshDependentThoroughfare"
 
@@ -75,10 +73,10 @@ object SparkProvider {
       s"$postTown" else s"$postTown $welshPostTown"
 
     val buildingNumberWithStreetName =
-      s"${buildingNumber} ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
+      s"$buildingNumber ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
 
     Seq(departmentName, organisationName, subBuildingName, buildingName,
-      poBoxNumberFormatted, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
+      poBoxNumber, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
       langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
 

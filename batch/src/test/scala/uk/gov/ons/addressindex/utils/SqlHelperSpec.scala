@@ -24,17 +24,17 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).sort("uprn").collect()
 
       // Then
-      result.length shouldBe 4
+      result.length shouldBe 3
 
-      val firstLine = result(1)
+      val firstLine = result(0)
 
       firstLine.getLong(0) shouldBe 100010971564L // UPRN
       firstLine.getString(1) shouldBe "KL8 1JQ" // POSTCODE_LOCATOR
       firstLine.getString(2) shouldBe "D" // ADDRESSBASE_POSTAL
-      firstLine.get(3) shouldBe (Array(-2.3158117F,53.6111710F)) // LOCATION
+      firstLine.get(3) shouldBe Array(-2.3158117F,53.6111710F) // LOCATION
       firstLine.getFloat(4) shouldBe 379203.00F // X_COORDINATE
       firstLine.getFloat(5) shouldBe 412780.00F // Y_COORDINATE
       firstLine.getLong(6) shouldBe 999910971564L // PARENT_UPRN
@@ -87,7 +87,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).orderBy("uprn").collect()
 
       // Then
-      result.length shouldBe 4
+      result.length shouldBe 3
 
       val firstLine = result(2)
 
@@ -104,51 +104,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
 
-      /**
-        * NAG CSV file schema
-        */
-      val nagFileSchema = StructType(Seq(
-        StructField("uprn", LongType, nullable = false),
-        StructField("postcodeLocator", StringType, nullable = false),
-        StructField("addressBasePostal", StringType, nullable = false),
-        StructField("latitude", FloatType, nullable = false),
-        StructField("longitude", FloatType, nullable = false),
-        StructField("easting", FloatType, nullable = false),
-        StructField("northing", FloatType, nullable = false),
-        StructField("parentUprn", LongType, nullable = false),
-        StructField("multiOccCount", ShortType, nullable = false),
-        StructField("blpuLogicalStatus", ByteType, nullable = false),
-        StructField("localCustodianCode", ShortType, nullable = false),
-        StructField("rpc", ByteType, nullable = false),
-        StructField("organisation", StringType, nullable = false),
-        StructField("legalName", StringType, nullable = false),
-        StructField("classScheme", StringType, nullable = false),
-        StructField("classificationCode", StringType, nullable = false),
-        StructField("usrn", IntegerType, nullable = false),
-        StructField("lpiKey", StringType, nullable = false),
-        StructField("paoText", StringType, nullable = false),
-        StructField("paoStartNumber", ShortType, nullable = false),
-        StructField("paoStartSuffix", StringType, nullable = false),
-        StructField("paoEndNumber", ShortType, nullable = false),
-        StructField("paoEndSuffix", StringType, nullable = false),
-        StructField("saoText", StringType, nullable = false),
-        StructField("saoStartNumber", ShortType, nullable = false),
-        StructField("saoStartSuffix", StringType, nullable = false),
-        StructField("saoEndNumber", ShortType, nullable = false),
-        StructField("saoEndSuffix", StringType, nullable = false),
-        StructField("level", StringType, nullable = false),
-        StructField("officialFlag", StringType, nullable = false),
-        StructField("lpiLogicalStatus", IntegerType, nullable = false),
-        StructField("usrnMatchIndicator", ByteType, nullable = false),
-        StructField("language", StringType, nullable = false),
-        StructField("streetDescriptor", StringType, nullable = false),
-        StructField("townName", StringType, nullable = false),
-        StructField("locality", StringType, nullable = false),
-        StructField("streetClassification", ByteType, nullable = false),
-        StructField("crossReference", StringType, nullable = false),
-        StructField("source", StringType, nullable = false)
-      ))
-
       // Given
       val paf = SparkProvider.sqlContext.read
         .format("com.databricks.spark.csv")
@@ -156,116 +111,38 @@ class SqlHelperSpec extends WordSpec with Matchers {
         .schema(CSVSchemas.postcodeAddressFileSchema)
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
-//      paf.registerTempTable("paf")
-//
-//      val concatPaf = SparkProvider.sqlContext.sql(
-//        s"""SELECT
-//              *,
-//              concatPaf(trim(poBoxNumber),
-//              cast(buildingNumber as String),
-//              trim(dependentThoroughfare),
-//              trim(welshDependentThoroughfare),
-//              trim(thoroughfare),
-//              trim(welshThoroughfare),
-//              trim(departmentName),
-//              trim(organisationName),
-//              trim(subBuildingName),
-//              trim(buildingName),
-//              trim(doubleDependentLocality),
-//              trim(welshDoubleDependentLocality),
-//              trim(dependentLocality),
-//              trim(welshDependentLocality),
-//              trim(postTown),
-//              trim(welshPostTown),
-//              trim(postcode)) as pafAll
-//            FROM paf""").na.fill("")
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+      val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
-      val nag = SparkProvider.sqlContext.read
-        .format("com.databricks.spark.csv")
-        .option("header", "true")
-        .schema(nagFileSchema)
-        .load("batch/src/test/resources/csv/nag/hybrid_test.csv")
-//        .registerTempTable("nag")
-
-      val nagUpdate = nag.withColumn("location", array(nag.col("longitude"),nag.col("latitude")))
-
-//      val nagUpdate = SparkProvider.sqlContext.sql(
-//        s"""SELECT
-//          uprn,
-//          postcodeLocator,
-//          addressBasePostal,
-//          array(longitude, latitude) as location,
-//          easting,
-//          northing,
-//          parentUprn,
-//          multiOccCount,
-//          blpuLogicalStatus,
-//          localCustodianCode,
-//          rpc,
-//          organisation,
-//          legalName,
-//          classScheme,
-//          classificationCode,
-//          usrn,
-//          lpiKey,
-//          paoText,
-//          paoStartNumber,
-//          paoStartSuffix,
-//          paoEndNumber,
-//          paoEndSuffix,
-//          saoText,
-//          saoStartNumber,
-//          saoStartSuffix,
-//          saoEndNumber,
-//          saoEndSuffix,
-//          level,
-//          officialFlag,
-//          lpiLogicalStatus,
-//          usrnMatchIndicator,
-//          language,
-//          streetDescriptor,
-//          townName,
-//          locality,
-//          streetClassification,
-//          crossReference,
-//          source,
-//          concatNag(nvl(cast(saoStartNumber as String), ""),
-//                    nvl(cast(saoEndNumber as String), ""),
-//                    saoEndSuffix,
-//                    saoStartSuffix,
-//                    saoText,
-//                    organisation,
-//                    nvl(cast(paoStartNumber as String), ""),
-//                    paoStartSuffix,
-//                    nvl(cast(paoEndNumber as String), ""),
-//                    paoEndSuffix,
-//                    paoText,
-//                    streetDescriptor,
-//                    townName,
-//                    locality,
-//                    postcodeLocator) as nagAll
-//        FROM nag""").na.fill("")
+      // When
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
 
       // When
       val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 3
+      result.length shouldBe 2
 
       val firstResult = result(0)
-      firstResult.uprn shouldBe 1L
-      firstResult.lpi.size shouldBe 2
-      firstResult.paf.size shouldBe 1
-
-      firstResult.lpi(0)("lpiKey") shouldBe "1610L000056911"
-      firstResult.lpi(1)("lpiKey") shouldBe "1610L000015314"
-
-      firstResult.paf(0)("recordIdentifier") shouldBe 27
+      firstResult.uprn shouldBe 100010971564L
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
 
       val secondResult = result(1)
       secondResult.uprn shouldBe 100010971565L
-      secondResult.lpi.size shouldBe 1
-      secondResult.paf shouldBe empty
+      secondResult.lpi.size shouldBe 2
+      secondResult.paf.size shouldBe 1
+
+      secondResult.lpi(0)("lpiKey") shouldBe "1610L000014429"
+      secondResult.lpi(1)("lpiKey") shouldBe "1610L000056911"
+
+      secondResult.paf(0)("recordIdentifier") shouldBe 27
+
     }
   }
 }

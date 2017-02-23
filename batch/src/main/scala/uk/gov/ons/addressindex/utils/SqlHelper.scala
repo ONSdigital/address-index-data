@@ -110,19 +110,19 @@ object SqlHelper {
         val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
 
-          val splitPostCode = postCode.split(" ")
-          val (postCodeOut, postCodeIn) =
-            if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
-            else ("", "")
+        val splitPostCode = postCode.split(" ")
+        val (postCodeOut, postCodeIn) =
+          if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
+          else ("", "")
 
 
         HybridAddressEsDocument(
-        uprn,
-        postCodeIn,
+          uprn,
+          postCodeIn,
           postCodeOut,
-        lpiArray.toSeq.map(HybridAddressEsDocument.rowToLpi),
-        pafArray.toSeq.map(HybridAddressEsDocument.rowToPaf)
-      )
+          lpis,
+          pafs
+        )
     }
   }
 }

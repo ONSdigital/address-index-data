@@ -1,14 +1,15 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
+import uk.gov.ons.addressindex.utils.SparkProvider
 
 case class HybridAddressEsDocument(
-                                    uprn: Long,
-                                    postCodeIn: String,
-                                    postCodeOut: String,
-                                    lpi: Seq[Map[String, Any]],
-                                    paf: Seq[Map[String, Any]]
-                                  )
+  uprn: Long,
+  postCodeIn: String,
+  postCodeOut: String,
+  lpi: Seq[Map[String, Any]],
+  paf: Seq[Map[String, Any]]
+)
 
 object HybridAddressEsDocument {
 
@@ -42,7 +43,7 @@ object HybridAddressEsDocument {
     "saoEndSuffix" -> row.getString(26),
     "level" -> row.getString(27),
     "officialFlag" -> row.getString(28),
-    "lpiLogicalStatus" -> row.getInt(29),
+    "lpiLogicalStatus" -> row.getByte(29),
     "usrnMatchIndicator" -> row.getByte(30),
     "language" -> row.getString(31),
     "streetDescriptor" -> row.getString(32),
@@ -84,6 +85,9 @@ object HybridAddressEsDocument {
     "endDate" -> row.getDate(26),
     "lastUpdateDate" -> row.getDate(27),
     "entryDate" -> row.getDate(28),
-    "pafAll" -> row.getString(29)
+    "pafAll" -> ""
+//      SparkProvider.concatPaf(row.getString(23), (if (row.isNullAt(9)) null else row.getShort(9)).toString, row.getString(10),
+//      row.getString(18), row.getString(11), row.getString(19), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
+//      row.getString(12), row.getString(20), row.getString(13), row.getString(21), row.getString(14), row.getString(22), row.getString(15))
   )
 }

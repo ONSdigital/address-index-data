@@ -17,7 +17,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val nagSaoEndSuffix = "JJ"
     val nagSaoStartNumber = 6473.toShort
     val nagUsrn = 9402538
-    val nagLpiLogicalStatus = 1
+    val nagLpiLogicalStatus = 1.toByte
     val nagEasting = 379171.00F
     val nagPaoEndSuffix = "OP"
     val nagStreetDescriptor = "AND ANOTHER STREET DESCRIPTOR"
@@ -79,7 +79,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val pafThoroughfare = "SOME_STREET"
     val pafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
     val pafRecordIdentifier = 27.toByte
-    val pafAll = "department CIBO FLAT E COTTAGE PO BOX 6 1 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
+    val pafAll = ""//"department CIBO FLAT E COTTAGE PO BOX 6 1 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
 
 
     "cast DataFrame's rows to an LPI key-value Map" in {
