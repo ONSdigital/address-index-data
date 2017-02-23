@@ -28,17 +28,17 @@ For usage see below:
     verify()
   }
 
-//  if (!opts.help()) {
-//    if (opts.paf()) {
-//      savePafAddresses()
-//    } else if (opts.nag()) {
-//      saveNagAddresses()
-//    } else if (opts.hybrid()){
+  if (!opts.help()) {
+    if (opts.paf()) {
+      savePafAddresses()
+    } else if (opts.nag()) {
+      saveNagAddresses()
+    } else if (opts.hybrid()){
       saveHybridAddresses()
-//    } else {
-//      opts.printHelp()
-//    }
-//  }
+    } else {
+      opts.printHelp()
+    }
+  }
 
   private def saveNagAddresses() = {
     val resultDF = generateNagAddresses()
@@ -64,31 +64,9 @@ For usage see below:
   private def saveHybridAddresses() = {
     val nag = generateNagAddresses()
 
-    val paf = AddressIndexFileReader.readDeliveryPointCSV().registerTempTable("paf")
+    val paf = AddressIndexFileReader.readDeliveryPointCSV()
 
-    val concatPaf = SparkProvider.sqlContext.sql(
-      s"""SELECT
-            *,
-            concatPaf(trim(poBoxNumber),
-            cast(buildingNumber as String),
-            trim(dependentThoroughfare),
-            trim(welshDependentThoroughfare),
-            trim(thoroughfare),
-            trim(welshThoroughfare),
-            trim(departmentName),
-            trim(organisationName),
-            trim(subBuildingName),
-            trim(buildingName),
-            trim(doubleDependentLocality),
-            trim(welshDoubleDependentLocality),
-            trim(dependentLocality),
-            trim(welshDependentLocality),
-            trim(postTown),
-            trim(welshPostTown),
-            trim(postcode)) as pafAll
-          FROM paf""").na.fill("")
-
-    val hybrid = SqlHelper.aggregateHybridIndex(concatPaf, nag)
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
 
     // Create ES Mappings here.....
 
