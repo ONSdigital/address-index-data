@@ -28,17 +28,17 @@ For usage see below:
     verify()
   }
 
-  if (!opts.help()) {
-    if (opts.paf()) {
-      savePafAddresses()
-    } else if (opts.nag()) {
-      saveNagAddresses()
-    } else if (opts.hybrid()){
+//  if (!opts.help()) {
+//    if (opts.paf()) {
+//      savePafAddresses()
+//    } else if (opts.nag()) {
+//      saveNagAddresses()
+//    } else if (opts.hybrid()){
       saveHybridAddresses()
-    } else {
-      opts.printHelp()
-    }
-  }
+//    } else {
+//      opts.printHelp()
+//    }
+//  }
 
   private def saveNagAddresses() = {
     val resultDF = generateNagAddresses()
