@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.utils
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -37,11 +37,86 @@ object SparkProvider {
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
   lazy val sqlContext = SQLContext.getOrCreate(sparkContext)
 
+  sqlContext.udf.register("concatPaf", concatPaf(_: String, _: String, _: String, _: String, _: String, _: String, _: String,
+    _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String))
+
+  sqlContext.udf.register("concatNag", concatNag(_: String, _: String, _: String, _: String, _: String, _: String, _: String,
+    _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String))
+
   val incrementalId = new AtomicInteger()
 
   def registerTempTable(dataFrame: DataFrame, name: String): String = {
     val generatedName = name + incrementalId.getAndIncrement()
     dataFrame.registerTempTable(generatedName)
     generatedName
+  }
+
+  def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
+  String, thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
+                subBuildingName: String, buildingName: String, doubleDependentLocality: String,
+                welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
+                postTown: String, welshPostTown: String, postcode: String): String = {
+
+    val poBoxNumberFormatted = if (poBoxNumber.isEmpty) "" else s"PO BOX $poBoxNumber"
+
+    val langDependentThoroughfare = if (dependentThoroughfare == welshDependentThoroughfare)
+      s"$dependentThoroughfare" else s"$dependentThoroughfare $welshDependentThoroughfare"
+
+    val langThoroughfare = if (thoroughfare == welshThoroughfare)
+      s"$thoroughfare" else s"$thoroughfare $welshThoroughfare"
+
+    val langDoubleDependentLocality = if (doubleDependentLocality == welshDoubleDependentLocality)
+      s"$doubleDependentLocality" else s"$doubleDependentLocality $welshDoubleDependentLocality"
+
+    val langDependentLocality = if (dependentLocality == welshDependentLocality)
+      s"$dependentLocality" else s"$dependentLocality $welshDependentLocality"
+
+    val langPostTown = if (postTown == welshPostTown)
+      s"$postTown" else s"$postTown $welshPostTown"
+
+    val buildingNumberWithStreetName =
+      s"${buildingNumber} ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
+
+    Seq(departmentName, organisationName, subBuildingName, buildingName,
+      poBoxNumberFormatted, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
+      langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
+  }
+
+  def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
+                saoText: String, organisation: String, paoStartNumber: String, paoStartSuffix: String,
+                paoEndNumber: String, paoEndSuffix: String, paoText: String, streetDescriptor: String,
+                townName: String, locality: String, postcodeLocator: String): String = {
+
+    val saoLeftRangeExists = saoStartNumber.nonEmpty || saoStartSuffix.nonEmpty
+    val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
+    val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
+
+    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
+      .map(_.trim).mkString
+    val sao =
+      if (saoText == organisation || saoText.isEmpty) saoNumbers
+      else if (saoNumbers.isEmpty) s"$saoText"
+      else s"$saoNumbers $saoText"
+
+    val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
+    val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
+    val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
+
+    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix)
+      .map(_.trim).mkString
+    val pao =
+      if (paoText == organisation || paoText.isEmpty) paoNumbers
+      else if (paoNumbers.isEmpty) s"$paoText"
+      else s"$paoText $paoNumbers"
+
+    val trimmedStreetDescriptor = streetDescriptor.trim
+    val buildingNumberWithStreetDescription =
+      if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
+      else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
+      else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
+      else s"$sao $pao $trimmedStreetDescriptor"
+
+    Seq(organisation, buildingNumberWithStreetDescription, locality,
+      townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
 }

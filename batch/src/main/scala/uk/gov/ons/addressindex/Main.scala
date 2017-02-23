@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
-import uk.gov.ons.addressindex.utils.SqlHelper
+import uk.gov.ons.addressindex.utils.{SparkProvider, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
 /**
@@ -52,7 +52,8 @@ For usage see below:
     val classification = AddressIndexFileReader.readClassificationCSV()
     val street = AddressIndexFileReader.readStreetCSV()
     val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
+    val crossRef = AddressIndexFileReader.readCrossrefCSV()
+    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
   }
 
   private def savePafAddresses() = {
@@ -62,9 +63,36 @@ For usage see below:
 
   private def saveHybridAddresses() = {
     val nag = generateNagAddresses()
-    val paf = AddressIndexFileReader.readDeliveryPointCSV()
 
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
+    val paf = AddressIndexFileReader.readDeliveryPointCSV().registerTempTable("paf")
+
+    val concatPaf = SparkProvider.sqlContext.sql(
+      s"""SELECT
+            *,
+            concatPaf(trim(poBoxNumber),
+            cast(buildingNumber as String),
+            trim(dependentThoroughfare),
+            trim(welshDependentThoroughfare),
+            trim(thoroughfare),
+            trim(welshThoroughfare),
+            trim(departmentName),
+            trim(organisationName),
+            trim(subBuildingName),
+            trim(buildingName),
+            trim(doubleDependentLocality),
+            trim(welshDoubleDependentLocality),
+            trim(dependentLocality),
+            trim(welshDependentLocality),
+            trim(postTown),
+            trim(welshPostTown),
+            trim(postcode)) as pafAll
+          FROM paf""").na.fill("")
+
+    val hybrid = SqlHelper.aggregateHybridIndex(concatPaf, nag)
+
+    // Create ES Mappings here.....
+
+
     ElasticSearchWriter.saveHybridAddresses(hybrid)
   }
 }

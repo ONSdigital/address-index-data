@@ -3,55 +3,68 @@ package uk.gov.ons.addressindex.models
 import org.apache.spark.sql.Row
 
 case class HybridAddressEsDocument(
-  uprn: String,
-  lpi: Seq[Map[String, String]],
-  paf: Seq[Map[String, String]]
-)
+                                    uprn: Long,
+                                    postCodeIn: String,
+                                    postCodeOut: String,
+                                    lpi: Seq[Map[String, Any]],
+                                    paf: Seq[Map[String, Any]]
+                                  )
 
 object HybridAddressEsDocument {
 
-  def rowToLpi(row: Row): Map[String, String] = Map(
-    "uprn" -> row.getString(0),
+  def rowToLpi(row: Row): Map[String, Any] = Map(
+    "uprn" -> row.getLong(0),
     "postcodeLocator" -> row.getString(1),
     "addressBasePostal" -> row.getString(2),
-    "latitude" -> row.getString(3),
-    "longitude" -> row.getString(4),
-    "easting" -> row.getString(5),
-    "northing" -> row.getString(6),
-    "organisation" -> row.getString(7),
-    "legalName" -> row.getString(8),
-    "classificationCode" -> row.getString(9),
-    "usrn" -> row.getString(10),
-    "lpiKey" -> row.getString(11),
-    "paoText" -> row.getString(12),
-    "paoStartNumber" -> row.getString(13),
-    "paoStartSuffix" -> row.getString(14),
-    "paoEndNumber" -> row.getString(15),
-    "paoEndSuffix" -> row.getString(16),
-    "saoText" -> row.getString(17),
-    "saoStartNumber" -> row.getString(18),
-    "saoStartSuffix" -> row.getString(19),
-    "saoEndNumber" -> row.getString(20),
-    "saoEndSuffix" -> row.getString(21),
-    "level" -> row.getString(22),
-    "officialFlag" -> row.getString(23),
-    "logicalStatus" -> row.getString(24),
-    "streetDescriptor" -> row.getString(25),
-    "townName" -> row.getString(26),
-    "locality" -> row.getString(27)
+    "location" -> row.get(3),
+    "easting" -> row.getFloat(4),
+    "northing" -> row.getFloat(5),
+    "parentUprn" -> (if (row.isNullAt(6)) null else row.getLong(6)),
+    "multiOccCount" -> row.getShort(7),
+    "blpuLogicalStatus" -> row.getByte(8),
+    "localCustodianCode" -> row.getShort(9),
+    "rpc" -> row.getByte(10),
+    "organisation" -> row.getString(11),
+    "legalName" -> row.getString(12),
+    "classScheme" -> row.getString(13),
+    "classificationCode" -> row.getString(14),
+    "usrn" -> row.getInt(15),
+    "lpiKey" -> row.getString(16),
+    "paoText" -> row.getString(17),
+    "paoStartNumber" -> (if (row.isNullAt(18)) null else row.getShort(18)),
+    "paoStartSuffix" -> row.getString(19),
+    "paoEndNumber" -> (if (row.isNullAt(20)) null else row.getShort(20)),
+    "paoEndSuffix" -> row.getString(21),
+    "saoText" -> row.getString(22),
+    "saoStartNumber" -> (if (row.isNullAt(23)) null else row.getShort(23)),
+    "saoStartSuffix" -> row.getString(24),
+    "saoEndNumber" -> (if (row.isNullAt(25)) null else row.getShort(25)),
+    "saoEndSuffix" -> row.getString(26),
+    "level" -> row.getString(27),
+    "officialFlag" -> row.getString(28),
+    "lpiLogicalStatus" -> row.getInt(29),
+    "usrnMatchIndicator" -> row.getByte(30),
+    "language" -> row.getString(31),
+    "streetDescriptor" -> row.getString(32),
+    "townName" -> row.getString(33),
+    "locality" -> row.getString(34),
+    "streetClassification" -> (if (row.isNullAt(35)) null else row.getByte(35)),
+    "crossReference" -> row.getString(36),
+    "source" -> row.getString(37),
+    "nagAll" -> row.getString(38)
   )
 
-  def rowToPaf(row: Row): Map[String, String] = Map(
-    "recordIdentifier" -> row.getString(0),
+  def rowToPaf(row: Row): Map[String, Any] = Map(
+    "recordIdentifier" -> row.getByte(0),
     "changeType" -> row.getString(1),
-    "proOrder" -> row.getString(2),
-    "uprn" -> row.getString(3),
-    "udprn" -> row.getString(4),
-    "organizationName" -> row.getString(5),
+    "proOrder" -> row.getLong(2),
+    "uprn" -> row.getLong(3),
+    "udprn" -> row.getInt(4),
+    "organisationName" -> row.getString(5),
     "departmentName" -> row.getString(6),
     "subBuildingName" -> row.getString(7),
     "buildingName" -> row.getString(8),
-    "buildingNumber" -> row.getString(9),
+    "buildingNumber" -> (if (row.isNullAt(9)) null else row.getShort(9)),
     "dependentThoroughfare" -> row.getString(10),
     "thoroughfare" -> row.getString(11),
     "doubleDependentLocality" -> row.getString(12),
@@ -66,10 +79,11 @@ object HybridAddressEsDocument {
     "welshDependentLocality" -> row.getString(21),
     "welshPostTown" -> row.getString(22),
     "poBoxNumber" -> row.getString(23),
-    "processDate" -> row.getString(24),
-    "startDate" -> row.getString(25),
-    "endDate" -> row.getString(26),
-    "lastUpdateDate" -> row.getString(27),
-    "entryDate" -> row.getString(28)
+    "processDate" -> row.getDate(24),
+    "startDate" -> row.getDate(25),
+    "endDate" -> row.getDate(26),
+    "lastUpdateDate" -> row.getDate(27),
+    "entryDate" -> row.getDate(28),
+    "pafAll" -> row.getString(29)
   )
 }

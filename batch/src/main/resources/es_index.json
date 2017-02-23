@@ -1,0 +1,272 @@
+{
+"settings": {
+"number_of_shards" :   1,
+"number_of_replicas" : 1
+},
+  "mappings": {
+    "address": {
+      "properties": {
+        "lpi": {
+          "properties": {
+            "addressBasePostal": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "classificationCode": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "easting": {
+              "type": "float",
+              "index": "not_analysed"
+            },
+            "location": {
+              "type": "geo_point",
+              "index": "not_analysed"
+            },
+            "legalName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "level": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "locality": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "lpiLogicalStatus": {
+              "type": "byte",
+              "index": "not_analysed"
+            },
+            "blpuLogicalStatus": {
+              "type": "byte",
+              "index": "not_analysed"
+            },
+            "lpiKey": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "northing": {
+              "type": "float",
+              "index": "not_analysed"
+            },
+            "officialFlag": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "organisation": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "paoEndNumber": {
+              "type": "short",
+              "index": "not_analysed"
+            },
+            "paoEndSuffix": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "paoStartNumber": {
+              "type": "short",
+              "index": "not_analysed"
+            },
+            "paoStartSuffix": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "paoText": {
+              "type": "string"
+            },
+            "postcodeLocator": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "saoEndNumber": {
+              "type": "short",
+              "index": "not_analysed"
+            },
+            "saoEndSuffix": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "saoStartNumber": {
+              "type": "short",
+              "index": "not_analysed"
+            },
+            "saoStartSuffix": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "saoText": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "streetDescriptor": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "townName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "uprn": {
+              "type": "long",
+              "index": "not_analysed"
+            },
+            "usrn": {
+              "type": "integer",
+              "index": "not_analysed"
+            }
+          }
+        },
+        "paf": {
+          "properties": {
+            "buildingName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "buildingNumber": {
+              "type": "short",
+              "index": "not_analysed"
+            },
+            "changeType": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "deliveryPointSuffix": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "departmentName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "dependentLocality": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "dependentThoroughfare": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "doubleDependentLocality": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "endDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analysed"
+            },
+            "entryDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analysed"
+            },
+            "lastUpdateDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analysed"
+            },
+            "organizationName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "poBoxNumber": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "postTown": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "postcode": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "postcodeType": {
+              "type": "string",
+              "index": "not_analysed"
+            },
+            "proOrder": {
+              "type": "long",
+              "index": "not_analysed"
+            },
+            "processDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analysed"
+            },
+            "recordIdentifier": {
+              "type": "byte",
+              "index": "not_analysed"
+            },
+            "startDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analysed"
+            },
+            "subBuildingName": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "thoroughfare": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "udprn": {
+              "type": "integer",
+              "index": "not_analysed"
+            },
+            "uprn": {
+              "type": "long",
+              "index": "not_analysed"
+            },
+            "welshDependentLocality": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "welshDependentThoroughfare": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "welshDoubleDependentLocality": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "welshPostTown": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "welshThoroughfare": {
+              "type": "string",
+              "analyzer": "whitespace"
+            },
+            "pafAll": {
+              "type": "string",
+              "analyzer": "whitespace"
+            }
+          }
+        },
+        "uprn": {
+          "type": "long",
+          "index": "not_analysed"
+        },
+        "postCodeIn": {
+          "type": "string",
+          "analyzer": "whitespace"
+        },
+        "postCodeOut": {
+          "type": "string",
+          "analyzer": "whitespace"
+        }
+      }
+    }
+  }
+}
+
+
+
+

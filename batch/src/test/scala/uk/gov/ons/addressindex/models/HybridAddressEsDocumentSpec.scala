@@ -4,27 +4,28 @@ import org.apache.spark.sql.Row
 import org.scalatest.{Matchers, WordSpec}
 
 class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
+
+  val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+
   "Hybrid Address Elastic Search Document" should {
 
     val nagOrganisation = "SOMETHING ELSE"
     val nagOfficialFlag = "Y"
     val nagClassificationCode = "RD"
-    val nagPaoStartNumber = "56"
+    val nagPaoStartNumber = 56.toShort
     val nagPostcodeLocator = "KL8 7HQ"
     val nagSaoEndSuffix = "JJ"
-    val nagLatitude = "4"
-    val nagSaoStartNumber = "6473"
-    val nagUsrn = "9402538"
-    val nagLogicalStatus = "1"
-    val nagEasting = "379171.00"
+    val nagSaoStartNumber = 6473.toShort
+    val nagUsrn = 9402538
+    val nagLpiLogicalStatus = 1
+    val nagEasting = 379171.00F
     val nagPaoEndSuffix = "OP"
     val nagStreetDescriptor = "AND ANOTHER STREET DESCRIPTOR"
-    val nagUprn = "100010971565"
-    val nagNorthing = "412816.00"
+    val nagUprn = 100010971565L
+    val nagNorthing = 412816.00F
     val nagLpiKey = "1610L000014429"
-    val nagSaoEndNumber = "6623"
-    val nagLongitude = "-2.3162985"
-    val nagPaoEndNumber = "7755"
+    val nagSaoEndNumber = 6623.toShort
+    val nagPaoEndNumber = 7755.toShort
     val nagTownName = "TOWN B"
     val nagLegalName = "ANOTHER LEGAL NAME"
     val nagSaoStartSuffix = "FF"
@@ -34,22 +35,35 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val nagAddressBasePostal = "D"
     val nagLocality = "LOCALITY XYZ"
     val nagLevel = "UP THERE SOME WHERE"
+    val nagParentUprn = 999910971564L
+    val nagMultiOccCount = 0.toShort
+    val nagBlpuLogicalStatus = 1.toByte
+    val nagLocalCustodianCode = 4218.toShort
+    val nagRpc = 1.toByte
+    val nagClassScheme = "AddressBase Premium Classification Scheme"
+    val nagUsrnMatchIndicator = 1.toByte
+    val nagLanguage = "ENG"
+    val nagStreetClassification = 8.toByte
+    val nagCrossReference = "E04000324"
+    val nagSource = "7666MI"
+    val nagLocation = Array(-2.3162985F, 4.00F)
+    val nagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
 
 
-    val pafBuildingNumber = "1"
-    val pafUdprn = "19"
-    val pafLastUpdateDate = "2016-02-10"
-    val pafProOrder = "272650"
-    val pafEndDate = "2012-04-25"
+    val pafBuildingNumber = 1.toShort
+    val pafUdprn = 19
+    val pafLastUpdateDate = new java.sql.Date(format.parse("2016-02-10").getTime)
+    val pafProOrder = 272650L
+    val pafEndDate = new java.sql.Date(format.parse("2012-04-25").getTime)
     val pafPostcodeType = "S"
     val pafDependentThoroughfare = "throughfare"
-    val pafEntryDate = "2012-03-19"
+    val pafEntryDate = new java.sql.Date(format.parse("2012-03-19").getTime)
     val pafWelshPostTown = "welsh5"
     val pafDeliveryPointSuffix = "1Q"
     val pafPostcode = "POSTCODE"
-    val pafProcessDate = "2016-01-18"
+    val pafProcessDate = new java.sql.Date(format.parse("2016-01-18").getTime)
     val pafPoBoxNumber = "6"
-    val pafUprn = "1"
+    val pafUprn = 1L
     val pafDependentLocality = "STIXTON"
     val pafBuildingName = "COTTAGE"
     val pafWelshDoubleDependentLocality = "welsh3"
@@ -63,8 +77,9 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val pafSubBuildingName = "FLAT E"
     val pafWelshThoroughfare = "welsh2"
     val pafThoroughfare = "SOME_STREET"
-    val pafStartDate = "2012-04-23"
-    val pafRecordIdentifier = "27"
+    val pafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
+    val pafRecordIdentifier = 27.toByte
+    val pafAll = "department CIBO FLAT E COTTAGE PO BOX 6 1 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
 
 
     "cast DataFrame's rows to an LPI key-value Map" in {
@@ -73,12 +88,17 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagUprn,
         nagPostcodeLocator,
         nagAddressBasePostal,
-        nagLatitude,
-        nagLongitude,
+        nagLocation,
         nagEasting,
         nagNorthing,
+        nagParentUprn,
+        nagMultiOccCount,
+        nagBlpuLogicalStatus,
+        nagLocalCustodianCode,
+        nagRpc,
         nagOrganisation,
         nagLegalName,
+        nagClassScheme,
         nagClassificationCode,
         nagUsrn,
         nagLpiKey,
@@ -94,41 +114,58 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagSaoEndSuffix,
         nagLevel,
         nagOfficialFlag,
-        nagLogicalStatus,
+        nagLpiLogicalStatus,
+        nagUsrnMatchIndicator,
+        nagLanguage,
         nagStreetDescriptor,
         nagTownName,
-        nagLocality
+        nagLocality,
+        nagStreetClassification,
+        nagCrossReference,
+        nagSource,
+        nagAll
       )
 
       val expected = Map(
-        "organisation" -> nagOrganisation,
-        "officialFlag" -> nagOfficialFlag,
-        "classificationCode" -> nagClassificationCode,
-        "paoStartNumber" -> nagPaoStartNumber,
-        "postcodeLocator" -> nagPostcodeLocator,
-        "saoEndSuffix" -> nagSaoEndSuffix,
-        "latitude" -> nagLatitude,
-        "saoStartNumber" -> nagSaoStartNumber,
-        "usrn" -> nagUsrn,
-        "logicalStatus" -> nagLogicalStatus,
-        "easting" -> nagEasting,
-        "paoEndSuffix" -> nagPaoEndSuffix,
-        "streetDescriptor" -> nagStreetDescriptor,
         "uprn" -> nagUprn,
-        "northing" -> nagNorthing,
-        "lpiKey" -> nagLpiKey,
-        "saoEndNumber" -> nagSaoEndNumber,
-        "longitude" -> nagLongitude,
-        "paoEndNumber" -> nagPaoEndNumber,
-        "townName" -> nagTownName,
-        "legalName" -> nagLegalName,
-        "saoStartSuffix" -> nagSaoStartSuffix,
-        "paoText" -> nagPaoText,
-        "saoText" -> nagSaoText,
-        "paoStartSuffix" -> nagPaoStartSuffix,
+        "postcodeLocator" -> nagPostcodeLocator,
         "addressBasePostal" -> nagAddressBasePostal,
+        "location" -> nagLocation,
+        "easting" -> nagEasting,
+        "northing" -> nagNorthing,
+        "parentUprn" -> nagParentUprn,
+        "multiOccCount" -> nagMultiOccCount,
+        "blpuLogicalStatus" -> nagBlpuLogicalStatus,
+        "localCustodianCode" -> nagLocalCustodianCode,
+        "rpc" -> nagRpc,
+        "organisation" -> nagOrganisation,
+        "legalName" -> nagLegalName,
+        "classScheme" -> nagClassScheme,
+        "classificationCode" -> nagClassificationCode,
+        "usrn" -> nagUsrn,
+        "lpiKey" -> nagLpiKey,
+        "paoText" -> nagPaoText,
+        "paoStartNumber" -> nagPaoStartNumber,
+        "paoStartSuffix" -> nagPaoStartSuffix,
+        "paoEndNumber" -> nagPaoEndNumber,
+        "paoEndSuffix" -> nagPaoEndSuffix,
+        "saoText" -> nagSaoText,
+        "saoStartNumber" -> nagSaoStartNumber,
+        "saoStartSuffix" -> nagSaoStartSuffix,
+        "saoEndNumber" -> nagSaoEndNumber,
+        "saoEndSuffix" -> nagSaoEndSuffix,
+        "level" -> nagLevel,
+        "officialFlag" -> nagOfficialFlag,
+        "lpiLogicalStatus" -> nagLpiLogicalStatus,
+        "usrnMatchIndicator" -> nagUsrnMatchIndicator,
+        "language" -> nagLanguage,
+        "streetDescriptor" -> nagStreetDescriptor,
+        "townName" -> nagTownName,
         "locality" -> nagLocality,
-        "level" -> nagLevel
+        "streetClassification" -> nagStreetClassification,
+        "crossReference" -> nagCrossReference,
+        "source" -> nagSource,
+        "nagAll" -> nagAll
       )
 
       // When
@@ -169,7 +206,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         pafStartDate,
         pafEndDate,
         pafLastUpdateDate,
-        pafEntryDate
+        pafEntryDate,
+        pafAll
       )
 
       val expected = Map(
@@ -190,7 +228,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "dependentLocality" -> pafDependentLocality,
         "buildingName" -> pafBuildingName,
         "welshDoubleDependentLocality" -> pafWelshDoubleDependentLocality,
-        "organizationName" -> pafOrganizationName,
+        "organisationName" -> pafOrganizationName,
         "postTown" -> pafPostTown,
         "changeType" -> pafChangeType,
         "departmentName" -> pafDepartmentName,
@@ -201,7 +239,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "welshThoroughfare" -> pafWelshThoroughfare,
         "thoroughfare" -> pafThoroughfare,
         "startDate" -> pafStartDate,
-        "recordIdentifier" -> pafRecordIdentifier
+        "recordIdentifier" -> pafRecordIdentifier,
+        "pafAll" -> pafAll
       )
 
       // When
