@@ -455,6 +455,10 @@ class AddressLinker:
         self.toLinkAddressData['ADDRESS_norm'] = \
             self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*TO\s*)(\d+)', r'\1-\3', case=False)
 
+        # some addresses have number/number rather than - as the range separator
+        self.toLinkAddressData['ADDRESS_norm'] = \
+            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*/\s*)(\d+)', r'\1-\3', case=False)
+
         # synonyms to expand - read from a file with format (from, to)
         synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values
 
