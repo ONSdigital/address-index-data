@@ -37,9 +37,6 @@ object SparkProvider {
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
   lazy val sqlContext = SQLContext.getOrCreate(sparkContext)
 
-  sqlContext.udf.register("concatPaf", concatPaf(_: String, _: String, _: String, _: String, _: String, _: String, _: String,
-    _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String))
-
   sqlContext.udf.register("concatNag", concatNag(_: String, _: String, _: String, _: String, _: String, _: String, _: String,
     _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String))
 
@@ -51,34 +48,6 @@ object SparkProvider {
     generatedName
   }
 
-  def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
-  String, thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
-                subBuildingName: String, buildingName: String, doubleDependentLocality: String,
-                welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
-                postTown: String, welshPostTown: String, postcode: String): String = {
-
-    val langDependentThoroughfare = if (dependentThoroughfare == welshDependentThoroughfare)
-      s"$dependentThoroughfare" else s"$dependentThoroughfare $welshDependentThoroughfare"
-
-    val langThoroughfare = if (thoroughfare == welshThoroughfare)
-      s"$thoroughfare" else s"$thoroughfare $welshThoroughfare"
-
-    val langDoubleDependentLocality = if (doubleDependentLocality == welshDoubleDependentLocality)
-      s"$doubleDependentLocality" else s"$doubleDependentLocality $welshDoubleDependentLocality"
-
-    val langDependentLocality = if (dependentLocality == welshDependentLocality)
-      s"$dependentLocality" else s"$dependentLocality $welshDependentLocality"
-
-    val langPostTown = if (postTown == welshPostTown)
-      s"$postTown" else s"$postTown $welshPostTown"
-
-    val buildingNumberWithStreetName =
-      s"$buildingNumber ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
-
-    Seq(departmentName, organisationName, subBuildingName, buildingName,
-      poBoxNumber, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
-      langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
-  }
 
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
                 saoText: String, organisation: String, paoStartNumber: String, paoStartSuffix: String,

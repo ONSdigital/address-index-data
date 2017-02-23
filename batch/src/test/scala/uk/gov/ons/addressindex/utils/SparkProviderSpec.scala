@@ -1,6 +1,7 @@
 package uk.gov.ons.addressindex.utils
 
 import org.scalatest.{Matchers, WordSpec}
+import uk.gov.ons.addressindex.models.HybridAddressEsDocument
 
 /**
   * Created by thornsj on 22/02/2017.
@@ -30,7 +31,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val pafWelshThoroughfare = "welsh2"
 
       // When
-      val result = SparkProvider.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
+      val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
         pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
@@ -61,7 +62,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val pafWelshThoroughfare = ""
 
       // When
-      val result = SparkProvider.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
+      val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
         pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
@@ -92,7 +93,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val pafWelshThoroughfare = "welsh2"
 
       // When
-      val result = SparkProvider.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
+      val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
         pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
@@ -123,7 +124,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val pafWelshThoroughfare = "SOME_STREET"
 
       // When
-      val result = SparkProvider.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
+      val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
         pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)

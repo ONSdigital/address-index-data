@@ -85,9 +85,38 @@ object HybridAddressEsDocument {
     "endDate" -> row.getDate(26),
     "lastUpdateDate" -> row.getDate(27),
     "entryDate" -> row.getDate(28),
-    "pafAll" -> ""
-//      SparkProvider.concatPaf(row.getString(23), (if (row.isNullAt(9)) null else row.getShort(9)).toString, row.getString(10),
-//      row.getString(18), row.getString(11), row.getString(19), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
-//      row.getString(12), row.getString(20), row.getString(13), row.getString(21), row.getString(14), row.getString(22), row.getString(15))
+    "pafAll" -> concatPaf(row.getString(23), if (row.isNullAt(9)) "" else row.getShort(9).toString, row.getString(10),
+      row.getString(18), row.getString(11), row.getString(19), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
+      row.getString(12), row.getString(20), row.getString(13), row.getString(21), row.getString(14), row.getString(22), row.getString(15))
   )
+
+  def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
+  String, thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
+    subBuildingName: String, buildingName: String, doubleDependentLocality: String,
+    welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
+    postTown: String, welshPostTown: String, postcode: String): String = {
+
+    val langDependentThoroughfare = if (dependentThoroughfare == welshDependentThoroughfare)
+      s"$dependentThoroughfare" else s"$dependentThoroughfare $welshDependentThoroughfare"
+
+    val langThoroughfare = if (thoroughfare == welshThoroughfare)
+      s"$thoroughfare" else s"$thoroughfare $welshThoroughfare"
+
+    val langDoubleDependentLocality = if (doubleDependentLocality == welshDoubleDependentLocality)
+      s"$doubleDependentLocality" else s"$doubleDependentLocality $welshDoubleDependentLocality"
+
+    val langDependentLocality = if (dependentLocality == welshDependentLocality)
+      s"$dependentLocality" else s"$dependentLocality $welshDependentLocality"
+
+    val langPostTown = if (postTown == welshPostTown)
+      s"$postTown" else s"$postTown $welshPostTown"
+
+    val buildingNumberWithStreetName =
+      s"$buildingNumber ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
+
+    Seq(departmentName, organisationName, subBuildingName, buildingName,
+      poBoxNumber, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
+      langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
+  }
+
 }

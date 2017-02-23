@@ -79,7 +79,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val pafThoroughfare = "SOME_STREET"
     val pafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
     val pafRecordIdentifier = 27.toByte
-    val pafAll = ""//"department CIBO FLAT E COTTAGE PO BOX 6 1 throughfare SOME_STREET locality STIXTON LONDON POSTCODE"
+    val pafAll = "department CIBO FLAT E COTTAGE 6 1 throughfare welsh1 SOME_STREET welsh2 locality welsh3 STIXTON welsh4 LONDON welsh5 POSTCODE"
 
 
     "cast DataFrame's rows to an LPI key-value Map" in {
