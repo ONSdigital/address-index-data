@@ -189,6 +189,16 @@
             "relatives": {
               "type": "long",
               "index": "not_analyzed"
+            },
+            "lpiStartDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analyzed"
+            },
+            "lpiLastUpdateDate": {
+              "type": "date",
+              "format": "strict_date_optional_time||epoch_millis",
+              "index": "not_analyzed"
             }
           }
         },
