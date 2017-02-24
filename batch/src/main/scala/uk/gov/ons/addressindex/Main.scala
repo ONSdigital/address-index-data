@@ -1,16 +1,15 @@
 package uk.gov.ons.addressindex
 
+import java.io.File
 import com.typesafe.config.ConfigFactory
+import org.apache.http.client.entity.EntityBuilder
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.SqlHelper
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.impl.client.{DefaultHttpClient, HttpClientBuilder}
-import org.apache.http.entity.StringEntity
-
-import scala.io.Source
+import org.apache.http.client.methods.HttpPut
+import org.apache.http.impl.client.HttpClientBuilder
 
 /**
  * Main executed file
@@ -78,15 +77,12 @@ For usage see below:
 
   private def postMapping() = {
     val config = ConfigFactory.load()
+    val indexName = s"${config.getString("addressindex.elasticsearch.indices.hybrid")}${System.currentTimeMillis()}"
     val url = s"http://${config.getString("addressindex.elasticsearch.nodes")}:" +
-      s"${config.getString("addressindex.elasticsearch.port")}/" +
-      s"${config.getString("addressindex.elasticsearch.indices.hybrid")}${System.currentTimeMillis()}/address"
-    val fileContents = Source.fromFile(config.getString("addressindex.files.es.json")).getLines.mkString
-
-    val post = new HttpPost(url)
-    post.setHeader("Content-type", "application/json")
-    post.setEntity(new StringEntity(fileContents))
-
-    HttpClientBuilder.create.build.execute(post)
+      s"${config.getString("addressindex.elasticsearch.port")}/${indexName}"
+    val put = new HttpPut(url)
+    put.setHeader("Content-type", "application/json")
+    put.setEntity(EntityBuilder.create().setFile(new File(config.getString("addressindex.files.es.json"))).build())
+    HttpClientBuilder.create.build.execute(put)
   }
 }

@@ -188,7 +188,7 @@
             },
             "relatives": {
               "type": "long",
-              "analyzer": "not_analyzed"
+              "index": "not_analyzed"
             }
           }
         },
@@ -337,7 +337,3 @@
     }
   }
 }
-
-
-
-
