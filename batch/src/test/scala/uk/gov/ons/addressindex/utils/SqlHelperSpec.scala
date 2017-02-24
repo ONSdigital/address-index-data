@@ -69,7 +69,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getByte(35) shouldBe 8 // STREET_CLASSIFICATION
       firstLine.getString(36) shouldBe "E04000324" // CROSS_REFERENCE
       firstLine.getString(37) shouldBe "7666MI" // SOURCE
-      firstLine.getString(38) shouldBe "SOME COUNCIL 1234AA-5678BB A BUILDING NAME OR DESCRIPTION ANOTHER BUILDING NAME OR DESCRIPTION 15CC-9876AB A STREET DESCRIPTOR A GREAT LOCALITY TOWNY TOWN KL8 1JQ"
+      firstLine.get(38) shouldBe Array() // RELATIVES
+      firstLine.getString(39) shouldBe "SOME COUNCIL 1234AA-5678BB A BUILDING NAME OR DESCRIPTION ANOTHER BUILDING NAME OR DESCRIPTION 15CC-9876AB A STREET DESCRIPTOR A GREAT LOCALITY TOWNY TOWN KL8 1JQ"
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {

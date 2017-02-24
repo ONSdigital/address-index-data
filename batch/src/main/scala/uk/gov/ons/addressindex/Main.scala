@@ -1,10 +1,16 @@
 package uk.gov.ons.addressindex
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
-import uk.gov.ons.addressindex.utils.{SparkProvider, SqlHelper}
+import uk.gov.ons.addressindex.utils.SqlHelper
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.impl.client.{DefaultHttpClient, HttpClientBuilder}
+import org.apache.http.entity.StringEntity
+
+import scala.io.Source
 
 /**
  * Main executed file
@@ -33,7 +39,7 @@ For usage see below:
       savePafAddresses()
     } else if (opts.nag()) {
       saveNagAddresses()
-    } else if (opts.hybrid()){
+    } else if (opts.hybrid()) {
       saveHybridAddresses()
     } else {
       opts.printHelp()
@@ -63,14 +69,24 @@ For usage see below:
 
   private def saveHybridAddresses() = {
     val nag = generateNagAddresses()
-
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-
     val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
 
-    // Create ES Mappings here.....
-
-
+    postMapping()
     ElasticSearchWriter.saveHybridAddresses(hybrid)
+  }
+
+  private def postMapping() = {
+    val config = ConfigFactory.load()
+    val url = s"http://${config.getString("addressindex.elasticsearch.nodes")}:" +
+      s"${config.getString("addressindex.elasticsearch.port")}/" +
+      s"${config.getString("addressindex.elasticsearch.indices.hybrid")}${System.currentTimeMillis()}/address"
+    val fileContents = Source.fromFile(config.getString("addressindex.files.es.json")).getLines.mkString
+
+    val post = new HttpPost(url)
+    post.setHeader("Content-type", "application/json")
+    post.setEntity(new StringEntity(fileContents))
+
+    HttpClientBuilder.create.build.execute(post)
   }
 }

@@ -52,7 +52,8 @@ object HybridAddressEsDocument {
     "streetClassification" -> (if (row.isNullAt(35)) null else row.getByte(35)),
     "crossReference" -> row.getString(36),
     "source" -> row.getString(37),
-    "nagAll" -> row.getString(38)
+    "relatives" -> row.get(38),
+    "nagAll" -> row.getString(39)
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(

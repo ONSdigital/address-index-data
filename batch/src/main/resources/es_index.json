@@ -185,6 +185,10 @@
             "nagAll": {
               "type": "string",
               "analyzer": "welsh_split_analyzer"
+            },
+            "relatives": {
+              "type": "long",
+              "analyzer": "not_analyzed"
             }
           }
         },

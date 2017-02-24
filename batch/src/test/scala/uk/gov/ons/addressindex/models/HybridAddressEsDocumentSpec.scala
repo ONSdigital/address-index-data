@@ -48,7 +48,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val nagSource = "7666MI"
     val nagLocation = Array(-2.3162985F, 4.00F)
     val nagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
-
+    val nagRelatives = Array()
 
     val pafBuildingNumber = 1.toShort
     val pafUdprn = 19
@@ -123,6 +123,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagStreetClassification,
         nagCrossReference,
         nagSource,
+        nagRelatives,
         nagAll
       )
 
@@ -165,6 +166,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "streetClassification" -> nagStreetClassification,
         "crossReference" -> nagCrossReference,
         "source" -> nagSource,
+        "relatives" -> nagRelatives,
         "nagAll" -> nagAll
       )
 

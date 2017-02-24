@@ -60,6 +60,7 @@ object SqlHelper {
           $streetTable.streetClassification,
           $crossRefTable.crossReference,
           $crossRefTable.source,
+          array() as relatives,
           concatNag(nvl(cast(saoStartNumber as String), ""),
                     nvl(cast(saoEndNumber as String), ""),
                     nvl(saoEndSuffix, ""),
