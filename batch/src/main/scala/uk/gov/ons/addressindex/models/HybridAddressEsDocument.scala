@@ -53,7 +53,9 @@ object HybridAddressEsDocument {
     "crossReference" -> row.getString(36),
     "source" -> row.getString(37),
     "relatives" -> row.get(38),
-    "nagAll" -> row.getString(39)
+    "nagAll" -> row.getString(39),
+    "lpiStartDate" -> row.getDate(40),
+    "lpiLastUpdateDate" -> row.getDate(41)
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(

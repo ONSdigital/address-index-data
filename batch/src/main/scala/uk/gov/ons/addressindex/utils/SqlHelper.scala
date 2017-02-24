@@ -75,7 +75,9 @@ object SqlHelper {
                     nvl(streetDescriptor, ""),
                     nvl(townName, ""),
                     nvl(locality, ""),
-                    nvl(postcodeLocator)) as nagAll
+                    nvl(postcodeLocator)) as nagAll,
+          $lpiTable.startDate as lpiStartDate,
+          $lpiTable.lastUpdateDate as lpiLastUpdateDate
         FROM $blpuTable
         LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
         LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn

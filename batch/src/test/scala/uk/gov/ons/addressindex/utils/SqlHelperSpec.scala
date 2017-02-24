@@ -11,6 +11,8 @@ import org.apache.spark.sql._
   */
 class SqlHelperSpec extends WordSpec with Matchers {
 
+  val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+
   "SqlHelper" should {
     "join blpu, organisation, lpi, street, street_descriptor and cross_ref" in {
 
@@ -71,6 +73,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getString(37) shouldBe "7666MI" // SOURCE
       firstLine.get(38) shouldBe Array() // RELATIVES
       firstLine.getString(39) shouldBe "SOME COUNCIL 1234AA-5678BB A BUILDING NAME OR DESCRIPTION ANOTHER BUILDING NAME OR DESCRIPTION 15CC-9876AB A STREET DESCRIPTOR A GREAT LOCALITY TOWNY TOWN KL8 1JQ"
+      firstLine.getDate(40) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
+      firstLine.getDate(41) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {
