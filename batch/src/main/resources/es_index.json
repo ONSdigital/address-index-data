@@ -5,7 +5,7 @@
     "analysis": {
       "analyzer": {
         "welsh_no_split_analyzer": {
-          "tokenizer": "keyword",
+          "tokenizer": "custom_keyword",
           "filter": [
             "asciifolding"
           ]
@@ -15,6 +15,12 @@
           "filter": [
             "asciifolding"
           ]
+        }
+      },
+      "tokenizer": {
+        "custom_keyword": {
+          "type": "keyword",
+          "buffer_size": 128
         }
       }
     }
