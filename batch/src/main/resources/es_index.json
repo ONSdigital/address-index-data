@@ -93,7 +93,8 @@
               "index": "not_analyzed"
             },
             "paoText": {
-              "type": "string"
+              "type": "string",
+              "analyzer": "welsh_no_split_analyzer"
             },
             "postcodeLocator": {
               "type": "string",
@@ -134,6 +135,50 @@
             "usrn": {
               "type": "integer",
               "index": "not_analyzed"
+            },
+            "parentUprn": {
+              "type": "long",
+              "index": "not_analyzed"
+            },
+            "multiOccCount": {
+              "type": "short",
+              "index": "not_analyzed"
+            },
+            "localCustodianCode": {
+              "type": "short",
+              "index": "not_analyzed"
+            },
+            "rpc": {
+              "type": "byte",
+              "index": "not_analyzed"
+            },
+            "usrnMatchIndicator": {
+              "type": "byte",
+              "index": "not_analyzed"
+            },
+            "language": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "streetClassification": {
+              "type": "byte",
+              "index": "not_analyzed"
+            },
+            "classScheme": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "crossReference": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "source": {
+              "type": "string",
+              "index": "not_analyzed"
+            },
+            "nagAll": {
+              "type": "string",
+              "analyzer": "welsh_split_analyzer"
             }
           }
         },
