@@ -38,11 +38,11 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 21-Dec-2016
+:version: 0.2
+:date: 20-Feb-2017
 """
-from Analytics.linking import addressLinking
 import pandas as pd
+from Analytics.linking import addressLinking
 
 
 class WelshAddressLinker(addressLinking.AddressLinker):
@@ -61,13 +61,23 @@ class WelshAddressLinker(addressLinking.AddressLinker):
         columns.remove('URN')
         columns.remove('UPRN')
 
+        # strip all white spaces from the input
+        for column in columns:
+            self.toLinkAddressData[column] = self.toLinkAddressData[column].str.strip()
+
         # fill NaNs with empty strings so that we can form a single address string
         self.toLinkAddressData[columns] = self.toLinkAddressData[columns].fillna('')
+
+        # if local authority the same as Town then replace by empty
+        msk = self.toLinkAddressData['LocalAuthority'] == self.toLinkAddressData['Town']
+        self.toLinkAddressData.loc[msk, 'LocalAuthority'] = ''
 
         self.toLinkAddressData['ADDRESS'] = self.toLinkAddressData['Service_Name'] + ' ' + \
                                             self.toLinkAddressData['Line1'] + ' ' + \
                                             self.toLinkAddressData['Line2'] + ' ' + \
                                             self.toLinkAddressData['Line3'] + ' ' + \
+                                            self.toLinkAddressData['Town'] + ' ' + \
+                                            self.toLinkAddressData['LocalAuthority'] + ' ' + \
                                             self.toLinkAddressData['Postcode']
 
         # rename postcode to postcode_orig and locality to locality_orig

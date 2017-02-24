@@ -37,34 +37,40 @@ Version
 """
 import datetime
 import glob
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 
-def _read_input_data(filename):
+def _read_input_data(filename, use_prototype=False):
     """
     Read in the original data from a _minimal.csv file created by the prototype.
 
     :param filename: name of the CSV to read in and process
     :type filename: str
+    :param use_prototype: whether or not to use the prototype UPRNs
+    :type use_prototype: bool
 
     :return: dataframe containing the input data used for the Beta request
     :rtype: pandas.DataFrame
     """
     data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': np.float64})
 
-    if ('UPRN_prev' in data) and ('UPRN_new' in data):
-        data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
-    elif 'UPRN_prev' in data:
-        data.rename(columns={'UPRN_prev': 'UPRN_comparison'}, inplace=True)
-    elif 'UPRN_new' in data:
-        data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
+    if use_prototype:
+        if 'UPRN_prev' in data:
+            data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
+        else:
+            print('Prototype UPRNs not found, will skip...')
+            return None
     else:
-        print('No comparison UPRNs available, will exit')
-        sys.exit(-9)
+        if ('UPRN_prev' in data) and ('UPRN_new' in data):
+            data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
+        elif 'UPRN_prev' in data:
+            data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
+        else:
+            print('No comparison UPRNs available, will skip...')
+            return None
 
     data.rename(columns={'ID': 'ID_original'}, inplace=True)
 
@@ -262,20 +268,27 @@ def main(path):
 
     for response_file in response_files:
         print('Processing', response_file)
-
         address_file = response_file.replace('_response.csv', '_minimal.csv')
-        output_file = response_file.replace('_response.csv', '_beta.csv')
-        output_figure_file = response_file.replace('_response.csv', '_performance.png')
 
-        input_data = _read_input_data(address_file)
-        beta_data = _read_response_data(response_file)
+        for name in ('Existing', 'Prototype'):
+            print('Calculating Performance using', name, 'UPRNs')
+            output_figure_file = response_file.replace('_response.csv', '_performance_' + name + '.png')
+            output_file = response_file.replace('_response.csv', '_beta_' + name + '.csv')
 
-        results = _join_data(input_data, beta_data, output_file)
+            if 'Prototype' in name:
+                input_data = _read_input_data(address_file, use_prototype=True)
+            else:
+                input_data = _read_input_data(address_file)
 
-        results = _check_performance(results)
+            if input_data is not None:
+                beta_data = _read_response_data(response_file)
 
-        _generate_performance_figure(results, output_figure_file)
-        # todo: add computation of presision, recall, and f1 score
+                results = _join_data(input_data, beta_data, output_file)
+
+                results = _check_performance(results)
+
+                _generate_performance_figure(results, output_figure_file)
+                # todo: add computation of precision, recall, and f1 score
 
 
 if __name__ == '__main__':

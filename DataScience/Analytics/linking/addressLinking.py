@@ -41,8 +41,8 @@ Author
 Version
 -------
 
-:version: 0.9
-:date: 1-Feb-2017
+:version: 0.91
+:date: 22-Feb-2017
 """
 import datetime
 import os
@@ -65,7 +65,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.9'
+__version__ = '0.91'
 
 
 class AddressLinker:
@@ -437,24 +437,27 @@ class AddressLinker:
         # remove white spaces if present
         self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.strip()
 
-        # remove commas and apostrophes and insert space
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
-                                                                              x['ADDRESS_norm'].replace(', ', ' '),
-                                                                              axis=1)
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
-                                                                              x['ADDRESS_norm'].replace(',', ' '),
-                                                                              axis=1)
+        # remove commas
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(', ', ' ')
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(',', ' ')
 
         # remove backslash if present and replace with space
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData.apply(lambda x:
-                                                                              x['ADDRESS_norm'].replace('\\', ' '),
-                                                                              axis=1)
+        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace('\\', ' ')
 
         # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
         # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
         # is space around the hyphen
         self.toLinkAddressData['ADDRESS_norm'] = \
-            self.toLinkAddressData.apply(lambda x: x['ADDRESS_norm'].replace('\d+ - \d+', '\d+-\d+'), axis=1)
+            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*-\s*)(\d+)', r'\1-\3', case=False)
+
+        # some addresses have number TO number, while this should be with hyphen, replace TO with - in those cases
+        # note: using \1 for group 1 and \3 for group 3 as I couldn't make non-capturing groups work
+        self.toLinkAddressData['ADDRESS_norm'] = \
+            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*TO\s*)(\d+)', r'\1-\3', case=False)
+
+        # some addresses have number/number rather than - as the range separator
+        self.toLinkAddressData['ADDRESS_norm'] = \
+            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*/\s*)(\d+)', r'\1-\3', case=False)
 
         # synonyms to expand - read from a file with format (from, to)
         synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values

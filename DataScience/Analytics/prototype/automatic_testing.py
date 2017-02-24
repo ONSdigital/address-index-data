@@ -34,14 +34,15 @@ Author
 Version
 -------
 
-:version: 0.7
-:date: 3-Feb-2017
+:version: 0.8
+:date: 22-Feb-2017
 """
 import os
 import datetime
 import sqlite3
 import Analytics.prototype.welshAddresses as wa
 import Analytics.prototype.welshAddressesSet2 as wa2
+import Analytics.prototype.welshAddressesSet3 as wa3
 import Analytics.prototype.landRegistryAddresses as lr
 import Analytics.prototype.edgeCaseAddresses as ec
 import Analytics.prototype.patientRecordAddresses as pr
@@ -105,6 +106,9 @@ def run_all_datasets():
 
     print('Running Welsh addresses second test set...')
     wa2.run_welsh_address_linker(**settings)
+
+    print('Running Welsh addresses third test set...')
+    wa3.run_welsh_address_linker(**settings)
 
     print('Running Land Registry addresses test...')
     lr.run_land_registry_linker(**settings)
