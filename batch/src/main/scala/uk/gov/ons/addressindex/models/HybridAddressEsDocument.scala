@@ -5,8 +5,8 @@ import uk.gov.ons.addressindex.utils.SparkProvider
 
 case class HybridAddressEsDocument(
   uprn: Long,
-  postCodeIn: String,
-  postCodeOut: String,
+  postcodeIn: String,
+  postcodeOut: String,
   lpi: Seq[Map[String, Any]],
   paf: Seq[Map[String, Any]]
 )

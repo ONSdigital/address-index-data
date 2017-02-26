@@ -135,14 +135,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 100010971564L
-      firstResult.postCodeOut shouldBe "KL8"
-      firstResult.postCodeIn shouldBe "1JQ"
+      firstResult.postcodeOut shouldBe "KL8"
+      firstResult.postcodeIn shouldBe "1JQ"
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
       val secondResult = result(1)
-      secondResult.postCodeOut shouldBe "PO15"
-      secondResult.postCodeIn shouldBe "5RZ"
+      secondResult.postcodeOut shouldBe "PO15"
+      secondResult.postcodeIn shouldBe "5RZ"
       secondResult.uprn shouldBe 100010971565L
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1

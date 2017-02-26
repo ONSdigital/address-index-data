@@ -15,39 +15,31 @@ import org.apache.http.impl.client.HttpClientBuilder
  * Main executed file
  */
 object Main extends App {
+
+  val config = ConfigFactory.load()
+
   val opts = new ScallopConf(args) {
     banner(
       """
-PAF and NAG indexer. All options are mutually exclusive.
+Hybrid indexer. All options are mutually exclusive.
 
-Example: java -jar ons-ai-batch.jar --paf
+Example: java -jar ons-ai-batch.jar --hybrid
 
 For usage see below:
       """)
 
-    val paf = opt[Boolean]("paf", noshort = true, descr = "Index PAF")
-    val nag = opt[Boolean]("nag", noshort = true, descr = "Index NAG")
     val hybrid = opt[Boolean]("hybrid", noshort = true, descr = "Index hybrid PAF & NAG")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
-    mutuallyExclusive(paf, nag, hybrid, help)
+    mutuallyExclusive(hybrid, help)
     verify()
   }
 
   if (!opts.help()) {
-    if (opts.paf()) {
-      savePafAddresses()
-    } else if (opts.nag()) {
-      saveNagAddresses()
-    } else if (opts.hybrid()) {
+    if (opts.hybrid()) {
       saveHybridAddresses()
     } else {
       opts.printHelp()
     }
-  }
-
-  private def saveNagAddresses() = {
-    val resultDF = generateNagAddresses()
-    ElasticSearchWriter.saveNAGAddresses(resultDF)
   }
 
   private def generateNagAddresses(): DataFrame = {
@@ -61,25 +53,21 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
   }
 
-  private def savePafAddresses() = {
-    val csv = AddressIndexFileReader.readDeliveryPointCSV()
-    ElasticSearchWriter.savePAFAddresses(csv)
-  }
-
   private def saveHybridAddresses() = {
+    val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
+    val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
+    postMapping(indexName)
+
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
 
-    postMapping()
-    ElasticSearchWriter.saveHybridAddresses(hybrid)
+    ElasticSearchWriter.saveHybridAddresses(indexName, hybrid)
   }
 
-  private def postMapping() = {
-    val config = ConfigFactory.load()
-    val indexName = s"${config.getString("addressindex.elasticsearch.indices.hybrid")}${System.currentTimeMillis()}"
+  private def postMapping(indexName: String) = {
     val url = s"http://${config.getString("addressindex.elasticsearch.nodes")}:" +
-      s"${config.getString("addressindex.elasticsearch.port")}/${indexName}"
+      s"${config.getString("addressindex.elasticsearch.port")}/$indexName"
     val put = new HttpPut(url)
     put.setHeader("Content-type", "application/json")
     put.setEntity(EntityBuilder.create().setFile(new File(config.getString("addressindex.files.es.json"))).build())

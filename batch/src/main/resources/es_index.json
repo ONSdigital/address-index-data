@@ -335,11 +335,11 @@
           "type": "long",
           "index": "not_analyzed"
         },
-        "postCodeIn": {
+        "postcodeIn": {
           "type": "string",
           "index": "not_analyzed"
         },
-        "postCodeOut": {
+        "postcodeOut": {
           "type": "string",
           "index": "not_analyzed"
         }
