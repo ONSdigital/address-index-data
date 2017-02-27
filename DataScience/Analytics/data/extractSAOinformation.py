@@ -230,7 +230,7 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[5]
 
     # sometimes both building number and flat range are stored in BuildingName (e.g. 9B-9C 65A), separate these
-    tmp = r'(\d+)([A-Z])-(\d+)([A-Z])\s(\d+)([A-Z])'
+    tmp = r'(\d+)([A-Z])-(\d+)([A-Z])\s.*?(\d+)([A-Z])'
     msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
@@ -243,7 +243,7 @@ def _parser_postprocessing(data):
     # if building number is not present, try to extract from building name if appropriate type
     # deal with cases where buildingName contains a suffix range: 24D-24E
     tmp = r'(\d+)([A-Z])-(\d+)([A-Z])'
-    msk = data['PAOendNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOstartSuffix'].isnull(), 'PAOstartSuffix'] = extracted_components[1]
