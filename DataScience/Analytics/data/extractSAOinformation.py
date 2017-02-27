@@ -229,6 +229,16 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[4]
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[5]
 
+    # sometimes both PAO and SAO range is in the BuildingName e.g. "3-3A CHURCHILL COURT 112-144"
+    tmp = r'(\d+)-(\d+)([A-Z]).*?(\d+)-(\d+)'
+    msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
+    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
+    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
+    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[2]
+    data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[3]
+    data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[4]
+
     # sometimes both building number and flat range are stored in BuildingName (e.g. 9B-9C 65A), separate these
     tmp = r'(\d+)([A-Z])-(\d+)([A-Z])\s.*?(\d+)([A-Z])'
     msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
@@ -251,19 +261,20 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOendSuffix'].isnull(), 'PAOendSuffix'] = extracted_components[3]
     # deal with cases where buildingName contains a suffix range: 24-24E
     tmp = r'(\d+)-(\d+)([A-Z])'
-    msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[1]
     data.loc[msk & data['PAOendSuffix'].isnull(), 'PAOendSuffix'] = extracted_components[2]
     # deal with cases where buildingName is a range: 120-122
     tmp = r'(\d+)-(\d+)'
-    msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[1]
-    # deal with cases where buildingName is 54A or 65B
-    tmp = r'(\d+)([A-Z])'
+    # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
+    # todo: add and not followed by -
+    tmp = r'[^-](\d+)([A-Z])[^-]'
     msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
@@ -285,8 +296,9 @@ def _parser_postprocessing(data):
     data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
     data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
     data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[2]
-    # deal with cases where buildingName is 54A or 65B
-    tmp = r'(\d+)([A-Z])'
+    # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
+    # todo: add and not followed by -
+    tmp = r'[^-](\d+)([A-Z])[^-]'
     msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     # data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
