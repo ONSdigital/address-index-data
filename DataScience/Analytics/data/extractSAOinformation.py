@@ -203,7 +203,7 @@ def _parser_postprocessing(data):
 
     # some cases the SAO components end up in the organisation name field, need to be separated
     tmp = r'(\d+)([A-Z])-(\d+)([A-Z])'
-    msk = data['BuildingNumber'].notnull() & data['OrganisationName'].str.contains(tmp, na=False, case=False)
+    msk = data['OrganisationName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'OrganisationName'].str.extract(tmp)
     data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
     data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
@@ -212,11 +212,24 @@ def _parser_postprocessing(data):
 
     # some cases the SAO components end up in the organisation name field, need to be separated
     tmp = r'(\d+)-(\d+)([A-Z])'
-    msk = data['BuildingNumber'].notnull() & data['OrganisationName'].str.contains(tmp, na=False, case=False)
+    msk = data['OrganisationName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'OrganisationName'].str.extract(tmp)
     data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
     data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
     data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[2]
+
+    # sometimes both PAO and SAO range is in the BuildingName e.g. "35A-35D 35A-35F"
+    tmp = r'(\d+)([A-Z])-(\d+)([A-Z]).*?(\d+)([A-Z])-(\d+)([A-Z])'
+    msk = data['BuildingNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
+    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
+    data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
+    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[2]
+    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[3]
+    data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[4]
+    data.loc[msk & data['PAOstartSuffix'].isnull(), 'PAOstartSuffix'] = extracted_components[5]
+    data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[6]
+    data.loc[msk & data['PAOendSuffix'].isnull(), 'PAOendSuffix'] = extracted_components[7]
 
     # sometimes both PAO and SAO range is in the BuildingName e.g. "28A-28F PICCADILLY COURT 457-463"
     tmp = r'(\d+)([A-Z])-(\d+)([A-Z]).*?(\d+)-(\d+)'
@@ -273,31 +286,15 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[1]
     # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
-    # todo: add and not followed by -
+    # todo: make sure that this works! see the one below as well
     tmp = r'[^-](\d+)([A-Z])[^-]'
     msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOstartSuffix'].isnull(), 'PAOstartSuffix'] = extracted_components[1]
 
-    # if building number is present, then add to SAO
-    # deal with cases where buildingName contains a suffix range: 24D-24E
-    tmp = r'(\d+)([A-Z])-(\d+)([A-Z])'
-    msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
-    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
-    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
-    data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
-    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[2]
-    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[3]
-    # deal with cases where buildingName contains a suffix range: 24-24E
-    tmp = r'(\d+)-(\d+)([A-Z])'
-    msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
-    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
-    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
-    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
-    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[2]
+    # if building start number is present, then add to SAO
     # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
-    # todo: add and not followed by -
     tmp = r'[^-](\d+)([A-Z])[^-]'
     msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
@@ -327,6 +324,22 @@ def _parser_postprocessing(data):
     extracted_components = data.loc[msk, 'SubBuildingName'].str.extract(tmp)
     data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[1]
     data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[0]
+
+    # deal with cases where buildingName contains a suffix range: 24D-24E
+    tmp = r'(\d+)([A-Z])-(\d+)([A-Z])'
+    msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
+    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
+    data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
+    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[2]
+    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[3]
+    # deal with cases where buildingName contains a suffix range: 24-24E
+    tmp = r'(\d+)-(\d+)([A-Z])'
+    msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
+    data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
+    data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
+    data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[2]
 
     # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
     msk = data['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
