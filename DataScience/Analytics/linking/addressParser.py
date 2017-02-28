@@ -459,7 +459,7 @@ class AddressParser:
         msk = data['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
         data.loc[msk, 'SubBuildingName'] = 'FLAT ' + data.loc[msk, 'SubBuildingName']
 
-        # deal with addresses that are of type 5/7 4 whatever road, the format assumed start/end_sao_number pao_start_numb
+        # deal with addresses that are of type 5/7 4 whatever road, the format assumed start/end_sao_numb pao_start_numb
         tmp = r'(\d+)\/(\d+)'
         msk = data['SubBuildingName'].str.contains(tmp, na=False, case=False) & \
               data['SAOStartNumber'].isnull() & data['BuildingNumber'].notnull()
