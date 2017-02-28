@@ -32,7 +32,7 @@ Version
 -------
 
 :version: 0.1
-:date: 27-Feb-2017
+:date: 28-Feb-2017
 """
 import warnings
 
@@ -47,65 +47,84 @@ warnings.simplefilter(action="ignore", category=UserWarning)
 
 def read_data(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/', filename='SAO_END_SUFFIX.xlsx'):
     """
+    Read in the data containing addresses with both PAO_START_NUMBER and SAO_END_SUFFIX present.
 
-    :param path:
-    :param filename:
+    :param path: location of the input file
+    :type path: str
+    :param filename: name of the input file
+    :type filename: str
 
-    :return:
+    :return: input data in a single data frame
+    :rtype: pandas.DataFrame
     """
     df = pd.read_excel(path + filename)
     return df
 
 
-def _normalize_input_data(data):
+def _normalize_input_data(data, normalised_field_name='ADDRESS_norm'):
     """
-    
-    :param data: 
-    :return: 
-    """
+    Normalise input address information.
 
+    This includes removal of commas and backslashes and whitespaces around numerical ranges.
+
+    :param data: address data containing a column 'ADDRESS' to normalise
+    :type data: pandas.DataFrame
+    :param normalised_field_name: name of the new field to contain normalised address data
+    :type normalised_field_name: str
+
+    :return: normalised data containing a new column names as given by normalised_field_name
+    :rtype: pandas.DataFrame
+    """
     # make a copy of the actual address field and run the parsing against it
-    data['ADDRESS_norm'] = data['ADDRESS'].copy()
+    data[normalised_field_name] = data['ADDRESS'].copy()
 
     # remove white spaces from the end and beginning if present
-    data['ADDRESS_norm'] = data['ADDRESS_norm'].str.strip()
+    data[normalised_field_name] = data[normalised_field_name].str.strip()
 
     # remove commas if present as not useful for matching
-    data['ADDRESS_norm'] = data['ADDRESS_norm'].str.replace(', ', ' ')
-    data['ADDRESS_norm'] = data['ADDRESS_norm'].str.replace(',', ' ')
+    data[normalised_field_name] = data[normalised_field_name].str.replace(', ', ' ')
+    data[normalised_field_name] = data[normalised_field_name].str.replace(',', ' ')
 
     # remove backslash if present and replace with space
-    data['ADDRESS_norm'] = data['ADDRESS_norm'].str.replace('\\', ' ')
+    data[normalised_field_name] = data[normalised_field_name].str.replace('\\', ' ')
 
     # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
     # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
     # is space around the hyphen
-    data['ADDRESS_norm'] = \
-        data['ADDRESS_norm'].str.replace(r'(\d+)(\s*-\s*)(\d+)', r'\1-\3', case=False)
+    data[normalised_field_name] = \
+        data[normalised_field_name].str.replace(r'(\d+)(\s*-\s*)(\d+)', r'\1-\3', case=False)
 
     # some addresses have number TO number, while this should be with hyphen, replace TO with - in those cases
     # note: using \1 for group 1 and \3 for group 3 as I couldn't make non-capturing groups work
-    data['ADDRESS_norm'] = \
-        data['ADDRESS_norm'].str.replace(r'(\d+)(\s*TO\s*)(\d+)', r'\1-\3', case=False)
+    data[normalised_field_name] = \
+        data[normalised_field_name].str.replace(r'(\d+)(\s*TO\s*)(\d+)', r'\1-\3', case=False)
 
     # some addresses have number/number rather than - as the range separator
-    data['ADDRESS_norm'] = \
-        data['ADDRESS_norm'].str.replace(r'(\d+)(\s*/\s*)(\d+)', r'\1-\3', case=False)
+    data[normalised_field_name] = \
+        data[normalised_field_name].str.replace(r'(\d+)(\s*/\s*)(\d+)', r'\1-\3', case=False)
 
     # some addresses have number+suffix - number+suffix, remove the potential whitespaces around the hyphen
-    data['ADDRESS_norm'] = \
-        data['ADDRESS_norm'].str.replace(r'(\d+[a-z])(\s*-\s*)(\d+[a-z])', r'\1-\3', case=False)
+    data[normalised_field_name] = \
+        data[normalised_field_name].str.replace(r'(\d+[a-z])(\s*-\s*)(\d+[a-z])', r'\1-\3', case=False)
 
     return data
 
 
-def _parse(data):
+def _parse(data, normalised_field_name='ADDRESS_norm'):
     """
+    Parse the address information given in the data.
 
-    :param data:
-    :return:
+    Assumes that the address information is stored in columned named 'ADDRESS'.
+
+    :param data: address data containing a column 'ADDRESS' to parse
+    :type data: pandas.DataFrame
+    :param normalised_field_name: name of the new field to contain normalised address data
+    :type normalised_field_name: str
+
+    :return: parsed address data
+    :rtype: pandas.DataFrame
     """
-    addresses = data['ADDRESS_norm'].values
+    addresses = data[normalised_field_name].values
 
     # temp data storage lists
     organisation = []
@@ -167,9 +186,15 @@ def _parse(data):
 
 def _parser_postprocessing(data):
     """
+    Parser post-processing steps.
 
-    :param data:
-    :return:
+    Extracts e.g. PAO_START, END, SAO_START, and END information from the parser tokens.
+
+    :param data: parsed address data ready for post-processing
+    :type data: pandas.DataFrame
+
+    :return: parsed address data, which have gone through the post-processing steps
+    :rtype: pandas.DataFrame
     """
     # if valid postcode information found then split between in and outcode
     if data['Postcode'].count() > 0:
@@ -338,11 +363,13 @@ def _parser_postprocessing(data):
     msk = data['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
     data.loc[msk, 'SubBuildingName'] = 'FLAT ' + data.loc[msk, 'SubBuildingName']
 
-    # todo: rewrite
-    # deal with addresses that are of type 5/7 4 whatever road...
-    msk = data['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
+    # deal with addresses that are of type 5/7 4 whatever road, the format assumed start/end_sao_number pao_start_numb
+    tmp = r'(\d+)\/(\d+)'
+    msk = data['SubBuildingName'].str.contains(tmp, na=False, case=False) & \
           data['SAOStartNumber'].isnull() & data['BuildingNumber'].notnull()
-    data.loc[msk, 'SAOStartNumber'] = data.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
+    extracted_components = data.loc[msk, 'SubBuildingName'].str.extract(tmp)
+    data.loc[msk & data['SAOStartNumber'].isnull(), 'SubBuildingName'] = extracted_components[0]
+    data.loc[msk & data['SAOEndNumber'].isnull(), 'SubBuildingName'] = extracted_components[1]
 
     # if SubBuildingName contains only numbers, then place also to the sao start number field as likely to be flat
     msk = data['SubBuildingName'].str.isnumeric() & data['SAOStartNumber'].isnull()
@@ -354,11 +381,17 @@ def _parser_postprocessing(data):
 
 def parse_SAO_information(data, path, output):
     """
+    Parse SAO information from a special file containing addresses with both PAO_START_NUMBER and SAO_END_SUFFIX
+    populated.
 
-    :param data:
-    :param path:
-    :param output:
-    :return:
+    :param data: input data to parse
+    :type data: pandas.DataFrame
+    :param path: location to which the output will be stored
+    :type path: str
+    :param output: name of the output file
+    :type output: str
+
+    :return: None
     """
     data = _normalize_input_data(data)
     data = _parse(data)
