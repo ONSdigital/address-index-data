@@ -122,7 +122,7 @@ def _parse(data):
     for address in tqdm(addresses):
         parsed = parser.tag(address.upper())  # probabilistic parser
 
-        # sometimes building number gets placed at building name, take it and add to building name
+        # sometimes building number gets placed at building name, take it and add to building number
         if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
             tmp = parsed['BuildingName'].split(' ')
             if len(tmp) > 1:
@@ -293,13 +293,6 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOstartSuffix'].isnull(), 'PAOstartSuffix'] = extracted_components[1]
 
     # if building start number is present, then add to SAO
-    # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
-    tmp = r'(?<!-|\d)(\d+)([A-Z])(?!-)'
-    msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
-    extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
-    # data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
-    data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
-
     # sometimes subBuildingName contains the flat range e.g. 14E-14E extract the components
     tmp = r'(\d+)([A-Z])-(\d+)([A-Z])'
     msk = data['SubBuildingName'].str.contains(tmp, na=False, case=False)
@@ -332,6 +325,7 @@ def _parser_postprocessing(data):
     data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[1]
     data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[2]
     data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[3]
+
     # deal with cases where buildingName contains a suffix range: 24-24E
     tmp = r'(\d+)-(\d+)([A-Z])'
     msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
