@@ -286,8 +286,7 @@ def _parser_postprocessing(data):
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
     data.loc[msk & data['PAOendNumber'].isnull(), 'PAOendNumber'] = extracted_components[1]
     # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
-    # todo: make sure that this works! see the one below as well
-    tmp = r'[^-](\d+)([A-Z])[^-]'
+    tmp = r'(?<!-|\d)(\d+)([A-Z])(?!-)'
     msk = data['PAOstartNumber'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     data.loc[msk & data['PAOstartNumber'].isnull(), 'PAOstartNumber'] = extracted_components[0]
@@ -295,7 +294,7 @@ def _parser_postprocessing(data):
 
     # if building start number is present, then add to SAO
     # deal with cases where buildingName is 54A or 65B but not part of a range e.g. 65A-65B
-    tmp = r'[^-](\d+)([A-Z])[^-]'
+    tmp = r'(?<!-|\d)(\d+)([A-Z])(?!-)'
     msk = data['PAOstartNumber'].notnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
     extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
     # data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
