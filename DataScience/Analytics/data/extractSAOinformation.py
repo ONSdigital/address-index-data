@@ -19,7 +19,6 @@ Requirements
 
 :requires: pandas
 :requires: ProbabilisticParser (a CRF model specifically build for ONS)
-:requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
 
 
 Author
@@ -34,14 +33,8 @@ Version
 :version: 0.1
 :date: 28-Feb-2017
 """
-import warnings
-
 import pandas as pd
 from Analytics.linking import addressParser
-
-# suppress pandas warnings
-warnings.simplefilter(action="ignore", category=FutureWarning)
-warnings.simplefilter(action="ignore", category=UserWarning)
 
 
 def read_data(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/', filename='SAO_END_SUFFIX.xlsx'):

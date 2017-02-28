@@ -30,11 +30,16 @@ import logging
 import os
 import re
 import sys
+import warnings
 
 import numpy as np
 import pandas as pd
 from ProbabilisticParser import parser
 from tqdm import tqdm
+
+# suppress pandas warnings
+warnings.simplefilter(action="ignore", category=FutureWarning)
+warnings.simplefilter(action="ignore", category=UserWarning)
 
 
 class AddressParser:
@@ -250,6 +255,10 @@ class AddressParser:
             if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
                 if 'LONDON' in parsed['TownName']:
                     parsed = self._fix_london_boroughs(parsed, os.path.join(self.currentDirectory, '../../data/'))
+
+            # parser sometimes places house to organisation name, while it is likelier that it should be subBuilding
+            if parsed.get('OrganisationName') == 'HOUSE' and parsed.get('SubBuildingName', None) is None:
+                parsed['SubBuildingName'] = parsed.get('OrganisationName')
 
             # store the parsed information to separate lists
             organisation.append(parsed.get('OrganisationName', None))
@@ -472,6 +481,15 @@ class AddressParser:
         msk[msk.isnull()] = False
         data.loc[msk, 'SAOStartNumber'] = data.loc[msk, 'SubBuildingName']
 
+        # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
+        # todo: rewrite
+        msk = data['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
+        data.loc[msk, 'SAOStartNumber'] = data.loc[msk, 'SubBuildingName']
+        data.loc[msk, 'SAOStartNumber'] = \
+            data.loc[msk].apply(lambda x: x['SAOStartNumber'].strip().
+                                replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
+                                axis=1)
+
         return data
 
     @staticmethod
@@ -502,3 +520,5 @@ class AddressParser:
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
         columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName']
         data[columns_to_add_empty_strings].fillna('', inplace=True)
+
+        return data
