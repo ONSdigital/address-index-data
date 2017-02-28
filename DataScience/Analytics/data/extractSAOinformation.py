@@ -137,23 +137,9 @@ def _parse(data, normalised_field_name='ADDRESS_norm'):
     town = []
     postcode = []
 
-    # loop over addresses - quite inefficient, should avoid a loop
+    # loop over addresses and use the probabilistic parser to tag the address components - should avoid a loop
     for address in tqdm(addresses):
-        parsed = parser.tag(address.upper())  # probabilistic parser
-
-        # sometimes building number gets placed at building name, take it and add to building number
-        if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-            tmp = parsed['BuildingName'].split(' ')
-            if len(tmp) > 1:
-                try:
-                    _ = int(tmp[0])
-                    parsed['BuildingNumber'] = tmp[0]
-                except ValueError:
-                    pass
-
-        # parser sometimes places house to organisation name, while it is likelier that it should be subBuilding
-        if parsed.get('OrganisationName') == 'HOUSE' and parsed.get('SubBuildingName', None) is None:
-            parsed['SubBuildingName'] = parsed.get('OrganisationName')
+        parsed = parser.tag(address.upper())
 
         # store the parsed information to separate lists
         organisation.append(parsed.get('OrganisationName', None))
