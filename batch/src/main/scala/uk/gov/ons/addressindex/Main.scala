@@ -1,15 +1,14 @@
 package uk.gov.ons.addressindex
 
-import java.io.File
 import com.typesafe.config.ConfigFactory
-import org.apache.http.client.entity.EntityBuilder
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
-import uk.gov.ons.addressindex.utils.SqlHelper
+import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 import org.apache.http.client.methods.HttpPut
-import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.DefaultHttpClient
 
 /**
  * Main executed file
@@ -70,7 +69,7 @@ For usage see below:
       s"${config.getString("addressindex.elasticsearch.port")}/$indexName"
     val put = new HttpPut(url)
     put.setHeader("Content-type", "application/json")
-    put.setEntity(EntityBuilder.create().setFile(new File(config.getString("addressindex.files.es.json"))).build())
-    HttpClientBuilder.create.build.execute(put)
+    put.setEntity(new StringEntity(Mappings.hybrid))
+    (new DefaultHttpClient).execute(put)
   }
 }

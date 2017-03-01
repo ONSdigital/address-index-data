@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0"  excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.scalatest" %% "scalatest" % "3.0.0" % Test,
   "org.rogach" %% "scallop" % "2.0.5",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.3"
+  "org.apache.httpcomponents" % "httpclient" % "4.2.5"
 )
 
 scalacOptions ++= List("-unchecked", "-Xlint")
