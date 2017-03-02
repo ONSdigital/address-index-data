@@ -366,7 +366,7 @@ class AddressParser:
         extracted_components = data.loc[msk, 'OrganisationName'].str.extract(tmp)
         data.loc[msk & data['SAOStartNumber'].isnull(), 'SAOStartNumber'] = extracted_components[0]
         data.loc[msk & data['SAOEndNumber'].isnull(), 'SAOEndNumber'] = extracted_components[1]
-        data.loc[msk & data['SAOStartSuffix'].isnull(), 'SAOStartSuffix'] = extracted_components[2]
+        data.loc[msk & data['SAOEndSuffix'].isnull(), 'SAOEndSuffix'] = extracted_components[2]
 
         # sometimes both PAO and SAO range is in the BuildingName e.g. "35A-35D 35A-35F"
         tmp = r'(\d+)([A-Z])-(\d+)([A-Z]).*?(\d+)([A-Z])-(\d+)([A-Z])'

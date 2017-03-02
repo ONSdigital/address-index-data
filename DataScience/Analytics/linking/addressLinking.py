@@ -204,10 +204,6 @@ class AddressLinker:
 
             # rename postcode to postcode_orig and locality to locality_orig
             self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_old'}, inplace=True)
-
-            # convert original UPRN to numeric
-            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(
-                convert_numeric=True)
         else:
             self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
             raise NotImplementedError
@@ -227,6 +223,8 @@ class AddressLinker:
         self.log.info('Found {} addresses...'.format(n_addresses))
 
         if 'UPRN_old' in self.toLinkAddressData.columns:
+            # cast the UPRNs as float64 for comparison purposes as int64 does not support NaNs
+            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].astype(np.float64)
             self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
         else:
             self.log.warning('No existing UPRNs found')
@@ -264,8 +262,9 @@ class AddressLinker:
             self.log.warning('Using Test Data...')
             self.settings['ABfilename'] = 'ABtest.csv'
 
+        # for comparison purposes cast the UPRN as float as int64 does not support missing values
         self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
-                                       dtype={'UPRN': np.int64, 'ORGANISATION_NAME': str,
+                                       dtype={'UPRN': np.float64, 'ORGANISATION_NAME': str,
                                               'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
                                               'BUILDING_NUMBER': str, 'THROUGHFARE': str,
                                               'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
@@ -553,7 +552,7 @@ class AddressLinker:
         """
         self.log.info('Checking Performance...')
 
-        # count the number of matches and the total number of addresses and write to the lod
+        # count the number of matches and the total number of addresses
         total = len(self.matching_results.index)
 
         # save matched to a file for inspection
