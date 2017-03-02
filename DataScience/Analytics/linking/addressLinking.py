@@ -398,8 +398,11 @@ class AddressLinker:
                         name='pao_number_dl')
         compare.numeric('PAO_END_NUMBER', 'PAOendNumber', threshold=0.1, method='linear',
                         name='building_end_number_dl')
-        compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
-                       missing_value=0.7)
+        if blocking not in (5, 8, 9):
+            compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
+                           missing_value=0.7)
+            compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
+                           missing_value=0.6)
         compare.string('POST_TOWN', 'TownName', method='jarowinkler', name='town_dl',
                        missing_value=0.2)
         compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
@@ -438,10 +441,6 @@ class AddressLinker:
         compare.string('DEPARTMENT_NAME', 'DepartmentName', method='jarowinkler', name='department_dl',
                        missing_value=0.6)
 
-        # Extras
-        compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
-                       missing_value=0.6)
-
         # execute the comparison model
         compare.run()
 
@@ -450,12 +449,13 @@ class AddressLinker:
             compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
-        elif blocking in (3, 4):
+        elif blocking in (3,):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
-        elif blocking in (5, 6, 7):
-            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+        elif blocking in (5,):
             compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
         elif blocking in (6, 7):
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+            compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
 

@@ -488,6 +488,13 @@ class AddressParser:
         msk = data['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
         data.loc[msk, 'SubBuildingName'] = 'FLAT ' + data.loc[msk, 'SubBuildingName']
 
+        # if SubBuildingName is empty, but BuildingName contains Block [A-Z], place this string to SubBuildingName
+        tmp = r'(BLOCK [A-Z])'
+        msk = data['SubBuildingName'].isnull() & data['BuildingName'].str.contains(tmp, na=False, case=False)
+        extracted_components = data.loc[msk, 'BuildingName'].str.extract(tmp)
+        if len(extracted_components.index) > 0:
+            data.loc[msk, 'SubBuildingName'] = extracted_components.values
+
         # deal with addresses that are of type 5/7 4 whatever road, the format assumed start/end_sao_numb pao_start_numb
         tmp = r'(\d+)\/(\d+)'
         msk = data['SubBuildingName'].str.contains(tmp, na=False, case=False) & \
