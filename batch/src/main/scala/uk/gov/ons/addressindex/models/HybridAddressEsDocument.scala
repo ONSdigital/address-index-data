@@ -53,9 +53,18 @@ object HybridAddressEsDocument {
     "crossReference" -> row.getString(36),
     "source" -> row.getString(37),
     "relatives" -> row.get(38),
-    "nagAll" -> row.getString(39),
-    "lpiStartDate" -> row.getDate(40),
-    "lpiLastUpdateDate" -> row.getDate(41)
+    "lpiStartDate" -> row.getDate(39),
+    "lpiLastUpdateDate" -> row.getDate(40),
+    "nagAll" ->  concatNag(
+      if (row.isNullAt(23)) null else row.getShort(23).toString,
+      if (row.isNullAt(25)) "" else row.getShort(25).toString,
+      row.getString(26), row.getString(24), row.getString(22), row.getString(11),
+      if (row.isNullAt(18)) "" else row.getShort(18).toString,
+      row.getString(19),
+      if (row.isNullAt(20)) "" else row.getShort(20).toString,
+      row.getString(21), row.getString(17), row.getString(32),
+      row.getString(33), row.getString(34), row.getString(1)
+    )
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
@@ -120,6 +129,44 @@ object HybridAddressEsDocument {
     Seq(departmentName, organisationName, subBuildingName, buildingName,
       poBoxNumber, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
       langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
+  }
+
+  def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
+    saoText: String, organisation: String, paoStartNumber: String, paoStartSuffix: String,
+    paoEndNumber: String, paoEndSuffix: String, paoText: String, streetDescriptor: String,
+    townName: String, locality: String, postcodeLocator: String): String = {
+
+    val saoLeftRangeExists = saoStartNumber.nonEmpty || saoStartSuffix.nonEmpty
+    val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
+    val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
+
+    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
+      .map(_.trim).mkString
+    val sao =
+      if (saoText == organisation || saoText.isEmpty) saoNumbers
+      else if (saoNumbers.isEmpty) s"$saoText"
+      else s"$saoNumbers $saoText"
+
+    val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
+    val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
+    val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
+
+    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix)
+      .map(_.trim).mkString
+    val pao =
+      if (paoText == organisation || paoText.isEmpty) paoNumbers
+      else if (paoNumbers.isEmpty) s"$paoText"
+      else s"$paoText $paoNumbers"
+
+    val trimmedStreetDescriptor = streetDescriptor.trim
+    val buildingNumberWithStreetDescription =
+      if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
+      else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
+      else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
+      else s"$sao $pao $trimmedStreetDescriptor"
+
+    Seq(organisation, buildingNumberWithStreetDescription, locality,
+      townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
 
 }

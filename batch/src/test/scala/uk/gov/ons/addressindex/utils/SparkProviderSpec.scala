@@ -153,7 +153,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -182,7 +182,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -210,7 +210,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -238,7 +238,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -266,7 +266,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -294,7 +294,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = "LOCALITY XYZ"
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 
@@ -322,7 +322,7 @@ class SparkProviderSpec extends WordSpec with Matchers {
       val nagLocality = ""
 
       // When
-      val result = SparkProvider.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
+      val result = HybridAddressEsDocument.concatNag(nagSaoStartNumber, nagSaoEndNumber, nagSaoEndSuffix, nagSaoStartSuffix,
         nagSaoText, nagOrganisation, nagPaoStartNumber, nagPaoStartSuffix, nagPaoEndNumber, nagPaoEndSuffix,
         nagPaoText, nagStreetDescriptor, nagTownName, nagLocality, nagPostcodeLocator)
 

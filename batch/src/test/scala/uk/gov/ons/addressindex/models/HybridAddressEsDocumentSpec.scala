@@ -126,7 +126,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagCrossReference,
         nagSource,
         nagRelatives,
-        nagAll,
         nagLpiStartDate,
         nagLpiLastUpdateDate
       )
@@ -214,8 +213,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         pafStartDate,
         pafEndDate,
         pafLastUpdateDate,
-        pafEntryDate,
-        pafAll
+        pafEntryDate
       )
 
       val expected = Map(
