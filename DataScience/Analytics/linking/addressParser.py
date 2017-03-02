@@ -508,6 +508,14 @@ class AddressParser:
         msk[msk.isnull()] = False
         data.loc[msk, 'SAOStartNumber'] = data.loc[msk, 'SubBuildingName']
 
+        # if street name contains a number and buildingnumber is empty, then place it there and pao_start_number
+        tmp = r'(\d+)'
+        msk = data['BuildingNumber'].isnull() & data['StreetName'].str.contains(tmp, na=False, case=False)
+        extracted_components = data.loc[msk, 'StreetName'].str.extract(tmp)
+        if len(extracted_components.index) > 0:
+            data.loc[msk, 'BuildingNumber'] = extracted_components.values
+            data.loc[msk, 'PAOstartNumber'] = extracted_components.values
+
         # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
         # todo: rewrite
         msk = data['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
