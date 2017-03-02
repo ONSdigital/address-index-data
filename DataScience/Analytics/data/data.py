@@ -5,12 +5,17 @@ ONS Address Index - Data
 
 A simple script containing methods to query or modify the ONS AddressBase data.
 
+Uses Dask for larger-than-memory computations. Can also use distributed to spread
+the computations over a cluster if needed.
+
 
 Requirements
 ------------
 
-:requires: numpy
-:requires: pandas
+:requires: dask (tested with 0.14.0)
+:requires: distributed (tested with 1.16.0)
+:requires: numpy (tested with 1.12.0)
+:requires: pandas (tested with 0.19.2)
 :requires: sqlalchemy
 :requires: tqdm (https://github.com/tqdm/tqdm)
 
@@ -24,17 +29,21 @@ Author
 Version
 -------
 
-:version: 0.9
-:date: 23-Jan-2016
+:version: 1.0
+:date: 1-Mar-2016
 """
 import glob
 import os
 import re
 import sqlite3
+
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+from dask.diagnostics import ProgressBar
 from sqlalchemy import create_engine
 from tqdm import tqdm
+from distributed import Client, LocalCluster
 
 if os.environ.get('LC_CTYPE', '') == 'UTF-8':
     os.environ['LC_CTYPE'] = 'en_US.UTF-8'
@@ -74,8 +83,9 @@ def getPostcode(string):
     """
     try:
         tmp = \
-        re.findall(r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
-                   string)[0]
+            re.findall(
+                r'[A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA',
+                string)[0]
     except ValueError:
         tmp = None
 
@@ -190,65 +200,81 @@ def combineMiniABtestingData():
     data.to_csv(path + 'ABmini.csv', index=0)
 
 
-def combineAddressBaseData(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
-                           filename='AB.csv'):
+def combine_address_base_data(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                              filename='AB.csv', distributed=False):
     """
     Read in all the Address Base Epoch 39 CSV files and combine to a single CSV file.
     Only relevant information is retained to compress the AB for easier handling.
+
+    .. Note:: Uses Dask so that the datasets do not need to fit in memory. This is not very efficient
+              as the join is using a column not index. However, as UPRN is not unique using it as index
+              has a penalty too.
 
     :param path: location of the AddressBase CSV files
     :type path: str
     :param filename: name of the output file
     :type filename: str
+    :param distributed:
+    :type distributed: bool
 
     :return: None
     """
-    files = glob.glob(path + 'ABP_E39_*.csv')
+    if distributed:
+        cluster = LocalCluster(n_workers=4, threads_per_worker=1)
+        client = Client(cluster)
+        print(client)
 
-    for file in tqdm(files):
+    all_files = glob.glob(path + 'ABP_E39_*.csv')
+    files = [file for file in all_files if ('STREET.csv' not in file)]
 
-        # skip a few addresses not used
-        if 'CLASSIFICATION' in file or 'STREET.csv' in file:
-            pass
-
-        print('Reading in', file)
-        tmp = pd.read_csv(file, dtype=str)
-
+    data_container = dict()
+    for file in files:
         if 'BLPU' in file:
-            BLPU = tmp[['UPRN', 'POSTCODE_LOCATOR']]
+            columns = ['UPRN', 'POSTCODE_LOCATOR']
+            id = 'BLPU'
 
         if 'DELIVERY_POINT' in file:
-            DP = tmp[['UPRN', 'ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
-                      'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
-                      'POST_TOWN', 'POSTCODE']]
+            columns = ['UPRN', 'ORGANISATION_NAME', 'DEPARTMENT_NAME', 'SUB_BUILDING_NAME',
+                       'BUILDING_NAME', 'BUILDING_NUMBER', 'THROUGHFARE', 'DEPENDENT_LOCALITY',
+                       'POST_TOWN', 'POSTCODE']
+            id = 'DP'
 
         if 'LPI' in file:
-            LPI = tmp[['UPRN', 'USRN', 'LANGUAGE',
-                       'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX', 'PAO_END_NUMBER', 'PAO_END_SUFFIX',
-                       'SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX']]
+            columns = ['UPRN', 'USRN', 'LANGUAGE', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX',
+                       'PAO_END_NUMBER', 'PAO_END_SUFFIX', 'SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX',
+                       'SAO_END_NUMBER', 'SAO_END_SUFFIX']
+            id = 'LPI'
 
         if 'STREET_DESC' in file:
-            ST = tmp[['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']]
+            columns = ['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY']
+            id = 'ST'
 
         if 'ORGANISATION' in file:
-            ORG = tmp[['UPRN', 'ORGANISATION']]
+            columns = ['UPRN', 'ORGANISATION']
+            id = 'ORG'
 
-    print('joining the individual dataframes...')
-    data = pd.merge(BLPU, DP, how='left', on='UPRN')
-    data = pd.merge(data, LPI, how='left', on='UPRN')
-    data = pd.merge(data, ORG, how='left', on=['UPRN'])
-    data = pd.merge(data, ST, how='left', on=['USRN', 'LANGUAGE'])
+        print('Reading in', file)
+        data_container[id] = dd.read_csv(file, dtype=str, usecols=columns)
 
-    # drop if all null
-    data.dropna(inplace=True, how='all')
+    print('joining the individual data frames to form a single hybrid index...')
+    data = dd.merge(data_container['BLPU'], data_container['DP'], how='left', on='UPRN')
+    data = dd.merge(data, data_container['LPI'], how='left', on='UPRN')
+    data = dd.merge(data, data_container['ORG'], how='left', on=['UPRN'])
+    data = dd.merge(data, data_container['ST'], how='left', on=['USRN', 'LANGUAGE'])
 
-    # change uprn to int
+    if distributed:
+        data = dd.compute(data)[0]
+    else:
+        with ProgressBar():
+            data = dd.compute(data)[0]
+
+    print('change the uprn type to int...')
     data['UPRN'] = data['UPRN'].astype(int)
 
-    # drop if no UPRN
+    print('drop all entries with no UPRN...')
     data = data[np.isfinite(data['UPRN'].values)]
 
-    # drop some that are not needed
+    print('drop unnecessary columns...')
     data.drop(['LANGUAGE', 'USRN'], axis=1, inplace=True)
 
     print(data.info())
@@ -339,7 +365,7 @@ def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRE
 
     columns = {'BLPU': ['UPRN', 'POSTCODE_LOCATOR'],
                'LPI': ['UPRN', 'USRN', 'LANGUAGE', 'PAO_TEXT', 'PAO_START_NUMBER', 'PAO_START_SUFFIX', 'PAO_END_NUMBER',
-                       'PAO_END_SUFFIX','SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX', 'OFFICIAL_FLAG'],
+                       'PAO_END_SUFFIX', 'SAO_TEXT', 'SAO_START_NUMBER', 'SAO_START_SUFFIX', 'OFFICIAL_FLAG'],
                'STREET_DESC': ['USRN', 'STREET_DESCRIPTOR', 'TOWN_NAME', 'LANGUAGE', 'LOCALITY'],
                'ORGANISATION': ['UPRN', 'ORGANISATION']}
 
@@ -382,8 +408,9 @@ def create_NLP_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRE
     data.to_csv(path + filename, index=False)
 
 
-def create_random_sample_of_delivery_point_addresses(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
-                                                     size=100000):
+def create_random_sample_of_delivery_point_addresses(
+        path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+        size=100000):
     """
 
     :param path:
@@ -391,7 +418,7 @@ def create_random_sample_of_delivery_point_addresses(path='/Users/saminiemi/Proj
     :return:
     """
     # read in delivery point table
-    delivery_point = pd.read_csv(path + 'ABP_E39_DELIVERY_POINT.csv',  dtype=str)
+    delivery_point = pd.read_csv(path + 'ABP_E39_DELIVERY_POINT.csv', dtype=str)
     delivery_point['UPRN'] = delivery_point['UPRN'].astype(np.int64)
     print(len(delivery_point.index), 'delivery point addresses...')
 
@@ -410,8 +437,8 @@ def create_random_sample_of_delivery_point_addresses(path='/Users/saminiemi/Proj
 
     # write to a file - UPRN and a single string address from the delivery point
     data = data.fillna('')
-    data['ADDRESS'] = data["ORGANISATION_NAME"] + ' ' + data["DEPARTMENT_NAME"] + ' ' + data["SUB_BUILDING_NAME"] + ' '\
-                      + data["BUILDING_NAME"] + ' ' + data["BUILDING_NUMBER"] + ' ' + data["THROUGHFARE"] + ' ' +\
+    data['ADDRESS'] = data["ORGANISATION_NAME"] + ' ' + data["DEPARTMENT_NAME"] + ' ' + data["SUB_BUILDING_NAME"] + ' ' \
+                      + data["BUILDING_NAME"] + ' ' + data["BUILDING_NUMBER"] + ' ' + data["THROUGHFARE"] + ' ' + \
                       data["POST_TOWN"] + ' ' + data["POSTCODE"]
 
     data = data[['UPRN', 'ADDRESS']]
@@ -420,5 +447,5 @@ def create_random_sample_of_delivery_point_addresses(path='/Users/saminiemi/Proj
 
 
 if __name__ == "__main__":
-    create_NLP_index()
-    create_random_sample_of_delivery_point_addresses()
+    combine_address_base_data()
+    convertCSVtoSQLite()
