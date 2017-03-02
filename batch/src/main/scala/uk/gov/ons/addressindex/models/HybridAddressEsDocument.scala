@@ -56,7 +56,7 @@ object HybridAddressEsDocument {
     "lpiStartDate" -> row.getDate(39),
     "lpiLastUpdateDate" -> row.getDate(40),
     "nagAll" ->  concatNag(
-      if (row.isNullAt(23)) null else row.getShort(23).toString,
+      if (row.isNullAt(23)) "" else row.getShort(23).toString,
       if (row.isNullAt(25)) "" else row.getShort(25).toString,
       row.getString(26), row.getString(24), row.getString(22), row.getString(11),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,

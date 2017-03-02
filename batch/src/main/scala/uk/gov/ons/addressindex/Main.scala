@@ -61,7 +61,7 @@ For usage see below:
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
 
-    ElasticSearchWriter.saveHybridAddresses(indexName, hybrid)
+    ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
 
   private def postMapping(indexName: String) = {
