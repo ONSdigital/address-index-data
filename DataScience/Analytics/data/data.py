@@ -30,7 +30,7 @@ Version
 -------
 
 :version: 1.0
-:date: 1-Mar-2016
+:date: 2-Mar-2016
 """
 import glob
 import os
@@ -41,9 +41,9 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 from dask.diagnostics import ProgressBar
+from distributed import Client, LocalCluster
 from sqlalchemy import create_engine
 from tqdm import tqdm
-from distributed import Client, LocalCluster
 
 if os.environ.get('LC_CTYPE', '') == 'UTF-8':
     os.environ['LC_CTYPE'] = 'en_US.UTF-8'
@@ -437,7 +437,7 @@ def create_random_sample_of_delivery_point_addresses(
 
     # write to a file - UPRN and a single string address from the delivery point
     data = data.fillna('')
-    data['ADDRESS'] = data["ORGANISATION_NAME"] + ' ' + data["DEPARTMENT_NAME"] + ' ' + data["SUB_BUILDING_NAME"] + ' ' \
+    data['ADDRESS'] = data["ORGANISATION_NAME"] + ' ' + data["DEPARTMENT_NAME"] + ' ' + data["SUB_BUILDING_NAME"] + ' '\
                       + data["BUILDING_NAME"] + ' ' + data["BUILDING_NUMBER"] + ' ' + data["THROUGHFARE"] + ' ' + \
                       data["POST_TOWN"] + ' ' + data["POSTCODE"]
 
@@ -446,6 +446,129 @@ def create_random_sample_of_delivery_point_addresses(
     data.to_csv(path + 'delivery_point_addresses.csv', index=False)
 
 
+def create_final_hybrid_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/', filename='AB.csv',
+                              output_filename='AB_processed.csv'):
+    """
+    A function to load an initial version of hybrid index as produced by combine_address_base_data
+    and to process it to the final hybrid index used in matching.
+
+    .. Warning: this method modifies the original AB information by e.g. combining different tables. Such
+                activities are undertaken because of the aggressive blocking the prototype linking code uses.
+                The actual production system should take AB as it is and the linking should not perform blocking
+                but rather be flexible and take into account that in NAG the information can be stored in various
+                fields.
+    """
+    address_base = pd.read_csv(path + filename,
+                               dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION_NAME': str,
+                                      'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                      'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
+                                      'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
+                                      'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str, 'PAO_END_NUMBER': str,
+                                      'PAO_END_SUFFIX': str, 'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
+                                      'SAO_START_SUFFIX': str, 'ORGANISATION': str, 'STREET_DESCRIPTOR': str,
+                                      'TOWN_NAME': str, 'LOCALITY': str, 'SAO_END_NUMBER': np.float64,
+                                      'SAO_END_SUFFIX': str})
+    print('Found {} addresses from the combined AddressBase file...'.format(len(address_base.index)))
+
+    # remove street records from the list of potential matches - this makes the search space slightly smaller
+    exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
+    exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
+    exclude += 'PONDS \d+M FROM|SUB STATION'
+    msk = address_base['PAO_TEXT'].str.contains(exclude, na=False, case=False)
+    address_base = address_base.loc[~msk]
+
+    # combine information - could be done differently, but for now using some of these for blocking
+    msk = address_base['THROUGHFARE'].isnull()
+    address_base.loc[msk, 'THROUGHFARE'] = address_base.loc[msk, 'STREET_DESCRIPTOR']
+
+    msk = address_base['BUILDING_NUMBER'].isnull()
+    address_base.loc[msk, 'BUILDING_NUMBER'] = address_base.loc[msk, 'PAO_START_NUMBER']
+
+    msk = address_base['BUILDING_NAME'].isnull()
+    address_base.loc[msk, 'BUILDING_NAME'] = address_base.loc[msk, 'PAO_TEXT']
+
+    msk = address_base['ORGANISATION_NAME'].isnull()
+    address_base.loc[msk, 'ORGANISATION_NAME'] = address_base.loc[msk, 'ORGANISATION']
+
+    msk = address_base['POSTCODE'].isnull()
+    address_base.loc[msk, 'POSTCODE'] = address_base.loc[msk, 'POSTCODE_LOCATOR']
+
+    msk = address_base['SUB_BUILDING_NAME'].isnull()
+    address_base.loc[msk, 'SUB_BUILDING_NAME'] = address_base.loc[msk, 'SAO_TEXT']
+
+    msk = address_base['POST_TOWN'].isnull()
+    address_base.loc[msk, 'POST_TOWN'] = address_base.loc[msk, 'TOWN_NAME']
+
+    msk = address_base['POSTCODE'].isnull()
+    address_base.loc[msk, 'POSTCODE'] = address_base.loc[msk, 'POSTCODE_LOCATOR']
+
+    msk = address_base['LOCALITY'].isnull()
+    address_base.loc[msk, 'LOCALITY'] = address_base.loc[msk, 'DEPENDENT_LOCALITY']
+
+    # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
+    # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
+    msk = address_base['SAO_START_NUMBER'].isnull() & (address_base['SAO_TEXT'].notnull())
+    address_base.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
+        address_base.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
+
+    # normalise street names so that st. is always st and 's is always s
+    msk = address_base['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
+    address_base.loc[msk, 'THROUGHFARE'] = address_base.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
+    msk = address_base['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
+    address_base.loc[msk, 'THROUGHFARE'] = address_base.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
+
+    # drop some that are not needed - in the future versions these might be useful
+    address_base.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION'], axis=1, inplace=True)
+
+    # split postcode to in and outcode - useful for doing blocking in different ways
+    postcodes = address_base['POSTCODE'].str.split(' ', expand=True)
+    postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
+    address_base = pd.concat([address_base, postcodes], axis=1)
+
+    print('Using {} addresses from the final hybrid index...'.format(len(address_base.index)))
+
+    print(address_base.info(verbose=True, memory_usage=True, null_counts=True))
+    address_base.to_csv(path + output_filename, index=False)
+
+
+def create_test_hybrid_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/data/ADDRESSBASE/',
+                             filename='AB_processed.csv', output_filename='ABtest.csv'):
+    """
+    Updates an existing test index to reflect changes made to the processed final hybrid index.
+
+    :param path:
+    :param filename:
+    :param output_filename:
+
+    :return: None
+    """
+    address_base = pd.read_csv(path + filename,
+                               dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION_NAME': str,
+                                      'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
+                                      'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
+                                      'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
+                                      'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str, 'PAO_END_NUMBER': str,
+                                      'PAO_END_SUFFIX': str, 'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
+                                      'SAO_START_SUFFIX': str, 'ORGANISATION': str, 'STREET_DESCRIPTOR': str,
+                                      'TOWN_NAME': str, 'LOCALITY': str, 'SAO_END_NUMBER': np.float64,
+                                      'SAO_END_SUFFIX': str})
+    print('Found {} addresses from te hybrid index...'.format(len(address_base.index)))
+
+    test_index_uprns = pd.read_csv(path + output_filename, usecols=['UPRN'], dtype={'UPRN': np.int64})['UPRN'].values
+    print('Found {} addresses from the test index...'.format(len(test_index_uprns.index)))
+
+    # find the overlap
+    mask = np.in1d(address_base['UPRN'].values, test_index_uprns)
+
+    # output to a file - overwrites the old test index
+    address_base_test_index = address_base.loc[mask]
+    address_base_test_index.to_csv(path + output_filename, index=False)
+    print(address_base_test_index.info())
+
+
 if __name__ == "__main__":
     combine_address_base_data()
+    create_final_hybrid_index()
     convertCSVtoSQLite()
+
+    create_test_hybrid_index()
