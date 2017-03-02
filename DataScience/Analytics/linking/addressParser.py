@@ -256,6 +256,24 @@ class AddressParser:
                 if 'LONDON' in parsed['TownName']:
                     parsed = self._fix_london_boroughs(parsed, os.path.join(self.currentDirectory, '../../data/'))
 
+            # sometimes building number gets placed at building name, take it and add to building name
+            if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
+                tmp = parsed['BuildingName'].split(' ')
+                if len(tmp) > 1:
+                    try:
+                        _ = int(tmp[0])
+                        parsed['BuildingNumber'] = tmp[0]
+                    except ValueError:
+                        pass
+
+            # some addresses contain place CO place, where the CO is not part of the actual name - remove these
+            # same is true for IN e.g. Road Marton IN Cleveland
+            if parsed.get('Locality', None) is not None:
+                if parsed['Locality'].strip().endswith(' CO'):
+                    parsed['Locality'] = parsed['Locality'].replace(' CO', '')
+                if parsed['Locality'].strip().endswith(' IN'):
+                    parsed['Locality'] = parsed['Locality'].replace(' IN', '')
+
             # parser sometimes places house to organisation name, while it is likelier that it should be subBuilding
             if parsed.get('OrganisationName') == 'HOUSE' and parsed.get('SubBuildingName', None) is None:
                 parsed['SubBuildingName'] = parsed.get('OrganisationName')
@@ -500,22 +518,21 @@ class AddressParser:
         :return:
         """
         for numeric_columns in ('PAOstartNumber', 'PAOendNumber', 'SAOStartNumber', 'SAOEndNumber'):
+            # convert to numeric, if NA then set to dummy
             data[numeric_columns] = pd.to_numeric(data[numeric_columns], errors='coerce')
             data[numeric_columns].fillna(-12345, inplace=True)
             data[numeric_columns] = data[numeric_columns].astype(np.int32)
 
-        for dummies_columns in ('PAOstartSuffix', 'PAOendSuffix', 'SAOStartSuffix', 'SAOEndSuffix'):
-            # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
+        for dummies_columns in ('PAOstartSuffix', 'PAOendSuffix', 'SAOStartSuffix', 'SAOEndSuffix', 'SAOText'):
+            # if field is empty add dummy - helps when comparing against None
             msk = data[dummies_columns].isnull()
-            data.loc[msk, dummies_columns] = 'Not/Avail'
+            data.loc[msk, dummies_columns] = 'N/A'
 
         # for some welsh addresses the building name is parsed as organisation name, so place to PAOtext if empty
         msk = data['PAOText'].isnull()
         data.loc[msk, 'PAOText'] = data['OrganisationName']
         msk = data['PAOText'].isnull()
         data.loc[msk, 'PAOText'] = ''
-        msk = data['SAOText'].isnull()
-        data.loc[msk, 'SAOText'] = 'N/A'
 
         # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
         columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName']
