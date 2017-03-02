@@ -250,13 +250,13 @@ class AddressLinker:
 
     def load_addressbase(self):
         """
-        A method to load a compressed version of the full AddressBase file.
+        A method to load a compressed version of the full AddressBase hybrid index.
 
         The information being used has been processed from a AB Epoch 39 files provided by ONS.
 
         .. Note: this method assumes that all modifications have already been carried out. This method
                  allows the prototype to be run on the ONS utility node as the memory requirements are
-                 reduced compared to when using the load_and_process_addressbase method.
+                 reduced.
         """
         self.log.info('Reading in Modified Address Base Data...')
 
@@ -286,6 +286,11 @@ class AddressLinker:
 
         self.addressBase['SAO_END_NUMBER'] = self.addressBase['SAO_END_NUMBER'].fillna('-12345')
         self.addressBase['SAO_END_NUMBER'] = self.addressBase['SAO_END_NUMBER'].astype(np.int32)
+
+        for dummies_columns in ('PAO_START_SUFFIX', 'PAO_END_SUFFIX', 'SAO_START_SUFFIX', 'SAO_END_SUFFIX', 'SAO_TEXT'):
+            # if field is empty add dummy - helps when comparing against None
+            msk = self.addressBase[dummies_columns].isnull()
+            self.addressBase.loc[msk, dummies_columns] = 'N/A'
 
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
@@ -328,7 +333,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 8
+        :param blocking: the mode of blocking, ranging from 1 to 10
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -422,7 +427,7 @@ class AddressLinker:
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
                        missing_value=0.6)
         compare.numeric('SAO_START_NUMBER', 'SAOStartNumber', threshold=0.1, method='linear', name='sao_number_dl')
-        compare.numeric('SAO_END_NUMBER', 'SAOEndNumber', threshold=0.1, method='linear', name='sao_number_dl')
+        compare.numeric('SAO_END_NUMBER', 'SAOEndNumber', threshold=0.1, method='linear', name='sao_number_dl2')
         compare.string('SAO_START_SUFFIX', 'SAOStartSuffix', method='jarowinkler', name='sao_suffix_dl',
                        missing_value=0.5)
         compare.string('SAO_END_SUFFIX', 'SAOEndSuffix', method='jarowinkler', name='sao_suffix_dl2',
