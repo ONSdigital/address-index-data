@@ -555,7 +555,7 @@ def create_test_hybrid_index(path='/Users/saminiemi/Projects/ONS/AddressIndex/da
     print('Found {} addresses from te hybrid index...'.format(len(address_base.index)))
 
     test_index_uprns = pd.read_csv(path + output_filename, usecols=['UPRN'], dtype={'UPRN': np.int64})['UPRN'].values
-    print('Found {} addresses from the test index...'.format(len(test_index_uprns.index)))
+    print('Found {} addresses from the test index...'.format(len(test_index_uprns)))
 
     # find the overlap
     mask = np.in1d(address_base['UPRN'].values, test_index_uprns)
