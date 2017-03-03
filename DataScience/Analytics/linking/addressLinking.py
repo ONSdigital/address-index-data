@@ -274,6 +274,10 @@ class AddressLinker:
                                               'STREET_DESCRIPTOR': str, 'postcode_in': str, 'postcode_out': str,
                                               'SAO_END_SUFFIX': str, 'SAO_END_NUMBER': np.float64})
 
+        # remove those with former in the sao_text
+        msk = self.addressBase['SAO_TEXT'].str.contains('FORMER', na=False, case=False)
+        self.addressBase = self.addressBase.loc[~msk]
+
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
 
@@ -296,7 +300,7 @@ class AddressLinker:
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
 
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)):
         """
         A method to link addresses against AddressBase.
 
@@ -332,7 +336,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 10
+        :param blocking: the mode of blocking, ranging from 1 to 11
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -345,33 +349,36 @@ class AddressLinker:
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
+            pairs = pcl.block(left_on=['OrganisationName', 'Postcode'],
+                              right_on=['ORGANISATION_NAME', 'POSTCODE'])
+        elif blocking == 2:
             pairs = pcl.block(left_on=['OrganisationName', 'TownName', 'BuildingNumber'],
                               right_on=['ORGANISATION_NAME', 'POST_TOWN', 'BUILDING_NUMBER'])
-        elif blocking == 2:
+        elif blocking == 3:
             pairs = pcl.block(left_on=['OrganisationName', 'TownName'],
                               right_on=['ORGANISATION_NAME', 'POST_TOWN'])
-        elif blocking == 3:
+        elif blocking == 4:
             pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
                               right_on=['POSTCODE', 'BUILDING_NAME'])
-        elif blocking == 4:
+        elif blocking == 5:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
                               right_on=['POSTCODE', 'BUILDING_NUMBER'])
-        elif blocking == 5:
+        elif blocking == 6:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['POSTCODE', 'THROUGHFARE'])
-        elif blocking == 6:
+        elif blocking == 7:
             pairs = pcl.block(left_on=['Postcode', 'TownName'],
                               right_on=['POSTCODE', 'POST_TOWN'])
-        elif blocking == 7:
+        elif blocking == 8:
             pairs = pcl.block(left_on=['Postcode'],
                               right_on=['POSTCODE'])
-        elif blocking == 8:
+        elif blocking == 9:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BUILDING_NAME', 'THROUGHFARE'])
-        elif blocking == 9:
+        elif blocking == 10:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
-        elif blocking == 10:
+        elif blocking == 11:
             pairs = pcl.block(left_on=['StreetName', 'TownName'],
                               right_on=['THROUGHFARE', 'POST_TOWN'])
         else:
@@ -398,7 +405,7 @@ class AddressLinker:
                         name='pao_number_dl')
         compare.numeric('PAO_END_NUMBER', 'PAOendNumber', threshold=0.1, method='linear',
                         name='building_end_number_dl')
-        if blocking not in (5, 8, 9):
+        if blocking not in (6, 9, 10):
             compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
                            missing_value=0.7)
             compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
@@ -415,7 +422,7 @@ class AddressLinker:
             compare.string('postcode_out', 'postcode_out', method='jarowinkler', name='outcode_dl',
                            missing_value=0.0)
 
-        if blocking in (1, 2, 8, 9, 10):
+        if blocking in (2, 3, 9, 10, 11):
             compare.string('POSTCODE', 'Postcode', method='jarowinkler', name='postcode_dl',
                            missing_value=0.0)
 
@@ -445,15 +452,15 @@ class AddressLinker:
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2):
+        if blocking in (2, 3):
             compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
-        elif blocking in (3,):
+        elif blocking in (4,):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
-        elif blocking in (5,):
+        elif blocking in (6,):
             compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
-        elif blocking in (6, 7):
+        elif blocking in (7, 8):
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
             compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
