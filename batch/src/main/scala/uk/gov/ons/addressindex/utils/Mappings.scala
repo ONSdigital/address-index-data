@@ -193,7 +193,7 @@ object Mappings {
                   },
                   "relatives": {
                     "type": "long",
-                    "index": "not_analyzed"
+                    "index": "no"
                   },
                   "lpiStartDate": {
                     "type": "date",
