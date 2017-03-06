@@ -1,6 +1,7 @@
 package uk.gov.ons.addressindex.models
 
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.types._
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
 
 /**
   * Contains schemas that should be applied to CSV documents
@@ -11,212 +12,212 @@ object CSVSchemas {
     * Postcode address CSV file schema
     */
   val postcodeAddressFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
-    StructField("udprn", StringType, nullable = false),
-    StructField("organizationName", StringType, nullable = false),
-    StructField("departmentName", StringType, nullable = false),
-    StructField("subBuildingName", StringType, nullable = false),
-    StructField("buildingName", StringType, nullable = false),
-    StructField("buildingNumber", StringType, nullable = false),
-    StructField("dependentThoroughfare", StringType, nullable = false),
-    StructField("thoroughfare", StringType, nullable = false),
-    StructField("doubleDependentLocality", StringType, nullable = false),
-    StructField("dependentLocality", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
+    StructField("udprn", IntegerType, nullable = false),
+    StructField("organisationName", StringType, nullable = true),
+    StructField("departmentName", StringType, nullable = true),
+    StructField("subBuildingName", StringType, nullable = true),
+    StructField("buildingName", StringType, nullable = true),
+    StructField("buildingNumber", ShortType, nullable = true),
+    StructField("dependentThoroughfare", StringType, nullable = true),
+    StructField("thoroughfare", StringType, nullable = true),
+    StructField("doubleDependentLocality", StringType, nullable = true),
+    StructField("dependentLocality", StringType, nullable = true),
     StructField("postTown", StringType, nullable = false),
     StructField("postcode", StringType, nullable = false),
     StructField("postcodeType", StringType, nullable = false),
     StructField("deliveryPointSuffix", StringType, nullable = false),
-    StructField("welshDependentThoroughfare", StringType, nullable = false),
-    StructField("welshThoroughfare", StringType, nullable = false),
-    StructField("welshDoubleDependentLocality", StringType, nullable = false),
-    StructField("welshDependentLocality", StringType, nullable = false),
-    StructField("welshPostTown", StringType, nullable = false),
-    StructField("poBoxNumber", StringType, nullable = false),
-    StructField("processDate", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false)
+    StructField("welshDependentThoroughfare", StringType, nullable = true),
+    StructField("welshThoroughfare", StringType, nullable = true),
+    StructField("welshDoubleDependentLocality", StringType, nullable = true),
+    StructField("welshDependentLocality", StringType, nullable = true),
+    StructField("welshPostTown", StringType, nullable = true),
+    StructField("poBoxNumber", StringType, nullable = true),
+    StructField("processDate", DateType, nullable = false),
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false)
   ))
 
   /**
     * BLPU CSV file schema
     */
   val blpuFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
-    StructField("logicalStatus", StringType, nullable = false),
-    StructField("blpuState", StringType, nullable = false),
-    StructField("blpuStateDate", StringType, nullable = false),
-    StructField("parentUprn", StringType, nullable = false),
-    StructField("xCoordinate", StringType, nullable = false),
-    StructField("yCoordinate", StringType, nullable = false),
-    StructField("latitude", StringType, nullable = false),
-    StructField("longitude", StringType, nullable = false),
-    StructField("rpc", StringType, nullable = false),
-    StructField("localCustodianCode", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
+    StructField("logicalStatus", ByteType, nullable = false),
+    StructField("blpuState", ByteType, nullable = true),
+    StructField("blpuStateDate", DateType, nullable = true),
+    StructField("parentUprn", LongType, nullable = true),
+    StructField("xCoordinate", FloatType, nullable = false),
+    StructField("yCoordinate", FloatType, nullable = false),
+    StructField("latitude", FloatType, nullable = false),
+    StructField("longitude", FloatType, nullable = false),
+    StructField("rpc", ByteType, nullable = false),
+    StructField("localCustodianCode", ShortType, nullable = false),
     StructField("country", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false),
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false),
     StructField("addressbasePostal", StringType, nullable = false),
     StructField("postcodeLocator", StringType, nullable = false),
-    StructField("multiOccCount", StringType, nullable = false)
+    StructField("multiOccCount", ShortType, nullable = false)
   ))
 
   /**
     * Classification CSV file schema
     */
   val classificationFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
     StructField("classKey", StringType, nullable = false),
     StructField("classificationCode", StringType, nullable = false),
     StructField("classScheme", StringType, nullable = false),
-    StructField("schemeVersion", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false)
+    StructField("schemeVersion", FloatType, nullable = false),
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false)
   ))
 
   /**
     * crossref CSV file schema
     */
   val crossrefFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
     StructField("xrefKey", StringType, nullable = false),
     StructField("crossReference", StringType, nullable = false),
-    StructField("version", StringType, nullable = false),
+    StructField("version", IntegerType, nullable = true),
     StructField("source", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false)
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false)
   ))
 
   /**
     * lpi CSV file schema
     */
   val lpiFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
     StructField("lpiKey", StringType, nullable = false),
     StructField("language", StringType, nullable = false),
-    StructField("logicalStatus", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false),
-    StructField("saoStartNumber", StringType, nullable = false),
-    StructField("saoStartSuffix", StringType, nullable = false),
-    StructField("saoEndNumber", StringType, nullable = false),
-    StructField("saoEndSuffix", StringType, nullable = false),
-    StructField("saoText", StringType, nullable = false),
-    StructField("paoStartNumber", StringType, nullable = false),
-    StructField("paoStartSuffix", StringType, nullable = false),
-    StructField("paoEndNumber", StringType, nullable = false),
-    StructField("paoEndSuffix", StringType, nullable = false),
-    StructField("paoText", StringType, nullable = false),
-    StructField("usrn", StringType, nullable = false),
-    StructField("usrnMatchIndicator", StringType, nullable = false),
-    StructField("areaName", StringType, nullable = false),
-    StructField("level", StringType, nullable = false),
-    StructField("officialFlag", StringType, nullable = false)
+    StructField("logicalStatus", ByteType, nullable = false),
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false),
+    StructField("saoStartNumber", ShortType, nullable = true),
+    StructField("saoStartSuffix", StringType, nullable = true),
+    StructField("saoEndNumber", ShortType, nullable = true),
+    StructField("saoEndSuffix", StringType, nullable = true),
+    StructField("saoText", StringType, nullable = true),
+    StructField("paoStartNumber", ShortType, nullable = true),
+    StructField("paoStartSuffix", StringType, nullable = true),
+    StructField("paoEndNumber", ShortType, nullable = true),
+    StructField("paoEndSuffix", StringType, nullable = true),
+    StructField("paoText", StringType, nullable = true),
+    StructField("usrn", IntegerType, nullable = false),
+    StructField("usrnMatchIndicator", ByteType, nullable = false),
+    StructField("areaName", StringType, nullable = true),
+    StructField("level", StringType, nullable = true),
+    StructField("officialFlag", StringType, nullable = true)
   ))
 
   /**
     * organisation CSV file schema
     */
   val organisationFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
     StructField("orgKey", StringType, nullable = false),
     StructField("organisation", StringType, nullable = false),
-    StructField("legalName", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false)
+    StructField("legalName", StringType, nullable = true),
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false)
   ))
 
   /**
     * street CSV file schema
     */
   val streetFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("usrn", StringType, nullable = false),
-    StructField("recordType", StringType, nullable = false),
-    StructField("swaOrgRefNaming", StringType, nullable = false),
-    StructField("state", StringType, nullable = false),
-    StructField("stateDate", StringType, nullable = false),
-    StructField("streetSurface", StringType, nullable = false),
-    StructField("streetClassification", StringType, nullable = false),
-    StructField("version", StringType, nullable = false),
-    StructField("streetStartDate", StringType, nullable = false),
-    StructField("streetEndDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("recordEntryDate", StringType, nullable = false),
-    StructField("streetStartX", StringType, nullable = false),
-    StructField("streetStartY", StringType, nullable = false),
-    StructField("streetStartLat", StringType, nullable = false),
-    StructField("streetStartLong", StringType, nullable = false),
-    StructField("streetEndX", StringType, nullable = false),
-    StructField("streetEndY", StringType, nullable = false),
-    StructField("streetEndLat", StringType, nullable = false),
-    StructField("streetEndLong", StringType, nullable = false),
-    StructField("streetTolerance", StringType, nullable = false)
+    StructField("proOrder", LongType, nullable = false),
+    StructField("usrn", IntegerType, nullable = false),
+    StructField("recordType", ByteType, nullable = false),
+    StructField("swaOrgRefNaming", ShortType, nullable = false),
+    StructField("state", ByteType, nullable = true),
+    StructField("stateDate", DateType, nullable = true),
+    StructField("streetSurface", ByteType, nullable = true),
+    StructField("streetClassification", ByteType, nullable = true),
+    StructField("version", ShortType, nullable = false),
+    StructField("streetStartDate", DateType, nullable = false),
+    StructField("streetEndDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("recordEntryDate", DateType, nullable = false),
+    StructField("streetStartX", FloatType, nullable = false),
+    StructField("streetStartY", FloatType, nullable = false),
+    StructField("streetStartLat", FloatType, nullable = false),
+    StructField("streetStartLong", FloatType, nullable = false),
+    StructField("streetEndX", FloatType, nullable = false),
+    StructField("streetEndY", FloatType, nullable = false),
+    StructField("streetEndLat", FloatType, nullable = false),
+    StructField("streetEndLong", FloatType, nullable = false),
+    StructField("streetTolerance", ShortType, nullable = false)
   ))
 
   /**
     * street-descriptor CSV file schema
     */
   val streetDescriptorFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("usrn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("usrn", IntegerType, nullable = false),
     StructField("streetDescriptor", StringType, nullable = false),
-    StructField("locality", StringType, nullable = false),
-    StructField("townName", StringType, nullable = false),
+    StructField("locality", StringType, nullable = true),
+    StructField("townName", StringType, nullable = true),
     StructField("administrativeArea", StringType, nullable = false),
     StructField("language", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false)
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false)
   ))
 
   /**
     * successor CSV file schema
     */
   val successorFileSchema = StructType(Seq(
-    StructField("recordIdentifier", StringType, nullable = false),
+    StructField("recordIdentifier", ByteType, nullable = false),
     StructField("changeType", StringType, nullable = false),
-    StructField("proOrder", StringType, nullable = false),
-    StructField("uprn", StringType, nullable = false),
+    StructField("proOrder", LongType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
     StructField("succKey", StringType, nullable = false),
-    StructField("startDate", StringType, nullable = false),
-    StructField("endDate", StringType, nullable = false),
-    StructField("lastUpdateDate", StringType, nullable = false),
-    StructField("entryDate", StringType, nullable = false),
-    StructField("successor", StringType, nullable = false)
+    StructField("startDate", DateType, nullable = false),
+    StructField("endDate", DateType, nullable = true),
+    StructField("lastUpdateDate", DateType, nullable = false),
+    StructField("entryDate", DateType, nullable = false),
+    StructField("successor", LongType, nullable = false)
   ))
 }

@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.utils
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -44,4 +44,6 @@ object SparkProvider {
     dataFrame.registerTempTable(generatedName)
     generatedName
   }
+
+
 }
