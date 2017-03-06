@@ -21,6 +21,7 @@ object AddressIndexFileReader {
   private lazy val pathToStreetCSV = config.getString("addressindex.files.csv.street")
   private lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
   private lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
+  private lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
 
   /**
     * Reads csv into a `DataFrame`
@@ -84,6 +85,13 @@ object AddressIndexFileReader {
     * @return 'DataFrame' containing the successor data from CSV
     */
   def readSuccessorCSV(): DataFrame = readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
+
+  /**
+    * Reads csv into a 'DataFrame'
+    *
+    * @return 'DataFrame' containing the hierarchy data from CSV
+    */
+  def readHierarchyCSV(): DataFrame = readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
 
   private def readCsv(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read

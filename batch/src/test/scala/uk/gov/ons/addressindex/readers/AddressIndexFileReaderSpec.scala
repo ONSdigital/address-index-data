@@ -273,5 +273,22 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getDate(8) shouldBe format.parse("2006-10-10") // ENTRY_DATE
       firstLine.getLong(9) shouldBe 122000001L // SUCCESSOR
     }
+
+    "read hierarchy csv file" in {
+
+      // When
+      val result = AddressIndexFileReader.readHierarchyCSV().collect()
+
+      // Then
+      result.length shouldBe 9
+
+      val line = result(4)
+      line.getLong(0) shouldBe 5 // UPRN
+      line.getLong(1) shouldBe 1 // PRIMARY_UPRN
+      line.getLong(2) shouldBe 2 // SECONDARY_UPRN
+      line.getLong(3) shouldBe 3 // LAYERS
+      line.getLong(4) shouldBe 3 // CURRENT_LAYER
+      line.getLong(2) shouldBe 2 // PARENT_UPRN
+    }
   }
 }
