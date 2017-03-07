@@ -24,12 +24,12 @@ ElasticSearch solution.
 Requirements
 ------------
 
-:requires: ProbabilisticParser (a CRF model specifically build for ONS)
-:requires: pandas (0.19.1)
-:requires: numpy (1.11.2)
+:requires: addressParser (a CRF model specifically build for ONS)
+:requires: pandas (tested with 0.19.2)
+:requires: numpy (tested with 1.12.0)
 :requires: tqdm (4.10.0: https://github.com/tqdm/tqdm)
 :requires: recordlinkage (0.6.0: https://pypi.python.org/pypi/recordlinkage/)
-:requires: matplotlib (1.5.3)
+:requires: matplotlib (2.0.0)
 
 
 Author
@@ -41,23 +41,23 @@ Author
 Version
 -------
 
-:version: 0.91
-:date: 22-Feb-2017
+:version: 0.92
+:date: 2-Mar-2017
 """
 import datetime
 import os
-import re
 import sqlite3
 import time
 import warnings
+
+import matplotlib
 import numpy as np
 import pandas as pd
 import pandas.util.testing as pdt
 import recordlinkage as rl
+from Analytics.linking import addressParser
 from Analytics.linking import logger
-from ProbabilisticParser import parser
 from tqdm import tqdm
-import matplotlib
 
 matplotlib.use('Agg')  # to prevent Tkinter crashing on cdhut-d03
 import matplotlib.pyplot as plt
@@ -65,7 +65,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action="ignore", category=FutureWarning)
 pd.options.mode.chained_assignment = None
 
-__version__ = '0.91'
+__version__ = '0.92'
 
 
 class AddressLinker:
@@ -73,12 +73,15 @@ class AddressLinker:
     This class forms the backbone of the Address Linking prototype developed for ONS
     as a part of the Address Index project.
 
-    The class implements methods to read in AddressBase, to normalise and parse address strings,
-    link input data against AddressBase, and finally to merge the test data with the AddressBase
-    information. It should be noted that the load_data method should be overwritten and made
-    appropriate for each input test file which maybe be in different formats. In addition, the
-    check_performance method should also be overwritten because some datasets may or may not
-    contain already attached UPRNs and different confidences may have been attached to these UPRNs.
+    The class implements methods to read in AddressBase, link input data against AddressBase,
+    and finally to merge the test data with the AddressBase information. It should be noted that
+    the load_data method should be overwritten and made appropriate for each input test file which
+    maybe be in different formats. In addition, the check_performance method should also be overwritten
+    because some datasets may or may not contain already attached UPRNs and different confidences may
+    have been attached to these UPRNs.
+
+    .. Note:: address parsing is now implemented in the AddressParser class. This linking class relies on
+              the parser class.
     """
 
     def __init__(self, **kwargs):
@@ -201,10 +204,6 @@ class AddressLinker:
 
             # rename postcode to postcode_orig and locality to locality_orig
             self.toLinkAddressData.rename(columns={'UPRNs_matched_to_date': 'UPRN_old'}, inplace=True)
-
-            # convert original UPRN to numeric
-            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].convert_objects(
-                convert_numeric=True)
         else:
             self.log.info('ERROR - please overwrite the method and make it relevant for the actual test data...')
             raise NotImplementedError
@@ -224,6 +223,8 @@ class AddressLinker:
         self.log.info('Found {} addresses...'.format(n_addresses))
 
         if 'UPRN_old' in self.toLinkAddressData.columns:
+            # cast the UPRNs as float64 for comparison purposes as int64 does not support NaNs
+            self.toLinkAddressData['UPRN_old'] = self.toLinkAddressData['UPRN_old'].astype(np.float64)
             self.nExistingUPRN = len(self.toLinkAddressData.loc[self.toLinkAddressData['UPRN_old'].notnull()].index)
         else:
             self.log.warning('No existing UPRNs found')
@@ -247,113 +248,35 @@ class AddressLinker:
 
     def load_addressbase(self):
         """
-        A method to load a compressed version of the full AddressBase file.
+        A method to load a compressed version of the full AddressBase hybrid index.
 
         The information being used has been processed from a AB Epoch 39 files provided by ONS.
 
         .. Note: this method assumes that all modifications have already been carried out. This method
                  allows the prototype to be run on the ONS utility node as the memory requirements are
-                 reduced compared to when using the load_and_process_addressbase method.
+                 reduced.
         """
         self.log.info('Reading in Modified Address Base Data...')
-
-        self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
-                                       dtype={'UPRN': np.int64, 'ORGANISATION_NAME': str,
-                                              'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
-                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str,
-                                              'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
-                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str,
-                                              'PAO_END_SUFFIX': str, 'PAO_END_NUMBER': str, 'SAO_START_SUFFIX': str,
-                                              'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
-                                              'STREET_DESCRIPTOR': str, 'TOWN_NAME': str, 'LOCALITY': str,
-                                              'postcode_in': str, 'postcode_out': str})
-
-        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
-        self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
-
-        self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
-        self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
-
-        # normalise street names so that st. is always st and 's is always s - PAF and NLP has differences
-        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
-        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
-        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
-        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
-
-        self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
-
-        # set index name - needed later for merging / duplicate removal
-        self.addressBase.index.name = 'AddressBase_Index'
-
-    def load_and_process_addressbase(self):
-        """
-        A method to load a compressed version of the full AddressBase file and to process it.
-
-        .. Note: this method modifies the original AB information by e.g. combining different tables. Such
-                 activities are undertaken because of the aggressive blocking the prototype linking code uses.
-                 The actual production system should take AB as it is and the linking should not perform blocking
-                 but rather be flexible and take into account that in NAG the information can be stored in various
-                 fields.
-        """
-        self.log.info('Reading in Address Base Data...')
 
         if self.settings['test']:
             self.log.warning('Using Test Data...')
             self.settings['ABfilename'] = 'ABtest.csv'
 
+        # for comparison purposes cast the UPRN as float as int64 does not support missing values
         self.addressBase = pd.read_csv(self.settings['ABpath'] + self.settings['ABfilename'],
-                                       dtype={'UPRN': np.int64, 'POSTCODE_LOCATOR': str, 'ORGANISATION_NAME': str,
+                                       dtype={'UPRN': np.float64, 'ORGANISATION_NAME': str,
                                               'DEPARTMENT_NAME': str, 'SUB_BUILDING_NAME': str, 'BUILDING_NAME': str,
-                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str, 'DEPENDENT_LOCALITY': str,
+                                              'BUILDING_NUMBER': str, 'THROUGHFARE': str,
                                               'POST_TOWN': str, 'POSTCODE': str, 'PAO_TEXT': str,
-                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str, 'PAO_END_NUMBER': str,
-                                              'PAO_END_SUFFIX': str, 'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64,
-                                              'SAO_START_SUFFIX': str, 'ORGANISATION': str, 'STREET_DESCRIPTOR': str,
-                                              'TOWN_NAME': str, 'LOCALITY': str})
-        self.log.info('Found {} addresses from AddressBase...'.format(len(self.addressBase.index)))
+                                              'PAO_START_NUMBER': str, 'PAO_START_SUFFIX': str,
+                                              'PAO_END_SUFFIX': str, 'PAO_END_NUMBER': str, 'SAO_START_SUFFIX': str,
+                                              'SAO_TEXT': str, 'SAO_START_NUMBER': np.float64, 'LOCALITY': str,
+                                              'STREET_DESCRIPTOR': str, 'postcode_in': str, 'postcode_out': str,
+                                              'SAO_END_SUFFIX': str, 'SAO_END_NUMBER': np.float64})
 
-        # remove street records from the list of potential matches - this makes the search space slightly smaller
-        exclude = 'STREET RECORD|ELECTRICITY SUB STATION|PUMPING STATION|POND \d+M FROM|PUBLIC TELEPHONE|'
-        exclude += 'PART OF OS PARCEL|DEMOLISHED BUILDING|CCTV CAMERA|TANK \d+M FROM|SHELTER \d+M FROM|TENNIS COURTS|'
-        exclude += 'PONDS \d+M FROM|SUB STATION'
-        msk = self.addressBase['PAO_TEXT'].str.contains(exclude, na=False, case=False)
+        # remove those with former in the sao_text
+        msk = self.addressBase['SAO_TEXT'].str.contains('FORMER', na=False, case=False)
         self.addressBase = self.addressBase.loc[~msk]
-
-        # combine information - could be done differently, but for now using some of these for blocking
-        msk = self.addressBase['THROUGHFARE'].isnull()
-        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'STREET_DESCRIPTOR']
-
-        msk = self.addressBase['BUILDING_NUMBER'].isnull()
-        self.addressBase.loc[msk, 'BUILDING_NUMBER'] = self.addressBase.loc[msk, 'PAO_START_NUMBER']
-
-        msk = self.addressBase['BUILDING_NAME'].isnull()
-        self.addressBase.loc[msk, 'BUILDING_NAME'] = self.addressBase.loc[msk, 'PAO_TEXT']
-
-        msk = self.addressBase['ORGANISATION_NAME'].isnull()
-        self.addressBase.loc[msk, 'ORGANISATION_NAME'] = self.addressBase.loc[msk, 'ORGANISATION']
-
-        msk = self.addressBase['POSTCODE'].isnull()
-        self.addressBase.loc[msk, 'POSTCODE'] = self.addressBase.loc[msk, 'POSTCODE_LOCATOR']
-
-        msk = self.addressBase['SUB_BUILDING_NAME'].isnull()
-        self.addressBase.loc[msk, 'SUB_BUILDING_NAME'] = self.addressBase.loc[msk, 'SAO_TEXT']
-
-        msk = self.addressBase['POST_TOWN'].isnull()
-        self.addressBase.loc[msk, 'POST_TOWN'] = self.addressBase.loc[msk, 'TOWN_NAME']
-
-        msk = self.addressBase['POSTCODE'].isnull()
-        self.addressBase.loc[msk, 'POSTCODE'] = self.addressBase.loc[msk, 'POSTCODE_LOCATOR']
-
-        msk = self.addressBase['LOCALITY'].isnull()
-        self.addressBase.loc[msk, 'LOCALITY'] = self.addressBase.loc[msk, 'DEPENDENT_LOCALITY']
-
-        # sometimes addressbase does not have SAO_START_NUMBER even if SAO_TEXT clearly has a number
-        # take the digits from SAO_TEXT and place them to SAO_START_NUMBER if this is empty
-        msk = self.addressBase['SAO_START_NUMBER'].isnull() & (self.addressBase['SAO_TEXT'].notnull())
-        self.addressBase.loc[msk, 'SAO_START_NUMBER'] = pd.to_numeric(
-            self.addressBase.loc[msk, 'SAO_TEXT'].str.extract('(\d+)'))
-        self.addressBase['SAO_START_NUMBER'].fillna(value=-12345, inplace=True)
-        self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].fillna('-12345')
         self.addressBase['PAO_START_NUMBER'] = self.addressBase['PAO_START_NUMBER'].astype(np.int32)
@@ -361,413 +284,23 @@ class AddressLinker:
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].fillna('-12345')
         self.addressBase['PAO_END_NUMBER'] = self.addressBase['PAO_END_NUMBER'].astype(np.int32)
 
-        # normalise street names so that st. is always st and 's is always s
-        msk = self.addressBase['THROUGHFARE'].str.contains('ST\.\s', na=False, case=False)
-        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace('ST\. ', 'ST ')
-        msk = self.addressBase['THROUGHFARE'].str.contains("'S\s", na=False, case=False)
-        self.addressBase.loc[msk, 'THROUGHFARE'] = self.addressBase.loc[msk, 'THROUGHFARE'].str.replace("'S\s", 'S ')
+        self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].fillna('-12345')
+        self.addressBase['SAO_START_NUMBER'] = self.addressBase['SAO_START_NUMBER'].astype(np.int32)
 
-        # drop some that are not needed - in the future versions these might be useful
-        self.addressBase.drop(['DEPENDENT_LOCALITY', 'POSTCODE_LOCATOR', 'ORGANISATION'],
-                              axis=1, inplace=True)
+        self.addressBase['SAO_END_NUMBER'] = self.addressBase['SAO_END_NUMBER'].fillna('-12345')
+        self.addressBase['SAO_END_NUMBER'] = self.addressBase['SAO_END_NUMBER'].astype(np.int32)
 
-        # split postcode to in and outcode - useful for doing blocking in different ways
-        if self.settings['expandPostcode']:
-            postcodes = self.addressBase['POSTCODE'].str.split(' ', expand=True)
-            postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-            self.addressBase = pd.concat([self.addressBase, postcodes], axis=1)
+        for dummies_columns in ('PAO_START_SUFFIX', 'PAO_END_SUFFIX', 'SAO_START_SUFFIX', 'SAO_END_SUFFIX', 'SAO_TEXT'):
+            # if field is empty add dummy - helps when comparing against None
+            msk = self.addressBase[dummies_columns].isnull()
+            self.addressBase.loc[msk, dummies_columns] = 'N/A'
 
         self.log.info('Using {} addresses from AddressBase for matching...'.format(len(self.addressBase.index)))
 
         # set index name - needed later for merging / duplicate removal
         self.addressBase.index.name = 'AddressBase_Index'
 
-        if self.settings['verbose']:
-            print('AddressBase:')
-            print(self.addressBase.info(verbose=True, memory_usage=True, null_counts=True))
-            if not self.settings['test']:
-                self.addressBase.to_csv(self.settings['ABpath'] + 'AB_processed.csv', index=False)
-
-    @staticmethod
-    def _extract_postcode(string):
-        """
-        A static private method to extract a postcode from address string.
-
-        Uses a rather loose regular expression, so  may get some strings that are not completely valid postcodes.
-        Should not be used to validate whether a postcode conforms to the UK postcode standards.
-
-        The regular expression was taken from:
-        http://stackoverflow.com/questions/164979/uk-postcode-regex-comprehensive
-
-        :param string: string to be parsed
-        :type string: str
-
-        :return: postcode
-        :rtype: str
-        """
-        regx = r'(([gG][iI][rR] {0,}0[aA]{2})|((([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y]?[0-9][0-9]?)|(([a-pr-uwyzA-PR-UWYZ][0-9][a-hjkstuwA-HJKSTUW])|([a-pr-uwyzA-PR-UWYZ][a-hk-yA-HK-Y][0-9][abehmnprv-yABEHMNPRV-Y]))) {0,}[0-9][abd-hjlnp-uw-zABD-HJLNP-UW-Z]{2}))'
-        try:
-            potential_postcode = re.findall(regx, string)[0][0]
-            potential_postcode = potential_postcode.lower().strip()
-        except IndexError:
-            potential_postcode = None
-
-        # above regex gives also those without space between, add if needed
-        if potential_postcode is not None:
-            if ' ' not in potential_postcode:
-                inc = potential_postcode[-3:]
-                out = potential_postcode.replace(inc, '')
-                potential_postcode = out + ' ' + inc
-
-        return potential_postcode
-
-    def _normalize_input_data(self):
-        """
-        A private method to normalize address information.
-
-        Removes white spaces, commas, and backslashes. Can also be used to expand common synonyms such
-        as RD or BERKS. Finally parses counties as the an early version of the probabilistic parser was
-        not trained to parse counties.
-        """
-        self.log.info('Normalising input addresses')
-
-        # make a copy of the actual address field and run the parsing against it
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS'].copy()
-
-        # remove white spaces if present
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.strip()
-
-        # remove commas
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(', ', ' ')
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(',', ' ')
-
-        # remove backslash if present and replace with space
-        self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace('\\', ' ')
-
-        # remove spaces around hyphens as this causes ranges to be interpreted incorrectly
-        # e.g. FLAT 15 191 - 193 NEWPORT ROAD CARDIFF CF24 1AJ is parsed incorrectly if there
-        # is space around the hyphen
-        self.toLinkAddressData['ADDRESS_norm'] = \
-            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*-\s*)(\d+)', r'\1-\3', case=False)
-
-        # some addresses have number TO number, while this should be with hyphen, replace TO with - in those cases
-        # note: using \1 for group 1 and \3 for group 3 as I couldn't make non-capturing groups work
-        self.toLinkAddressData['ADDRESS_norm'] = \
-            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*TO\s*)(\d+)', r'\1-\3', case=False)
-
-        # some addresses have number/number rather than - as the range separator
-        self.toLinkAddressData['ADDRESS_norm'] = \
-            self.toLinkAddressData['ADDRESS_norm'].str.replace(r'(\d+)(\s*/\s*)(\d+)', r'\1-\3', case=False)
-
-        # synonyms to expand - read from a file with format (from, to)
-        synonyms = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'synonyms.csv').values
-
-        # expand common synonyms to help with parsing
-        if self.settings['expandSynonyms']:
-            self.log.info('Expanding synonyms as a part of normalisation...')
-            for fro, to in synonyms:
-                self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(fro, to)
-
-        # parsing gets really confused if region or county is in the line - get known counties from a file
-        counties = pd.read_csv(os.path.join(self.currentDirectory, '../../data/') + 'counties.csv')['county']
-
-        # use this for the counties so that e.g. ESSEX ROAD does not become just ROAD...
-        # todo: the regex is getting ridiculous, maybe do other way around i.e. country must be followed by postcode or
-        #       be the last component.
-        addRegex = r'(?:\s|$)(?!ROAD|LANE|STREET|CLOSE|DRIVE|AVENUE|SQUARE|COURT|PARK|CRESCENT|WAY|WALK|HEOL|FFORDD|HILL|GARDENS|GATE|GROVE|HOUSE|VIEW|BUILDING|VILLAS|LODGE|PLACE|ROW|WHARF|RISE|TERRACE|CROSS|ENTERPRISE|HATCH|&)'
-
-        # remove county from address but add a column for it
-        self.toLinkAddressData['County'] = None
-        for county in counties:
-            msk = self.toLinkAddressData['ADDRESS_norm'].str.contains(county + addRegex, regex=True, na=False)
-            self.toLinkAddressData.loc[msk, 'County'] = county
-            self.toLinkAddressData['ADDRESS_norm'] = self.toLinkAddressData['ADDRESS_norm'].str.replace(county +
-                                                                                                        addRegex, '',
-                                                                                                        case=False)
-
-    @staticmethod
-    def _fix_london_boroughs(parsed, directory, datafile='localities.csv'):
-        """
-        A static private method to address incorrectly parsed London boroughs.
-
-        If the street name contains London borough then move it to locality and remove from the street name.
-
-        :param parsed: a dictionary containing the address tokens that have been parsed
-        :type parsed: dict
-        :param directory: location of the data file
-        :type directory: str
-        :param datafile: name of the data file containing a column locality
-        :type datafile: str
-
-        :return: a dictionary containing the address tokens with updated information
-        :rtype: dict
-        """
-        london_localities = pd.read_csv(directory + datafile)['locality']
-
-        for LondonLocality in london_localities:
-            if parsed['StreetName'].strip().endswith(LondonLocality):
-                parsed['Locality'] = LondonLocality
-                # take the last part out, so that e.g. CHINGFORD AVENUE CHINGFORD is correctly processed
-                # need to be careful with e.g.  WESTERN GATEWAY ROYAL VICTORIA DOCK (3 parts to remove)
-                parsed['StreetName'] = parsed['StreetName'].strip()[:-len(LondonLocality)].strip()
-
-        return parsed
-
-    def parse_input_addresses_to_tokens(self):
-        """
-        Parses the address information from the input data.
-
-        Uses a combination of a probabilistic Conditional Random Fields model trained on PAF data and some rules.
-        Can perform address string normalisation i.e. remove punctuation and e.g. expand synonyms.
-        """
-        self.log.info('Start parsing address data...')
-
-        # normalise data so that the parser has the best possible chance of getting things right
-        self._normalize_input_data()
-
-        # get addresses and store separately as an vector
-        addresses = self.toLinkAddressData['ADDRESS_norm'].values
-        self.log.info('{} addresses to parse...'.format(len(addresses)))
-
-        # temp data storage lists
-        organisation = []
-        department = []
-        sub_building = []
-        flat_number = []
-        building_name = []
-        building_number = []
-        pao_start_number = []
-        pao_end_number = []
-        building_suffix = []
-        street = []
-        locality = []
-        town = []
-        postcode = []
-
-        # loop over addresses - quite inefficient, should avoid a loop
-        for address in tqdm(addresses):
-            parsed = parser.tag(address.upper())  # probabilistic parser
-            possible_postcode = self._extract_postcode(address)  # regular expression extraction
-
-            # if both parsers found postcode then check that they are the same
-            if parsed.get('Postcode', None) is not None and possible_postcode is not None:
-                if parsed['Postcode'] != possible_postcode:
-                    # not the same, use possible_postcode
-                    parsed['Postcode'] = possible_postcode
-
-            # if the probabilistic parser did not find postcode but regular expression did, then use that
-            if parsed.get('Postcode', None) is None and possible_postcode is not None:
-                parsed['Postcode'] = possible_postcode
-
-            if parsed.get('Postcode', None) is not None:
-                # check that there is space, if not then add if the parsed postcode is long enough to contain a complete
-                # postcode. Some users have partial postcodes to which one should not add a space.
-                if ' ' not in parsed['Postcode'] and len(parsed['Postcode']) > 4:
-                    in_code = parsed['Postcode'][-3:]
-                    out_code = parsed['Postcode'].replace(in_code, '')
-                    parsed['Postcode'] = out_code + ' ' + in_code
-
-                # change to all capitals
-                parsed['Postcode'] = parsed['Postcode'].upper()
-
-            # if Hackney etc. in StreetName then remove and move to locality if town name contains London
-            # Probabilistic parser should see more cases with london localities, parsed incorrectly at the mo
-            if parsed.get('StreetName', None) is not None and parsed.get('TownName', None) is not None:
-                if 'LONDON' in parsed['TownName']:
-                    parsed = self._fix_london_boroughs(parsed, os.path.join(self.currentDirectory, '../../data/'))
-
-            # if delivery point address is e.g. "5 BEST HOUSE", then the "5" refers likely to FLAT 5
-            if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-                tmp = parsed['BuildingName'].split(' ')
-                if len(tmp) > 1:
-                    try:
-                        _ = int(tmp[0])
-                        parsed['FlatNumber'] = tmp[0]
-                    except ValueError:
-                        pass
-
-            # if BuildingName is e.g. 55A then should get the number and suffix separately
-            if parsed.get('BuildingName', None) is not None:
-
-                parsed['pao_end_number'] = None
-
-                if '-' in parsed['BuildingName']:
-                    tmp = parsed['BuildingName'].split('-')
-                    parsed['pao_start_number'] = ''.join([x for x in tmp[0] if x.isdigit()])
-                    parsed['pao_end_number'] = ''.join([x for x in tmp[-1] if x.isdigit()])
-                else:
-                    parsed['pao_start_number'] = ''.join([x for x in parsed['BuildingName'] if x.isdigit()])
-
-                if len(parsed['pao_start_number']) < 1:
-                    parsed['pao_start_number'] = None
-
-                parsed['BuildingSuffix'] = ''.join([x for x in parsed['BuildingName'] if not x.isdigit()])
-
-                # accept suffixes that are only maximum two chars and if not hyphen
-                if len(parsed['BuildingSuffix']) > 2 or parsed['BuildingSuffix'] == '-' or \
-                                parsed['BuildingSuffix'] == '/':
-                    parsed['BuildingSuffix'] = None
-
-            # some addresses contain place CO place, where the CO is not part of the actual name - remove these
-            # same is true for IN e.g. Road Marton IN Cleveland
-            if parsed.get('Locality', None) is not None:
-                if parsed['Locality'].strip().endswith(' CO'):
-                    parsed['Locality'] = parsed['Locality'].replace(' CO', '')
-                if parsed['Locality'].strip().endswith(' IN'):
-                    parsed['Locality'] = parsed['Locality'].replace(' IN', '')
-
-            # sometimes building number gets placed at building name, take it and add to building name
-            if parsed.get('BuildingNumber', None) is None and parsed.get('BuildingName', None) is not None:
-                tmp = parsed['BuildingName'].split(' ')
-                if len(tmp) > 1:
-                    try:
-                        _ = int(tmp[0])
-                        parsed['BuildingNumber'] = tmp[0]
-                    except ValueError:
-                        pass
-
-            # if pao_start_number is Null then add BuildingNumber to it
-            if parsed.get('pao_start_number', None) is None and parsed.get('BuildingNumber', None) is not None:
-                parsed['pao_start_number'] = parsed['BuildingNumber']
-
-            # parser sometimes places house to organisation name, while it is likelier that it should be subBuilding
-            if parsed.get('OrganisationName') == 'HOUSE' and parsed.get('SubBuildingName', None) is None:
-                parsed['SubBuildingName'] = parsed.get('OrganisationName')
-
-            # store the parsed information to separate lists
-            organisation.append(parsed.get('OrganisationName', None))
-            department.append(parsed.get('DepartmentName', None))
-            sub_building.append(parsed.get('SubBuildingName', None))
-            building_name.append(parsed.get('BuildingName', None))
-            building_number.append(parsed.get('BuildingNumber', None))
-            street.append(parsed.get('StreetName', None))
-            locality.append(parsed.get('Locality', None))
-            town.append(parsed.get('TownName', None))
-            postcode.append(parsed.get('Postcode', None))
-            building_suffix.append(parsed.get('BuildingSuffix', None))
-            pao_start_number.append(parsed.get('pao_start_number', None))
-            pao_end_number.append(parsed.get('pao_end_number', None))
-            flat_number.append(parsed.get('FlatNumber', None))
-
-        # add the parsed information to the dataframe
-        self.toLinkAddressData['OrganisationName'] = organisation
-        self.toLinkAddressData['DepartmentName'] = department
-        self.toLinkAddressData['SubBuildingName'] = sub_building
-        self.toLinkAddressData['BuildingName'] = building_name
-        self.toLinkAddressData['BuildingNumber'] = building_number
-        self.toLinkAddressData['StreetName'] = street
-        self.toLinkAddressData['Locality'] = locality
-        self.toLinkAddressData['TownName'] = town
-        self.toLinkAddressData['Postcode'] = postcode
-        self.toLinkAddressData['BuildingSuffix'] = building_suffix
-        self.toLinkAddressData['BuildingStartNumber'] = pao_start_number
-        self.toLinkAddressData['BuildingEndNumber'] = pao_end_number
-        self.toLinkAddressData['FlatNumber'] = flat_number
-        self.toLinkAddressData['PAOText'] = self.toLinkAddressData['BuildingName'].copy()
-        self.toLinkAddressData['SAOText'] = self.toLinkAddressData['SubBuildingName'].copy()
-
-        if self.settings['expandPostcode']:
-            # if valid postcode information found then split between in and outcode
-            if self.toLinkAddressData['Postcode'].count() > 0:
-                postcodes = self.toLinkAddressData['Postcode'].str.split(' ', expand=True)
-                postcodes.rename(columns={0: 'postcode_in', 1: 'postcode_out'}, inplace=True)
-                self.toLinkAddressData = pd.concat([self.toLinkAddressData, postcodes], axis=1)
-            else:
-                self.toLinkAddressData['postcode_in'] = None
-                self.toLinkAddressData['postcode_out'] = None
-
-        # if building number is empty and subBuildingName is a only number, add to BuildingStartNumber
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+', na=False, case=False) & \
-              self.toLinkAddressData['BuildingStartNumber'].isnull()
-        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-
-        # split flat or apartment number as separate for numerical comparison - compare e.g. SAO number
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('flat|apartment|unit', na=False, case=False)
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
-            self.toLinkAddressData.loc[msk].apply(lambda x: x['FlatNumber'].strip().
-                                                  replace('FLAT', '').replace('APARTMENT', '').replace('UNIT', ''),
-                                                  axis=1)
-
-        # sometimes subBuildingName is e.g. C2 where to number refers to the flat number
-        msk = self.toLinkAddressData['FlatNumber'].str.contains('[A-Z]\d+', na=False, case=False)
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
-            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('[A-Z]', '')
-
-        # deal with addresses that are of type 5/7 4 whatever road...
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
-              self.toLinkAddressData['FlatNumber'].isnull() & self.toLinkAddressData['BuildingNumber'].notnull()
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
-            self.toLinkAddressData.loc[msk, 'SubBuildingName'].str.replace('\/\d+', '')
-
-        # some addresses have / as the separator for buildings and flats, when matching against NLP, needs "FLAT"
-        msk = self.toLinkAddressData['SubBuildingName'].str.contains('\d+\/\d+', na=False, case=False)
-        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + \
-                                                             self.toLinkAddressData.loc[msk, 'SubBuildingName']
-
-        # if SubBuildingName contains only numbers, then place also to the flat number field as likely to be flat
-        msk = self.toLinkAddressData['SubBuildingName'].str.isnumeric() & self.toLinkAddressData['FlatNumber'].isnull()
-        msk[msk.isnull()] = False
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'SubBuildingName']
-
-        # some addresses, e.g. "5B ELIZABETH AVENUE", have FLAT implicitly even if not spelled -> add "FLAT X"
-        msk = (self.toLinkAddressData['BuildingSuffix'].notnull()) & \
-              (self.toLinkAddressData['SubBuildingName'].isnull())
-        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'FLAT ' + self.toLinkAddressData.loc[msk, 'BuildingSuffix']
-
-        # in some other cases / is in the BuildingName field - now this separates the building and flat
-        # the first part refers to the building number and the second to the flat
-        msk = self.toLinkAddressData['BuildingName'].str.contains('\d+\/\d+', na=False, case=False) & \
-              self.toLinkAddressData['FlatNumber'].isnull()
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
-        self.toLinkAddressData.loc[msk, 'FlatNumber'] = \
-            self.toLinkAddressData.loc[msk, 'FlatNumber'].str.replace('\d+\/', '')
-        self.toLinkAddressData['FlatNumber'] = pd.to_numeric(self.toLinkAddressData['FlatNumber'], errors='coerce')
-        self.toLinkAddressData['FlatNumber'].fillna(-12345, inplace=True)
-        self.toLinkAddressData['FlatNumber'] = self.toLinkAddressData['FlatNumber'].astype(np.int32)
-
-        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = self.toLinkAddressData.loc[msk, 'BuildingName']
-        self.toLinkAddressData.loc[msk, 'BuildingStartNumber'] = \
-            self.toLinkAddressData.loc[msk, 'BuildingStartNumber'].str.replace('\/\d+', '')
-        self.toLinkAddressData['BuildingStartNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingStartNumber'],
-                                                                      errors='coerce')
-        self.toLinkAddressData['BuildingStartNumber'].fillna(-12345, inplace=True)
-        self.toLinkAddressData['BuildingStartNumber'] = self.toLinkAddressData['BuildingStartNumber'].astype(np.int32)
-
-        self.toLinkAddressData['BuildingEndNumber'] = pd.to_numeric(self.toLinkAddressData['BuildingEndNumber'],
-                                                                    errors='coerce')
-        self.toLinkAddressData['BuildingEndNumber'].fillna(-12345, inplace=True)
-        self.toLinkAddressData['BuildingEndNumber'] = self.toLinkAddressData['BuildingEndNumber'].astype(np.int32)
-
-        # if SubBuilding name or BuildingSuffix is empty add dummy - helps when comparing against None
-        msk = self.toLinkAddressData['SubBuildingName'].isnull()
-        self.toLinkAddressData.loc[msk, 'SubBuildingName'] = 'N/A'
-        msk = self.toLinkAddressData['BuildingSuffix'].isnull()
-        self.toLinkAddressData.loc[msk, 'BuildingSuffix'] = 'N/A'
-        msk = self.toLinkAddressData['PAOText'].isnull()
-        # for some welsh addresses the building name is parsed as organisation name, so place to PAOtext if empty
-        self.toLinkAddressData.loc[msk, 'PAOText'] = self.toLinkAddressData['OrganisationName']
-        msk = self.toLinkAddressData['PAOText'].isnull()
-        self.toLinkAddressData.loc[msk, 'PAOText'] = ''
-        msk = self.toLinkAddressData['SAOText'].isnull()
-        self.toLinkAddressData.loc[msk, 'SAOText'] = 'N/A'
-
-        # fill columns that are often NA with empty strings - helps when doing string comparisons against Nones
-        columns_to_add_empty_strings = ['OrganisationName', 'DepartmentName', 'SubBuildingName']
-        self.toLinkAddressData[columns_to_add_empty_strings].fillna('', inplace=True)
-
-        # save for inspection
-        self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
-                                      index=False)
-
-        # drop the temp info
-        self.toLinkAddressData.drop(['ADDRESS_norm', ], axis=1, inplace=True)
-
-        if self.settings['verbose']:
-            print('Parsed:')
-            print(self.toLinkAddressData.info(verbose=True, memory_usage=True, null_counts=True))
-
-    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)):
+    def link_all_addresses(self, blocking_modes=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)):
         """
         A method to link addresses against AddressBase.
 
@@ -803,7 +336,7 @@ class AddressLinker:
 
         :param addresses_to_be_linked: dataframe holding the address information that is to be matched against a source
         :type addresses_to_be_linked: pandas.DataFrame
-        :param blocking: the mode of blocking, ranging from 1 to 8
+        :param blocking: the mode of blocking, ranging from 1 to 11
         :type blocking: int
 
         :return: dataframe of matches, dataframe of non-matched addresses
@@ -816,33 +349,36 @@ class AddressLinker:
         # block on both postcode and house number, street name can have typos and therefore is not great for blocking
         self.log.info('Start matching with blocking mode {}'.format(blocking))
         if blocking == 1:
+            pairs = pcl.block(left_on=['OrganisationName', 'Postcode'],
+                              right_on=['ORGANISATION_NAME', 'POSTCODE'])
+        elif blocking == 2:
             pairs = pcl.block(left_on=['OrganisationName', 'TownName', 'BuildingNumber'],
                               right_on=['ORGANISATION_NAME', 'POST_TOWN', 'BUILDING_NUMBER'])
-        elif blocking == 2:
+        elif blocking == 3:
             pairs = pcl.block(left_on=['OrganisationName', 'TownName'],
                               right_on=['ORGANISATION_NAME', 'POST_TOWN'])
-        elif blocking == 3:
+        elif blocking == 4:
             pairs = pcl.block(left_on=['Postcode', 'BuildingName'],
                               right_on=['POSTCODE', 'BUILDING_NAME'])
-        elif blocking == 4:
+        elif blocking == 5:
             pairs = pcl.block(left_on=['Postcode', 'BuildingNumber'],
                               right_on=['POSTCODE', 'BUILDING_NUMBER'])
-        elif blocking == 5:
+        elif blocking == 6:
             pairs = pcl.block(left_on=['Postcode', 'StreetName'],
                               right_on=['POSTCODE', 'THROUGHFARE'])
-        elif blocking == 6:
+        elif blocking == 7:
             pairs = pcl.block(left_on=['Postcode', 'TownName'],
                               right_on=['POSTCODE', 'POST_TOWN'])
-        elif blocking == 7:
+        elif blocking == 8:
             pairs = pcl.block(left_on=['Postcode'],
                               right_on=['POSTCODE'])
-        elif blocking == 8:
+        elif blocking == 9:
             pairs = pcl.block(left_on=['BuildingName', 'StreetName'],
                               right_on=['BUILDING_NAME', 'THROUGHFARE'])
-        elif blocking == 9:
+        elif blocking == 10:
             pairs = pcl.block(left_on=['BuildingNumber', 'StreetName'],
                               right_on=['BUILDING_NUMBER', 'THROUGHFARE'])
-        elif blocking == 10:
+        elif blocking == 11:
             pairs = pcl.block(left_on=['StreetName', 'TownName'],
                               right_on=['THROUGHFARE', 'POST_TOWN'])
         else:
@@ -865,12 +401,15 @@ class AddressLinker:
                        missing_value=0.8)
         compare.string('BUILDING_NUMBER', 'BuildingNumber', method='jarowinkler', name='building_number_dl',
                        missing_value=0.5)
-        compare.numeric('PAO_START_NUMBER', 'BuildingStartNumber', threshold=0.1, method='linear',
+        compare.numeric('PAO_START_NUMBER', 'PAOstartNumber', threshold=0.1, method='linear',
                         name='pao_number_dl')
-        compare.numeric('PAO_END_NUMBER', 'BuildingEndNumber', threshold=0.1, method='linear',
+        compare.numeric('PAO_END_NUMBER', 'PAOendNumber', threshold=0.1, method='linear',
                         name='building_end_number_dl')
-        compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
-                       missing_value=0.7)
+        if blocking not in (6, 9, 10):
+            compare.string('THROUGHFARE', 'StreetName', method='jarowinkler', name='street_dl',
+                           missing_value=0.7)
+            compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
+                           missing_value=0.6)
         compare.string('POST_TOWN', 'TownName', method='jarowinkler', name='town_dl',
                        missing_value=0.2)
         compare.string('LOCALITY', 'Locality', method='jarowinkler', name='locality_dl',
@@ -883,18 +422,25 @@ class AddressLinker:
             compare.string('postcode_out', 'postcode_out', method='jarowinkler', name='outcode_dl',
                            missing_value=0.0)
 
-        if blocking in (1, 2, 8, 9, 10):
+        if blocking in (2, 3, 9, 10, 11):
             compare.string('POSTCODE', 'Postcode', method='jarowinkler', name='postcode_dl',
                            missing_value=0.0)
 
         # use to separate e.g. 55A from 55
-        compare.string('PAO_START_SUFFIX', 'BuildingSuffix', method='jarowinkler', name='pao_suffix_dl',
+        compare.string('PAO_START_SUFFIX', 'PAOstartSuffix', method='jarowinkler', name='pao_suffix_dl',
+                       missing_value=0.5)
+        compare.string('PAO_END_SUFFIX', 'PAOendSuffix', method='jarowinkler', name='pao_suffix_dl2',
                        missing_value=0.5)
 
         # the following is good for flats and apartments, which have been numbered
         compare.string('SUB_BUILDING_NAME', 'SubBuildingName', method='jarowinkler', name='flatw_dl',
                        missing_value=0.6)
-        compare.numeric('SAO_START_NUMBER', 'FlatNumber', threshold=0.1, method='linear', name='sao_number_dl')
+        compare.numeric('SAO_START_NUMBER', 'SAOStartNumber', threshold=0.1, method='linear', name='sao_number_dl')
+        compare.numeric('SAO_END_NUMBER', 'SAOEndNumber', threshold=0.1, method='linear', name='sao_number_dl2')
+        compare.string('SAO_START_SUFFIX', 'SAOStartSuffix', method='jarowinkler', name='sao_suffix_dl',
+                       missing_value=0.5)
+        compare.string('SAO_END_SUFFIX', 'SAOEndSuffix', method='jarowinkler', name='sao_suffix_dl2',
+                       missing_value=0.5)
 
         # set rules for organisations such as care homes and similar type addresses
         compare.string('ORGANISATION_NAME', 'OrganisationName', method='jarowinkler', name='organisation_dl',
@@ -902,23 +448,21 @@ class AddressLinker:
         compare.string('DEPARTMENT_NAME', 'DepartmentName', method='jarowinkler', name='department_dl',
                        missing_value=0.6)
 
-        # Extras
-        compare.string('STREET_DESCRIPTOR', 'StreetName', method='jarowinkler', name='street_desc_dl',
-                       missing_value=0.6)
-
         # execute the comparison model
         compare.run()
 
         # remove those matches that are not close enough - requires e.g. street name to be close enough
-        if blocking in (1, 2):
+        if blocking in (2, 3):
             compare.vectors = compare.vectors.loc[compare.vectors['incode_dl'] >= 0.8]
             compare.vectors = compare.vectors.loc[compare.vectors['outcode_dl'] >= 0.5]
             compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.7]
-        elif blocking in (3, 4):
-            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.5]
-        elif blocking in (5, 6, 7):
+        elif blocking in (4,):
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+        elif blocking in (6,):
             compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
-        elif blocking in (6, 7):
+        elif blocking in (7, 8):
+            compare.vectors = compare.vectors.loc[compare.vectors['street_dl'] >= 0.6]
+            compare.vectors = compare.vectors.loc[compare.vectors['pao_number_dl'] > 0.9]
             msk = (compare.vectors['street_dl'] >= 0.7) | (compare.vectors['organisation_dl'] > 0.3)
             compare.vectors = compare.vectors.loc[msk]
 
@@ -1015,7 +559,7 @@ class AddressLinker:
         """
         self.log.info('Checking Performance...')
 
-        # count the number of matches and the total number of addresses and write to the lod
+        # count the number of matches and the total number of addresses
         total = len(self.matching_results.index)
 
         # save matched to a file for inspection
@@ -1213,16 +757,16 @@ class AddressLinker:
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         start = time.clock()
-        if self.settings['test']:
-            self.load_and_process_addressbase()
-        else:
-            self.load_addressbase()
-
+        self.load_addressbase()
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
         start = time.clock()
-        self.parse_input_addresses_to_tokens()
+        address_parser = addressParser.AddressParser(log=self.log, **self.settings)
+        self.toLinkAddressData = address_parser.parse(self.toLinkAddressData)
+        self.toLinkAddressData = address_parser.convert_to_numeric_and_add_dummies(self.toLinkAddressData)
+        self.toLinkAddressData.to_csv(self.settings['outpath'] + self.settings['outname'] + '_parsed_addresses.csv',
+                                      index=False)
         stop = time.clock()
         self.log.info('finished in {} seconds...'.format(round((stop - start), 1)))
 
