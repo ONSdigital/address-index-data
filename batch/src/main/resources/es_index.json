@@ -344,8 +344,20 @@
           "index": "not_analyzed"
         },
         "relatives": {
-          "type": "array",
-          "index": "no"
+          "properties": {
+            "level": {
+              "type": "integer",
+              "index": "not_analyzed"
+            },
+            "siblings": {
+              "type": "integer",
+              "index": "not_analyzed"
+            },
+            "parents": {
+              "type": "integer",
+              "index": "not_analyzed"
+            }
+          }
         }
       }
     }
