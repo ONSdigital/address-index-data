@@ -106,6 +106,75 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondLine.getString(34) shouldBe "LOCALITY XYZ" // LOCALITY
     }
 
+    "aggregate relatives from hierarchy table" in {
+      // Given
+      val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+
+      // When
+      val result = SqlHelper.aggregateHierarchyInformation(hierarchy).orderBy("primaryUprn", "level").collect()
+
+      // Then
+      result.length shouldBe 5
+      val firstLine = result(0)
+      firstLine.getLong(0) shouldBe 1l
+      firstLine.getInt(1) shouldBe 1
+      firstLine.getAs[Array[Long]](2) shouldBe Array(1l)
+      firstLine.getAs[Array[Long]](3) shouldBe Array()
+
+      val secondLine = result(1)
+      secondLine.getLong(0) shouldBe 1l
+      secondLine.getInt(1) shouldBe 2
+      secondLine.getAs[Array[Long]](2) shouldBe Array(2l, 3l, 4l)
+      secondLine.getAs[Array[Long]](3) shouldBe Array(1l, 1l, 1l)
+
+      val thirdLine = result(2)
+      thirdLine.getLong(0) shouldBe 1l
+      thirdLine.getInt(1) shouldBe 3
+      thirdLine.getAs[Array[Long]](2) shouldBe Array(5l, 6l, 7l, 8l, 9l)
+      thirdLine.getAs[Array[Long]](3) shouldBe Array(2l, 2l, 2l, 3l, 3l)
+
+      val forthLine = result(3)
+      forthLine.getLong(0) shouldBe 10l
+      forthLine.getInt(1) shouldBe 1
+      forthLine.getAs[Array[Long]](2) shouldBe Array(10l)
+      forthLine.getAs[Array[Long]](3) shouldBe Array()
+
+      val fifthLine = result(4)
+      fifthLine.getLong(0) shouldBe 10l
+      fifthLine.getInt(1) shouldBe 2
+      fifthLine.getAs[Array[Long]](2) shouldBe Array(11l, 12l)
+      fifthLine.getAs[Array[Long]](3) shouldBe Array(10l, 10l)
+    }
+
+    "update addresses with relatives" ignore {
+      // Given
+      val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+      val expectedRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(1),
+          "parents" -> Array(null)
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(2, 3, 4),
+          "parents" -> Array(1, 1, 1)
+        ),
+        Map(
+          "level" -> 3,
+          "siblings" -> Array(5, 6, 7, 8, 9),
+          "parents" -> Array(2, 2, 2, 3, 3)
+        )
+      )
+
+      // When
+      val result = SqlHelper.aggregateHierarchyInformation(hierarchy).collect()
+
+      // Then
+      result.length shouldBe 9
+
+    }
+
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
 
       // Given

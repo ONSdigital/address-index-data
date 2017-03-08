@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import uk.gov.ons.addressindex.models.HybridAddressEsDocument
+import uk.gov.ons.addressindex.models.{HierarchyDocument, HybridAddressEsDocument}
 
 /**
   * Join the Csv files into single DataFrame
@@ -71,6 +71,22 @@ object SqlHelper {
         LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
         LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
         AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
+  }
+
+  def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame ={
+    val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
+
+    SparkProvider.sqlContext.sql(
+      s"""SELECT
+            primaryUprn,
+            thisLayer as level,
+            collect_list(uprn) as siblings,
+            collect_list(parentUprn) as parents
+          FROM
+            $hierarchyTable
+          GROUP BY primaryUprn, thisLayer
+       """
+    )
   }
 
   /**
