@@ -1,7 +1,7 @@
 package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, Row}
 import uk.gov.ons.addressindex.models.{HierarchyDocument, HybridAddressEsDocument}
 
 /**
@@ -73,6 +73,11 @@ object SqlHelper {
         AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
   }
 
+  /**
+    *
+    * @param hierarchy
+    * @return
+    */
   def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame ={
     val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
 
@@ -89,6 +94,17 @@ object SqlHelper {
     )
   }
 
+  def constructHierarchyRdd(hierarchy: DataFrame, aggregatedHierarchy: DataFrame): RDD[HierarchyDocument] = {
+
+    val hierarchyGroupedByPrimaryUprn = aggregatedHierarchy.rdd.groupBy(row => row.getLong(0))
+
+    val hierarchyRdd = hierarchy.rdd.keyBy(row => row.getLong(1))
+
+    hierarchyRdd.join(hierarchyGroupedByPrimaryUprn).map { case (_, (hierarchyRow: Row, relations: Iterable[Row])) =>
+      HierarchyDocument.fromJoinData(hierarchyRow, relations)
+    }
+  }
+
   /**
     * Constructs a hybrid index from nag and paf dataframes
     * We couldn't use Spark Sql because it does not contain `collect_list` until 2.0
@@ -96,8 +112,8 @@ object SqlHelper {
     */
   def aggregateHybridIndex(paf: DataFrame, nag: DataFrame): RDD[HybridAddressEsDocument] = {
 
-    val pafGroupedRdd = paf.rdd.keyBy(t => t.getLong(3))
-    val nagGroupedRdd = nag.rdd.keyBy(t => t.getLong(0))
+    val pafGroupedRdd = paf.rdd.keyBy(row => row.getLong(3))
+    val nagGroupedRdd = nag.rdd.keyBy(row => row.getLong(0))
 
     // Following line will group rows in 2 groups: lpi and paf
     // The first element in each new row will contain `uprn` as the first key

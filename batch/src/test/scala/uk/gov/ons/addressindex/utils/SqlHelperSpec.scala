@@ -146,33 +146,58 @@ class SqlHelperSpec extends WordSpec with Matchers {
       fifthLine.getAs[Array[Long]](3) shouldBe Array(10l, 10l)
     }
 
-    "update addresses with relatives" ignore {
+    "update addresses with relatives" in {
       // Given
       val hierarchy = AddressIndexFileReader.readHierarchyCSV()
-      val expectedRelations = Array(
+      val expectedFirstRelations = Array(
         Map(
           "level" -> 1,
-          "siblings" -> Array(1),
-          "parents" -> Array(null)
+          "siblings" -> Array(1).deep,
+          "parents" -> Array().deep
         ),
         Map(
           "level" -> 2,
-          "siblings" -> Array(2, 3, 4),
-          "parents" -> Array(1, 1, 1)
+          "siblings" -> Array(2, 3, 4).deep,
+          "parents" -> Array(1, 1, 1).deep
         ),
         Map(
           "level" -> 3,
-          "siblings" -> Array(5, 6, 7, 8, 9),
-          "parents" -> Array(2, 2, 2, 3, 3)
+          "siblings" -> Array(5, 6, 7, 8, 9).deep,
+          "parents" -> Array(2, 2, 2, 3, 3).deep
         )
       )
 
+      val expectedSecondRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(10).deep,
+          "parents" -> Array().deep
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(11,12).deep,
+          "parents" -> Array(10, 10).deep
+        )
+      )
+
+      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchy)
+
       // When
-      val result = SqlHelper.aggregateHierarchyInformation(hierarchy).collect()
+      val results = SqlHelper.constructHierarchyRdd(hierarchy, hierarchyGrouped).collect()
 
       // Then
-      result.length shouldBe 9
+      results.length shouldBe 12
 
+      results.map(_.uprn) shouldBe Array[Long](1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+      results.map(_.parentUprn) shouldBe Array[Long](null.asInstanceOf[Long], 1, 1, 1, 2, 2, 2, 3, 3, null.asInstanceOf[Long], 10, 10)
+
+      results.take(9).foreach{ result =>
+        result.relations.toList shouldBe expectedFirstRelations.toList
+      }
+
+      results.takeRight(3).foreach{ result =>
+        result.relations.toList shouldBe expectedSecondRelations.toList
+      }
     }
 
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
