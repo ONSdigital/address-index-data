@@ -110,17 +110,20 @@ object SqlHelper {
     * We couldn't use Spark Sql because it does not contain `collect_list` until 2.0
     * Hive does not support aggregating complex types in the `collect_list` udf
     */
-  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, hierarchy: RDD[HierarchyDocument]): RDD[HybridAddressEsDocument] = {
 
-    val pafGroupedRdd = paf.rdd.keyBy(row => row.getLong(3))
-    val nagGroupedRdd = nag.rdd.keyBy(row => row.getLong(0))
+    val pafWithKey = paf.rdd.keyBy(row => row.getLong(3))
+    val nagWithKey = nag.rdd.keyBy(row => row.getLong(0))
+    val hierarchyWithKey = hierarchy.keyBy(document => document.uprn)
 
     // Following line will group rows in 2 groups: lpi and paf
     // The first element in each new row will contain `uprn` as the first key
-    val groupedRdd = nagGroupedRdd.cogroup(pafGroupedRdd)
+    val groupedRdd = nagWithKey.cogroup(pafWithKey)
+    
+    val groupedRddWithHierarchy = groupedRdd.leftOuterJoin(hierarchyWithKey)
 
-    groupedRdd.map {
-      case (uprn, (lpiArray, pafArray)) =>
+    groupedRddWithHierarchy.map {
+      case (uprn, ((lpiArray, pafArray), hierarchyDocument)) =>
         val lpis = lpiArray.toSeq.map(HybridAddressEsDocument.rowToLpi)
         val pafs = pafArray.toSeq.map(HybridAddressEsDocument.rowToPaf)
 
@@ -135,11 +138,16 @@ object SqlHelper {
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
           else ("", "")
 
+        // fun fact: `null.asInstanceOf[Long]` is actually equal to `0l`
+        val parentUprn = hierarchyDocument.map(_.parentUprn).getOrElse(0l)
+        val relatives = hierarchyDocument.map(_.relations).getOrElse(Array())
 
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
           postCodeOut,
+          parentUprn,
+          relatives,
           lpis,
           pafs
         )

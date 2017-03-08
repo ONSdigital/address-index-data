@@ -33,7 +33,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val firstLine = result(0)
 
-      firstLine.getLong(0) shouldBe 100010971564L // UPRN
+      firstLine.getLong(0) shouldBe 2L // UPRN
       firstLine.getString(1) shouldBe "KL8 1JQ" // POSTCODE_LOCATOR
       firstLine.getString(2) shouldBe "D" // ADDRESSBASE_POSTAL
       firstLine.get(3) shouldBe Array(-2.3158117F,53.6111710F) // LOCATION
@@ -217,26 +217,33 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
-      // When
       val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
 
+      val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
+      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
+      val hierarchy = SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
+
       // When
-      val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 2
 
       val firstResult = result(0)
-      firstResult.uprn shouldBe 100010971564L
+      firstResult.uprn shouldBe 2L
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
+      firstResult.parentUprn shouldBe 1l
+      firstResult.relatives.length shouldBe 3
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
       val secondResult = result(1)
+      secondResult.uprn shouldBe 100010971565L
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
-      secondResult.uprn shouldBe 100010971565L
+      secondResult.parentUprn shouldBe 0L
+      secondResult.relatives.length shouldBe 0
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 

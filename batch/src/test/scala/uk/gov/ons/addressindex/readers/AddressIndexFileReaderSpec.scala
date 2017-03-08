@@ -61,7 +61,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getByte(0) shouldBe 21 // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getLong(2) shouldBe 373713L // PRO_ORDER
-      firstLine.getLong(3) shouldBe 100010971564L // UPRN
+      firstLine.getLong(3) shouldBe 2L // UPRN
       firstLine.getByte(4) shouldBe 1 // LOGICAL_STATUS
       firstLine.getByte(5) shouldBe 3 // BLPU_STATE
       firstLine.getDate(6) shouldBe format.parse("2007-06-26") // BLPU_STATE_DATE
@@ -95,7 +95,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getByte(0) shouldBe 32 // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getLong(2) shouldBe 683979L // PRO_ORDER
-      firstLine.getLong(3) shouldBe 100010971564L // UPRN
+      firstLine.getLong(3) shouldBe 2L // UPRN
       firstLine.getString(4) shouldBe "1110C000053211" // CLASS_KEY
       firstLine.getString(5) shouldBe "RD" // CLASSIFICATION_CODE
       firstLine.getString(6) shouldBe "AddressBase Premium Classification Scheme" // CLASS_SCHEME
@@ -119,7 +119,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getByte(0) shouldBe 23 // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getLong(2) shouldBe 211153L // PRO_ORDER
-      firstLine.getLong(3) shouldBe 100010971564L // UPRN
+      firstLine.getLong(3) shouldBe 2L // UPRN
       firstLine.getString(4) shouldBe "0655X202358935" // XREF_KEY
       firstLine.getString(5) shouldBe "E04000324" // CROSS_REFERENCE
       firstLine.getInt(6) shouldBe 123 // VERSION
@@ -143,7 +143,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getByte(0) shouldBe 24 // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getLong(2) shouldBe 309891L // PRO_ORDER
-      firstLine.getLong(3) shouldBe 100010971564L // UPRN
+      firstLine.getLong(3) shouldBe 2L // UPRN
       firstLine.getString(4) shouldBe "1610L000015314" // LPI_KEY
       firstLine.getString(5) shouldBe "ENG" // LANGUAGE
       firstLine.getByte(6) shouldBe 1 // LOGICAL_STATUS
@@ -181,7 +181,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       firstLine.getByte(0) shouldBe 31 // RECORD_IDENTIFIER
       firstLine.getString(1) shouldBe "I" // CHANGE_TYPE
       firstLine.getLong(2) shouldBe 357282L // PRO_ORDER
-      firstLine.getLong(3) shouldBe 100010971564L // UPRN
+      firstLine.getLong(3) shouldBe 2L // UPRN
       firstLine.getString(4) shouldBe "0116O000707611" // ORG_KEY
       firstLine.getString(5) shouldBe "SOME COUNCIL" // ORGANISATION
       firstLine.getString(6) shouldBe "THE LEGAL NAME" // LEGAL_NAME
@@ -280,14 +280,14 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readHierarchyCSV().collect()
 
       // Then
-      result.length shouldBe 9
+      result.length shouldBe 12
 
       val line = result(4)
       line.getLong(0) shouldBe 5 // UPRN
       line.getLong(1) shouldBe 1 // PRIMARY_UPRN
       line.getLong(2) shouldBe 2 // SECONDARY_UPRN
-      line.getLong(3) shouldBe 3 // LAYERS
-      line.getLong(4) shouldBe 3 // CURRENT_LAYER
+      line.getInt(3) shouldBe 3 // LAYERS
+      line.getInt(4) shouldBe 3 // CURRENT_LAYER
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
   }

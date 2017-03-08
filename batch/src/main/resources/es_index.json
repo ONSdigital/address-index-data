@@ -186,10 +186,6 @@
               "type": "string",
               "analyzer": "welsh_split_analyzer"
             },
-            "relatives": {
-              "type": "long",
-              "index": "no"
-            },
             "lpiStartDate": {
               "type": "date",
               "format": "strict_date_optional_time||epoch_millis",
@@ -342,6 +338,14 @@
         "postcodeOut": {
           "type": "string",
           "index": "not_analyzed"
+        },
+        "parentUprn": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "relatives": {
+          "type": "array",
+          "index": "no"
         }
       }
     }
