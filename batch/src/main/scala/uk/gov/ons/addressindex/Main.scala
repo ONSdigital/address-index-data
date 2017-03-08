@@ -9,6 +9,8 @@ import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.spark.rdd.RDD
+import uk.gov.ons.addressindex.models.HierarchyDocument
 
 /**
  * Main executed file
@@ -33,13 +35,13 @@ For usage see below:
     verify()
   }
 
-//  if (!opts.help()) {
-//    if (opts.hybrid()) {
+  if (!opts.help()) {
+    if (opts.hybrid()) {
       saveHybridAddresses()
-//    } else {
-//      opts.printHelp()
-//    }
-//  }
+    } else {
+      opts.printHelp()
+    }
+  }
 
   private def generateNagAddresses(): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -52,16 +54,24 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
   }
 
+  private def generateHierarchyData(): RDD[HierarchyDocument] = {
+    val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
+    val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
+    SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)t
+  }
+
   private def saveHybridAddresses() = {
     val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
-//    val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
-//    postMapping(indexName)
+    val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
+    postMapping(indexName)
 
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-//    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
+    val hierarchy = generateHierarchyData()
 
-//    ElasticSearchWriter.saveHybridAddresses(s"test3/address", hybrid)
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
+
+    ElasticSearchWriter.saveHybridAddresses(s"test3/address", hybrid)
   }
 
   private def postMapping(indexName: String) = {

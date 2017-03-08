@@ -74,9 +74,10 @@ object SqlHelper {
   }
 
   /**
-    *
-    * @param hierarchy
-    * @return
+    * Aggregates data forming lists of siblings and their parents per level of the hierarchy
+    * (groped by root uprn)
+    * @param hierarchy hierarchy data
+    * @return dataframe containing layers/levels of hierarchy
     */
   def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame ={
     val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
@@ -94,6 +95,12 @@ object SqlHelper {
     )
   }
 
+  /**
+    * Construct an RDD of hierarchical documents from the intial hierarchy data and the aggregated hierarchy data
+    * @param hierarchy initial hierarchy data
+    * @param aggregatedHierarchy aggregated hiearachy data
+    * @return RDD of hierarchical documents containing information about relatives of a particular address
+    */
   def constructHierarchyRdd(hierarchy: DataFrame, aggregatedHierarchy: DataFrame): RDD[HierarchyDocument] = {
 
     val hierarchyGroupedByPrimaryUprn = aggregatedHierarchy.rdd.groupBy(row => row.getLong(0))
