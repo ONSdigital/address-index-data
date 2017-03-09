@@ -57,7 +57,7 @@ For usage see below:
   private def generateHierarchyData(): RDD[HierarchyDocument] = {
     val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
     val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
-    SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)t
+    SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
   }
 
   private def saveHybridAddresses() = {

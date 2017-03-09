@@ -350,11 +350,11 @@
               "index": "not_analyzed"
             },
             "siblings": {
-              "type": "integer",
+              "type": "long",
               "index": "not_analyzed"
             },
             "parents": {
-              "type": "integer",
+              "type": "long",
               "index": "not_analyzed"
             }
           }
