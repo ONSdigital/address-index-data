@@ -3,6 +3,7 @@ package uk.gov.ons.addressindex.utils
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -35,7 +36,7 @@ object SparkProvider {
   conf.set("es.nodes.wan.only", config.getString("addressindex.elasticsearch.wan-only"))
 
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
-  lazy val sqlContext = SQLContext.getOrCreate(sparkContext)
+  lazy val sqlContext = new HiveContext(sparkContext)
 
   val incrementalId = new AtomicInteger()
 

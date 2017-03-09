@@ -7,6 +7,8 @@ case class HybridAddressEsDocument(
   uprn: Long,
   postcodeIn: String,
   postcodeOut: String,
+  parentUprn: Long,
+  relatives: Array[Map[String, Any]],
   lpi: Seq[Map[String, Any]],
   paf: Seq[Map[String, Any]]
 )

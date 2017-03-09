@@ -33,7 +33,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val firstLine = result(0)
 
-      firstLine.getLong(0) shouldBe 100010971564L // UPRN
+      firstLine.getLong(0) shouldBe 2L // UPRN
       firstLine.getString(1) shouldBe "KL8 1JQ" // POSTCODE_LOCATOR
       firstLine.getString(2) shouldBe "D" // ADDRESSBASE_POSTAL
       firstLine.get(3) shouldBe Array(-2.3158117F,53.6111710F) // LOCATION
@@ -106,6 +106,100 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondLine.getString(34) shouldBe "LOCALITY XYZ" // LOCALITY
     }
 
+    "aggregate relatives from hierarchy table" in {
+      // Given
+      val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+
+      // When
+      val result = SqlHelper.aggregateHierarchyInformation(hierarchy).orderBy("primaryUprn", "level").collect()
+
+      // Then
+      result.length shouldBe 5
+      val firstLine = result(0)
+      firstLine.getLong(0) shouldBe 1l
+      firstLine.getInt(1) shouldBe 1
+      firstLine.getAs[Array[Long]](2) shouldBe Array(1l)
+      firstLine.getAs[Array[Long]](3) shouldBe Array()
+
+      val secondLine = result(1)
+      secondLine.getLong(0) shouldBe 1l
+      secondLine.getInt(1) shouldBe 2
+      secondLine.getAs[Array[Long]](2) shouldBe Array(2l, 3l, 4l)
+      secondLine.getAs[Array[Long]](3) shouldBe Array(1l, 1l, 1l)
+
+      val thirdLine = result(2)
+      thirdLine.getLong(0) shouldBe 1l
+      thirdLine.getInt(1) shouldBe 3
+      thirdLine.getAs[Array[Long]](2) shouldBe Array(5l, 6l, 7l, 8l, 9l)
+      thirdLine.getAs[Array[Long]](3) shouldBe Array(2l, 2l, 2l, 3l, 3l)
+
+      val forthLine = result(3)
+      forthLine.getLong(0) shouldBe 10l
+      forthLine.getInt(1) shouldBe 1
+      forthLine.getAs[Array[Long]](2) shouldBe Array(10l)
+      forthLine.getAs[Array[Long]](3) shouldBe Array()
+
+      val fifthLine = result(4)
+      fifthLine.getLong(0) shouldBe 10l
+      fifthLine.getInt(1) shouldBe 2
+      fifthLine.getAs[Array[Long]](2) shouldBe Array(11l, 12l)
+      fifthLine.getAs[Array[Long]](3) shouldBe Array(10l, 10l)
+    }
+
+    "update addresses with relatives" in {
+      // Given
+      val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+      val expectedFirstRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(1).deep,
+          "parents" -> Array().deep
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(2, 3, 4).deep,
+          "parents" -> Array(1, 1, 1).deep
+        ),
+        Map(
+          "level" -> 3,
+          "siblings" -> Array(5, 6, 7, 8, 9).deep,
+          "parents" -> Array(2, 2, 2, 3, 3).deep
+        )
+      )
+
+      val expectedSecondRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(10).deep,
+          "parents" -> Array().deep
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(11,12).deep,
+          "parents" -> Array(10, 10).deep
+        )
+      )
+
+      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchy)
+
+      // When
+      val results = SqlHelper.constructHierarchyRdd(hierarchy, hierarchyGrouped).collect()
+
+      // Then
+      results.length shouldBe 12
+
+      results.map(_.uprn) shouldBe Array[Long](1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+      results.map(_.parentUprn) shouldBe Array[Long](null.asInstanceOf[Long], 1, 1, 1, 2, 2, 2, 3, 3, null.asInstanceOf[Long], 10, 10)
+
+      results.take(9).foreach{ result =>
+        result.relations.toList shouldBe expectedFirstRelations.toList
+      }
+
+      results.takeRight(3).foreach{ result =>
+        result.relations.toList shouldBe expectedSecondRelations.toList
+      }
+    }
+
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
 
       // Given
@@ -123,26 +217,33 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
-      // When
       val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
 
+      val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
+      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
+      val hierarchy = SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
+
       // When
-      val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 2
 
       val firstResult = result(0)
-      firstResult.uprn shouldBe 100010971564L
+      firstResult.uprn shouldBe 2L
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
+      firstResult.parentUprn shouldBe 1l
+      firstResult.relatives.length shouldBe 3
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
       val secondResult = result(1)
+      secondResult.uprn shouldBe 100010971565L
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
-      secondResult.uprn shouldBe 100010971565L
+      secondResult.parentUprn shouldBe 0L
+      secondResult.relatives.length shouldBe 0
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 

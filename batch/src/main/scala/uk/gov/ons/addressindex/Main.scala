@@ -9,6 +9,8 @@ import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.spark.rdd.RDD
+import uk.gov.ons.addressindex.models.HierarchyDocument
 
 /**
  * Main executed file
@@ -52,6 +54,12 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
   }
 
+  private def generateHierarchyData(): RDD[HierarchyDocument] = {
+    val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
+    val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
+    SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
+  }
+
   private def saveHybridAddresses() = {
     val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
     val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
@@ -59,7 +67,9 @@ For usage see below:
 
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag)
+    val hierarchy = generateHierarchyData()
+
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
 
     ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
