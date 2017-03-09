@@ -75,7 +75,7 @@ object SqlHelper {
 
   /**
     * Aggregates data forming lists of siblings and their parents per level of the hierarchy
-    * (groped by root uprn)
+    * (grouped by root uprn)
     * @param hierarchy hierarchy data
     * @return dataframe containing layers/levels of hierarchy
     */
