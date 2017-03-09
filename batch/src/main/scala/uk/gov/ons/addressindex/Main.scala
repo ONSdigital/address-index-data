@@ -71,7 +71,7 @@ For usage see below:
 
     val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
 
-    ElasticSearchWriter.saveHybridAddresses(s"test3/address", hybrid)
+    ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
 
   private def postMapping(indexName: String) = {
