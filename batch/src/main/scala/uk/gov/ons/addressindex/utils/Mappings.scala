@@ -133,7 +133,7 @@ object Mappings {
                   },
                   "streetDescriptor": {
                     "type": "string",
-                    "analyzer": "welsh_split_analyzer"
+                    "analyzer": "welsh_no_split_analyzer"
                   },
                   "townName": {
                     "type": "string",
@@ -190,10 +190,6 @@ object Mappings {
                   "nagAll": {
                     "type": "string",
                     "analyzer": "welsh_split_analyzer"
-                  },
-                  "relatives": {
-                    "type": "long",
-                    "index": "no"
                   },
                   "lpiStartDate": {
                     "type": "date",
@@ -347,6 +343,26 @@ object Mappings {
               "postcodeOut": {
                 "type": "string",
                 "index": "not_analyzed"
+              },
+              "parentUprn": {
+                "type": "string",
+                "index": "not_analyzed"
+              },
+              "relatives": {
+                "properties": {
+                  "level": {
+                    "type": "integer",
+                    "index": "not_analyzed"
+                  },
+                  "siblings": {
+                    "type": "long",
+                    "index": "not_analyzed"
+                  },
+                  "parents": {
+                    "type": "long",
+                    "index": "not_analyzed"
+                  }
+                }
               }
             }
           }

@@ -4,8 +4,6 @@ resolvers ++= Seq(
   "conjars" at "http://conjars.org/repo"
 )
 
-
-
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-compiler" % scalaVersion.value,
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -16,8 +14,7 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
   "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0"  excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.scalatest" %% "scalatest" % "3.0.0" % Test,
-  "org.rogach" %% "scallop" % "2.0.5",
-  "org.apache.httpcomponents" % "httpclient" % "4.2.5"
+  "org.rogach" %% "scallop" % "2.0.5"
 )
 
 scalacOptions ++= List("-unchecked", "-Xlint")
