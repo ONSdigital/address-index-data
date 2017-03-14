@@ -60,7 +60,6 @@ object SqlHelper {
           $streetTable.streetClassification,
           $crossRefTable.crossReference,
           $crossRefTable.source,
-          array() as relatives,
           $lpiTable.startDate as lpiStartDate,
           $lpiTable.lastUpdateDate as lpiLastUpdateDate
         FROM $blpuTable

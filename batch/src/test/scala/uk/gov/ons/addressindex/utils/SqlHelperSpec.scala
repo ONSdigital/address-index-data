@@ -71,9 +71,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getByte(35) shouldBe 8 // STREET_CLASSIFICATION
       firstLine.getString(36) shouldBe "E04000324" // CROSS_REFERENCE
       firstLine.getString(37) shouldBe "7666MI" // SOURCE
-      firstLine.get(38) shouldBe Array() // RELATIVES
-      firstLine.getDate(39) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
-      firstLine.getDate(40) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getDate(38) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
+      firstLine.getDate(39) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {

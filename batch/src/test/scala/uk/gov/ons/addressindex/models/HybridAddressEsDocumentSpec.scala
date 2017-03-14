@@ -48,7 +48,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val nagSource = "7666MI"
     val nagLocation = Array(-2.3162985F, 4.00F)
     val nagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
-    val nagRelatives = Array()
     val nagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
     val nagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
 
@@ -125,7 +124,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagStreetClassification,
         nagCrossReference,
         nagSource,
-        nagRelatives,
         nagLpiStartDate,
         nagLpiLastUpdateDate
       )
@@ -169,7 +167,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "streetClassification" -> nagStreetClassification,
         "crossReference" -> nagCrossReference,
         "source" -> nagSource,
-        "relatives" -> nagRelatives,
         "nagAll" -> nagAll,
         "lpiStartDate" -> nagLpiStartDate,
         "lpiLastUpdateDate" -> nagLpiLastUpdateDate
