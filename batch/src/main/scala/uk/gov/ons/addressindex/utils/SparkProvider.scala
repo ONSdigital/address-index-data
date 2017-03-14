@@ -35,6 +35,9 @@ object SparkProvider {
   // located on a cloud behind a public ip. More: https://www.elastic.co/guide/en/elasticsearch/hadoop/master/cloud.html
   conf.set("es.nodes.wan.only", config.getString("addressindex.elasticsearch.wan-only"))
 
+  // this must fix duplication problem
+  conf.set("es.mapping.id", "uprn")
+
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
   lazy val sqlContext = new HiveContext(sparkContext)
 

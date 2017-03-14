@@ -35,13 +35,13 @@ For usage see below:
     verify()
   }
 
-//  if (!opts.help()) {
-//    if (opts.hybrid()) {
+  if (!opts.help()) {
+    if (opts.hybrid()) {
       saveHybridAddresses()
-//    } else {
-//      opts.printHelp()
-//    }
-//  }
+    } else {
+      opts.printHelp()
+    }
+  }
 
   private def generateNagAddresses(): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -62,8 +62,8 @@ For usage see below:
 
   private def saveHybridAddresses() = {
     val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
-    val indexName = s"${baseIndexName}"//_${System.currentTimeMillis()}"
-    //postMapping(indexName)
+    val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
+    postMapping(indexName)
 
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
