@@ -54,9 +54,8 @@ object HybridAddressEsDocument {
     "streetClassification" -> (if (row.isNullAt(35)) null else row.getByte(35)),
     "crossReference" -> row.getString(36),
     "source" -> row.getString(37),
-    "relatives" -> row.get(38),
-    "lpiStartDate" -> row.getDate(39),
-    "lpiLastUpdateDate" -> row.getDate(40),
+    "lpiStartDate" -> row.getDate(38),
+    "lpiLastUpdateDate" -> row.getDate(39),
     "nagAll" ->  concatNag(
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       if (row.isNullAt(25)) "" else row.getShort(25).toString,
