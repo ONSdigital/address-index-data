@@ -94,7 +94,7 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
     return response
 
 
-def _create_chunks(data, batch_size=1000):
+def _create_chunks(data, batch_size=10000):
     """
     Creates arrays of roughly equal size from input data frames.
 
@@ -106,13 +106,13 @@ def _create_chunks(data, batch_size=1000):
     :return: array of roughly equal size data frames
     :rtype: np.ndarray
     """
-    splits = int(len(data.index) / batch_size)
+    splits = max(1, int(len(data.index) / batch_size))
     chunks = np.array_split(data, splits)
 
     return chunks
 
 
-def _run_baseline(filename, mini_batch=True, batch_size=1000):
+def _run_baseline(filename, mini_batch=True, batch_size=10000):
     """
     Process a single CSV file, execute bulk point query, and output the response text to a file.
 
@@ -131,6 +131,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=1000):
         results = []
 
         for i, data_chunk in enumerate(data_chunks):
+            print('Executing chunk', i)
             response = query_elastic(data_chunk)
 
             try:

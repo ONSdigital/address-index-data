@@ -292,4 +292,4 @@ def main(path):
 
 
 if __name__ == '__main__':
-    main(path='/Users/saminiemi/Projects/ONS/AddressIndex/linkedData/')
+    main(path='./')
