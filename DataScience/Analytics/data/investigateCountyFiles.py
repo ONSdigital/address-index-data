@@ -1,10 +1,17 @@
+#!/usr/bin/env python
 """
-ONS Address Index - Probabilistic Parser
-========================================
+ONS Address Index - Investigating Different County Lists
+========================================================
 
-This file defines the calling mechanism for a trained probabilistic parser model.
-It also implements a simple test. Note that the results are model dependent, so
-the assertions will fail if a new model is trained.
+A simple script to compare two county lists i.e. to find the union, intersect, and complements.
+
+
+Running
+-------
+
+After all requirements are satisfied and the datasets are available, the script can be run using CPython::
+
+    python investigateCountyFiles.py
 
 
 Requirements
@@ -30,7 +37,7 @@ import pandas as pd
 
 def _normalize(df):
     """
-    Normalise the county data i.e. strip spaces and convert to upper case. Also sort alphabetically.
+    Normalise the county data i.e. strip spaces and convert to upper case, and finally sort alphabetically.
 
     :param df: input data frame with county column
     :type df: pandas.DataFrame
@@ -78,9 +85,9 @@ def read_paul_county_file():
 
 def compare_datasets(df1, df2):
     """
-    Compares the two county datasets.
+    Compares the two county data sets.
 
-    Merges the dataframes so using an outer join. Adds merger indictor - either Original_only, PG_only, or both.
+    Merges the dataframes so using an outer join. Adds merger indicator - either Original_only, PG_only, or both.
     Saves the merged dataframe to CSV file for inspection.
 
     :param df1: Original counties dataframe
