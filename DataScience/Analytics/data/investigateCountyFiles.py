@@ -68,14 +68,17 @@ def read_original_county_file():
     return df
 
 
-def read_paul_county_file():
+def read_paul_county_file(filename='/Users/saminiemi/Dropbox/ONS/County_List_PG.csv'):
     """
     Read in Paul's county file. Normalises the county information.
+
+    :param filename: path and name of the county CSV file given by Paul
+    :type filename: str
 
     :return: counties in a dataframe
     :rtype: pandas.DataFrame
     """
-    df = pd.read_csv('/Users/saminiemi/Dropbox/ONS/County_List_PG.csv')
+    df = pd.read_csv(filename)
     df = _normalize(df)
 
     print(len(df.index), 'counties in the PG file')
