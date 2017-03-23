@@ -105,7 +105,7 @@ object Mappings {
                   },
                   "paoText": {
                     "type": "string",
-                    "analyzer": "welsh_no_split_analyzer"
+                    "analyzer": "welsh_split_analyzer"
                   },
                   "postcodeLocator": {
                     "type": "string",

@@ -102,7 +102,10 @@ object SqlHelper {
     */
   def constructHierarchyRdd(hierarchy: DataFrame, aggregatedHierarchy: DataFrame): RDD[HierarchyDocument] = {
 
-    val hierarchyGroupedByPrimaryUprn = aggregatedHierarchy.rdd.groupBy(row => row.getLong(0))
+    val hierarchyGroupedByPrimaryUprn = aggregatedHierarchy.rdd
+      // The following code is a replacement for `groupBy(_.getLong(0))`, that works without additional shuffling (faster)
+      .keyBy(row => row.getLong(0))
+      .aggregateByKey(Seq.empty[Row])((acc: Seq[Row], row: Row) => acc :+ row, (acc1: Seq[Row], acc2: Seq[Row]) => acc1 ++ acc2)
 
     val hierarchyRdd = hierarchy.rdd.keyBy(row => row.getLong(1))
 

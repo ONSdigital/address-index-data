@@ -87,18 +87,18 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).orderBy("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).orderBy("locality").collect()
 
       // Then
       result.length shouldBe 3
 
-      val firstLine = result(2)
+      val firstLine = result(1)
 
       firstLine.getLong(0) shouldBe 100010971565L // UPRN
       firstLine.getInt(15) shouldBe 9402538 // USRN
       firstLine.getString(34) shouldBe "FSDF DSFSDF DSF" // LOCALITY
 
-      val secondLine = result(1)
+      val secondLine = result(2)
 
       secondLine.getLong(0) shouldBe 100010971565L // UPRN
       secondLine.getInt(15) shouldBe 9402538 // USRN
@@ -182,7 +182,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchy)
 
       // When
-      val results = SqlHelper.constructHierarchyRdd(hierarchy, hierarchyGrouped).collect()
+      val results = SqlHelper.constructHierarchyRdd(hierarchy, hierarchyGrouped).sortBy(_.uprn).collect()
 
       // Then
       results.length shouldBe 12
@@ -191,11 +191,12 @@ class SqlHelperSpec extends WordSpec with Matchers {
       results.map(_.parentUprn) shouldBe Array[Long](null.asInstanceOf[Long], 1, 1, 1, 2, 2, 2, 3, 3, null.asInstanceOf[Long], 10, 10)
 
       results.take(9).foreach{ result =>
-        result.relations.toList shouldBe expectedFirstRelations.toList
+        // relations may not be sorted as we'd expect them to be (and that's OK)
+        result.relations.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
       }
 
       results.takeRight(3).foreach{ result =>
-        result.relations.toList shouldBe expectedSecondRelations.toList
+        result.relations.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedSecondRelations.toList
       }
     }
 
@@ -246,8 +247,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
-      secondResult.lpi(0)("lpiKey") shouldBe "1610L000014429"
-      secondResult.lpi(1)("lpiKey") shouldBe "1610L000056911"
+      secondResult.lpi(0)("lpiKey") shouldBe "1610L000056911"
+      secondResult.lpi(1)("lpiKey") shouldBe "1610L000014429"
 
       secondResult.paf(0)("recordIdentifier") shouldBe 27
 

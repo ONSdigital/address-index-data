@@ -1,16 +1,15 @@
 package uk.gov.ons.addressindex
 
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
+import uk.gov.ons.addressindex.models.HierarchyDocument
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
-import org.apache.http.client.methods.HttpPut
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.spark.rdd.RDD
-import uk.gov.ons.addressindex.models.HierarchyDocument
+
+import scalaj.http.{Http, HttpResponse}
 
 /**
  * Main executed file
@@ -24,24 +23,27 @@ object Main extends App {
       """
 Hybrid indexer. All options are mutually exclusive.
 
-Example: java -jar ons-ai-batch.jar --hybrid
+Example: java -jar ons-ai-batch.jar --mapping --hybrid
 
 For usage see below:
       """)
 
     val hybrid = opt[Boolean]("hybrid", noshort = true, descr = "Index hybrid PAF & NAG")
+    val mapping = opt[Boolean]("mapping", noshort = true, descr = "Creates mapping for the index")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
-    mutuallyExclusive(hybrid, help)
     verify()
   }
 
+  // each run of this application has a unique index name
+  val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
+  val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
+
   if (!opts.help()) {
-    if (opts.hybrid()) {
-      saveHybridAddresses()
-    } else {
-      opts.printHelp()
-    }
-  }
+
+    if (opts.mapping()) postMapping(indexName)
+    if (opts.hybrid()) saveHybridAddresses()
+
+  } else opts.printHelp()
 
   private def generateNagAddresses(): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -61,9 +63,6 @@ For usage see below:
   }
 
   private def saveHybridAddresses() = {
-    val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
-    val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
-    postMapping(indexName)
 
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
@@ -75,11 +74,11 @@ For usage see below:
   }
 
   private def postMapping(indexName: String) = {
-    val url = s"http://${config.getString("addressindex.elasticsearch.nodes")}:" +
-      s"${config.getString("addressindex.elasticsearch.port")}/$indexName"
-    val put = new HttpPut(url)
-    put.setHeader("Content-type", "application/json")
-    put.setEntity(new StringEntity(Mappings.hybrid))
-    (new DefaultHttpClient).execute(put)
+    val nodes = config.getString("addressindex.elasticsearch.nodes")
+    val port = config.getString("addressindex.elasticsearch.port")
+    val url = s"http://$nodes:$port/$indexName"
+
+    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
+    if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
   }
 }
