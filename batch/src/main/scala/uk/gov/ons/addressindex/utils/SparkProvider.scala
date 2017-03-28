@@ -23,10 +23,17 @@ object SparkProvider {
   conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName)
   conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName)
 
+  conf.set("spark.sql.shuffle.partitions", config.getString("addressindex.spark.sql.shuffle.partitions"))
+  conf.set("spark.yarn.executor.memoryOverhead", config.getString("addressindex.spark.yarn.executor.memoryOverhead"))
+
   conf.set("es.nodes", config.getString("addressindex.elasticsearch.nodes"))
   conf.set("es.port", config.getString("addressindex.elasticsearch.port"))
   conf.set("es.net.http.auth.user", config.getString("addressindex.elasticsearch.user"))
   conf.set("es.net.http.auth.pass", config.getString("addressindex.elasticsearch.pass"))
+
+  conf.set("es.batch.write.retry.count", config.getString("addressindex.elasticsearch.retry.count"))
+  conf.set("es.batch.size.bytes", config.getString("addressindex.elasticsearch.batch.size.bytes"))
+  conf.set("es.batch.size.entries", config.getString("addressindex.elasticsearch.batch.size.entries"))
 
   // decides either if ES index should be created manually or not
   conf.set("es.index.auto.create", config.getString("addressindex.elasticsearch.index-autocreate"))
@@ -35,7 +42,7 @@ object SparkProvider {
   // located on a cloud behind a public ip. More: https://www.elastic.co/guide/en/elasticsearch/hadoop/master/cloud.html
   conf.set("es.nodes.wan.only", config.getString("addressindex.elasticsearch.wan-only"))
 
-  // this must fix duplication problem
+  // this must fix duplication problem, hardcoded
   conf.set("es.mapping.id", "uprn")
 
   private lazy val sparkContext = SparkContext.getOrCreate(conf)
