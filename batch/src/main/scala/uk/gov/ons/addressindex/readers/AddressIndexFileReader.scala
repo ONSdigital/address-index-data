@@ -11,24 +11,24 @@ import uk.gov.ons.addressindex.utils.SparkProvider
   */
 object AddressIndexFileReader {
 
-  private lazy val config = ConfigFactory.load()
-  private lazy val pathToCsv = config.getString("addressindex.files.csv.delivery-point")
-  private lazy val pathToBlpuCSV = config.getString("addressindex.files.csv.blpu")
-  private lazy val pathToClassificationCSV = config.getString("addressindex.files.csv.classification")
-  private lazy val pathToCrossrefCSV = config.getString("addressindex.files.csv.crossref")
-  private lazy val pathToLpiCSV = config.getString("addressindex.files.csv.lpi")
-  private lazy val pathToOrganisationCSV = config.getString("addressindex.files.csv.organisation")
-  private lazy val pathToStreetCSV = config.getString("addressindex.files.csv.street")
-  private lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
-  private lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
-  private lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
+  lazy val config = ConfigFactory.load()
+  lazy val pathToDeliveryPointCsv = config.getString("addressindex.files.csv.delivery-point")
+  lazy val pathToBlpuCSV = config.getString("addressindex.files.csv.blpu")
+  lazy val pathToClassificationCSV = config.getString("addressindex.files.csv.classification")
+  lazy val pathToCrossrefCSV = config.getString("addressindex.files.csv.crossref")
+  lazy val pathToLpiCSV = config.getString("addressindex.files.csv.lpi")
+  lazy val pathToOrganisationCSV = config.getString("addressindex.files.csv.organisation")
+  lazy val pathToStreetCSV = config.getString("addressindex.files.csv.street")
+  lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
+  lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
+  lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
 
   /**
     * Reads csv into a `DataFrame`
     *
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(): DataFrame = readCsv(pathToCsv, CSVSchemas.postcodeAddressFileSchema)
+  def readDeliveryPointCSV(): DataFrame = readCsv(pathToDeliveryPointCsv, CSVSchemas.postcodeAddressFileSchema)
 
   /**
     * Reads csv into a 'DataFrame'
@@ -112,5 +112,52 @@ object AddressIndexFileReader {
         s"file://$currentDirectory/$path"
       }
     }
+  }
+
+  def validateFileNames(): Boolean = {
+
+    val epoch = extractEpoch(pathToDeliveryPointCsv)
+    val date = extractDate(pathToDeliveryPointCsv)
+
+    Seq(
+      pathToDeliveryPointCsv,
+      pathToBlpuCSV,
+      pathToClassificationCSV,
+      pathToCrossrefCSV,
+      pathToLpiCSV,
+      pathToOrganisationCSV,
+      pathToStreetCSV,
+      pathToStreetDescriptorCSV,
+      pathToSuccessorCSV,
+      pathToHierarchyCSV
+    ).forall(fileName => validateFileName(fileName, epoch, date))
+
+  }
+
+  def validateFileName(filePath: String, epoch: Int, date: String): Boolean = {
+    val nameRegex = s"ABP_E$epoch.+_v$date$$".r
+
+    if (nameRegex.findFirstIn(filePath).isDefined) true
+    else throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
+  }
+
+  def extractEpoch(filePath: String): Int = {
+    val epochRegex = s"ABP_E(\\d+).+$$".r
+    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
+    epoch.group(1).toInt
+  }
+
+  def extractDate(filePath: String): String ={
+    val dateRegex = s"ABP_E.+(\\d{6})$$".r
+    val date = dateRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date"))
+    date.group(1)
+  }
+
+  def generateIndexNameFromFileName(): String = {
+    val epoch = extractEpoch(pathToDeliveryPointCsv)
+    val date = extractDate(pathToDeliveryPointCsv)
+
+    val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
+    s"${baseIndexName}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }
