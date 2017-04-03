@@ -112,13 +112,19 @@ def _create_chunks(data, batch_size=10000):
     return chunks
 
 
-def _run_baseline(filename, mini_batch=True, batch_size=10000):
+def _run_baseline(filename, mini_batch=True, return_package_name='bulkAddresses', batch_size=10000):
     """
     Process a single CSV file, execute bulk point query, and output the response text to a file.
 
     :param filename: name of the CSV file to process
     :type filename: str
     :param mini_batch: whether to chunk the queries to batches
+    :type mini_batch: bool
+    :param return_package_name: name of the JSON return package containing the bulk matches
+    :type return_package_name: str
+    :param batch_size: size of the mini batch that is used in this script (note that the batches are rounded, so
+                       not necessarily exactly this size)
+    :type batch_size: int
 
     :return: None
     """
@@ -143,7 +149,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=10000):
                 print(response)
 
             try:
-                results.append(response.json()['resp'])
+                results.append(response.json()[return_package_name])
             except ConnectionError:
                 print('Chunk', i, 'failed')
                 print(response)
@@ -151,7 +157,7 @@ def _run_baseline(filename, mini_batch=True, batch_size=10000):
         data_frames = [pd.DataFrame.from_dict(result) for result in results]
         data_frame = pd.concat(data_frames)
     else:
-        results = query_elastic(data).json()['resp']
+        results = query_elastic(data).json()[return_package_name]
         data_frame = pd.DataFrame.from_dict(results)
 
     data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False, encoding='utf-8')
