@@ -1,6 +1,5 @@
 package uk.gov.ons.addressindex.readers
 
-import com.sun.javaws.exceptions.InvalidArgumentException
 import org.scalatest.{Matchers, WordSpec}
 
 class AddressIndexFileReaderSpec extends WordSpec with Matchers {
@@ -8,7 +7,6 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
   "AddressIndexFileReader" should {
-    /*
     "read delivery point csv file" in {
 
       // When
@@ -292,7 +290,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getInt(4) shouldBe 3 // CURRENT_LAYER
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
-*/
+
     "extract epoch from the file path" in {
       // Given
       val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506"
