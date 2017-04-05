@@ -290,5 +290,62 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getInt(4) shouldBe 3 // CURRENT_LAYER
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
+
+    "extract epoch from the file path" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506"
+      val expected = 39
+
+      // When
+      val result = AddressIndexFileReader.extractEpoch(filePath)
+
+      // Then
+      result shouldBe expected
+    }
+
+    "throw exception if no epoch could be extracted" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E_BLPU_v040506"
+
+      // When Then
+      intercept[IllegalArgumentException]{
+        AddressIndexFileReader.extractEpoch(filePath)
+      }
+    }
+
+    "extract date from the file path" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506"
+      val expected = "040506"
+
+      // When
+      val result = AddressIndexFileReader.extractDate(filePath)
+
+      // Then
+      result shouldBe expected
+    }
+
+    "throw exception if no date could be extracted" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU"
+
+      // When Then
+      intercept[IllegalArgumentException]{
+        AddressIndexFileReader.extractDate(filePath)
+      }
+    }
+
+    "throw exception if file could not be validated" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU"
+      val epoch = 40
+      val date = "010203"
+
+      // When Then
+      intercept[IllegalArgumentException]{
+        AddressIndexFileReader.validateFileName(filePath, epoch, date)
+      }
+
+    }
   }
 }

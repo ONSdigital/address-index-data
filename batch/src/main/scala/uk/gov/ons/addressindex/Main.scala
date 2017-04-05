@@ -35,15 +35,17 @@ For usage see below:
   }
 
   // each run of this application has a unique index name
-  val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
-  val indexName = s"${baseIndexName}_${System.currentTimeMillis()}"
+  val indexName = generateIndexName()
 
   if (!opts.help()) {
+    AddressIndexFileReader.validateFileNames()
 
     if (opts.mapping()) postMapping(indexName)
     if (opts.hybrid()) saveHybridAddresses()
 
   } else opts.printHelp()
+
+  private def generateIndexName(): String = AddressIndexFileReader.generateIndexNameFromFileName()
 
   private def generateNagAddresses(): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
