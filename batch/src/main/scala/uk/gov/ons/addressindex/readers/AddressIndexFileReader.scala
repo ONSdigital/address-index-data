@@ -135,7 +135,7 @@ object AddressIndexFileReader {
   }
 
   def validateFileName(filePath: String, epoch: Int, date: String): Boolean = {
-    val nameRegex = s"ABP_E$epoch.+_v$date$$".r
+    val nameRegex = s"ABP_E$epoch.+_v$date\\.csv$$".r
 
     if (nameRegex.findFirstIn(filePath).isDefined) true
     else throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
