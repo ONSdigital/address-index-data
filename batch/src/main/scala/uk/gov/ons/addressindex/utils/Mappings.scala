@@ -113,15 +113,13 @@ object Mappings {
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
                 "filter": [
-                  "asciifolding",
-                  "address_synonym_filter"
+                  "asciifolding"
                 ]
               },
               "welsh_split_analyzer": {
-                "tokenizer": "classic",
+                "tokenizer": "standard",
                 "filter": [
-                  "asciifolding",
-                  "address_synonym_filter"
+                  "asciifolding"
                 ]
               }
             },
@@ -232,7 +230,7 @@ object Mappings {
                   },
                   "saoText": {
                     "type": "string",
-                    "analyzer": "welsh_no_split_analyzer"
+                    "analyzer": "welsh_split_analyzer"
                   },
                   "streetDescriptor": {
                     "type": "string",
