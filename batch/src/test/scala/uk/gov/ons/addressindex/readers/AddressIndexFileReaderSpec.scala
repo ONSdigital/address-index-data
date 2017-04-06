@@ -335,6 +335,19 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       }
     }
 
+    "return true if file could be validated" in {
+      // Given
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506.csv"
+      val epoch = 39
+      val date = "040506"
+
+      // When
+      val result = AddressIndexFileReader.validateFileName(filePath, epoch, date)
+
+      // Then
+      result shouldBe true
+    }
+
     "throw exception if file could not be validated" in {
       // Given
       val filePath = "hdfs://path/to/file/ABP_E39_BLPU.csv"
