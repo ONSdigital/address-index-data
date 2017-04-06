@@ -148,7 +148,7 @@ object AddressIndexFileReader {
   }
 
   def extractDate(filePath: String): String ={
-    val dateRegex = s"ABP_E.+(\\d{6})$$".r
+    val dateRegex = s"ABP_E.+(\\d{6})\\.csv$$".r
     val date = dateRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date"))
     date.group(1)
   }

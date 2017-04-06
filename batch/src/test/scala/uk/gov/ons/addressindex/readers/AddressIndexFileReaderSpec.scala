@@ -305,7 +305,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
     "throw exception if no epoch could be extracted" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E_BLPU_v040506"
+      val filePath = "hdfs://path/to/file/ABP_E_BLPU_v040506.csv"
 
       // When Then
       intercept[IllegalArgumentException]{
@@ -315,7 +315,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
     "extract date from the file path" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506"
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506.csv"
       val expected = "040506"
 
       // When
@@ -327,7 +327,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
     "throw exception if no date could be extracted" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E39_BLPU"
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU.csv"
 
       // When Then
       intercept[IllegalArgumentException]{
@@ -337,7 +337,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
     "throw exception if file could not be validated" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E39_BLPU"
+      val filePath = "hdfs://path/to/file/ABP_E39_BLPU.csv"
       val epoch = 40
       val date = "010203"
 
