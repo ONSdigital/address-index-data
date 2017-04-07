@@ -61,7 +61,8 @@ object SqlHelper {
           $crossRefTable.crossReference,
           $crossRefTable.source,
           $lpiTable.startDate as lpiStartDate,
-          $lpiTable.lastUpdateDate as lpiLastUpdateDate
+          $lpiTable.lastUpdateDate as lpiLastUpdateDate,
+          $lpiTable.endDate as lpiEndDate
         FROM $blpuTable
         LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
         LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn

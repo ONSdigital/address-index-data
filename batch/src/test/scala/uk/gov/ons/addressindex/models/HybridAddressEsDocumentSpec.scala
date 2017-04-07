@@ -50,6 +50,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val nagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
     val nagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
     val nagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
+    val nagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
 
     val pafBuildingNumber = 1.toShort
     val pafUdprn = 19
@@ -125,7 +126,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagCrossReference,
         nagSource,
         nagLpiStartDate,
-        nagLpiLastUpdateDate
+        nagLpiLastUpdateDate,
+        nagLpiEndDate
       )
 
       val expected = Map(
@@ -169,7 +171,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "source" -> nagSource,
         "nagAll" -> nagAll,
         "lpiStartDate" -> nagLpiStartDate,
-        "lpiLastUpdateDate" -> nagLpiLastUpdateDate
+        "lpiLastUpdateDate" -> nagLpiLastUpdateDate,
+        "lpiEndDate" -> nagLpiEndDate
       )
 
       // When
