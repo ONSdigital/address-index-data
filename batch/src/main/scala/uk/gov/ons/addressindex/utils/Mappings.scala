@@ -301,6 +301,11 @@ object Mappings {
                     "type": "date",
                     "format": "strict_date_optional_time||epoch_millis",
                     "index": "not_analyzed"
+                  },
+                  "lpiEndDate": {
+                    "type": "date",
+                    "format": "strict_date_optional_time||epoch_millis",
+                    "index": "not_analyzed"
                   }
                 }
               },
