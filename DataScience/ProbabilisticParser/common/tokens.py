@@ -37,6 +37,7 @@ import string
 MODEL_FILE = 'addressCRF.crfsuite'
 directory = os.path.dirname(__file__)  # for relative path definitions
 MODEL_PATH = os.path.join(directory, '../training/')
+LUT_PATH = '/home/james/Clients/ONS/address-index-api/parsers/src/main/resources/input_pre_post_processing'
 
 # set labels - token names expected in the training file
 LABELS = ['OrganisationName',
@@ -67,12 +68,38 @@ Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', '
 Ordinal = {'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH',
            'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHTH', '8TH'}
 
+# Read in the files required for tokenization pre-processing.
+with open(LUT_PATH + '/county') as f:
+    county = f.read().splitlines()
+with open(LUT_PATH + '/non_county_identification') as f:
+    nonCountyIdentification = f.read().splitlines()
+with open(LUT_PATH + '/synonym') as f:
+    synonyms = f.read().splitlines()
+# Create a dictionary for the synonyms.
+synonym_LUT = dict(map(lambda x: x.split(','), synonyms))
+
 # get some extra info - possible incodes and the linked post towns, used to identify tokens
 df = pd.read_csv(os.path.join(directory, '../../data/') + 'postcode_district_to_town.csv')
 OUTCODES = set(df['postcode'].values)
 POSTTOWNS = set(df['town'].values)
-# county?
 
+def synonym(token):
+    """
+    Create a function 'synonym' which will map each of the elements in the synoyms file to the respective synonym.
+
+    :param token: The token to synonymize.
+    :type token: string
+
+    :return token_out: The synonym of the token passed in.
+    :type: string
+    """
+
+    try:
+        token_out = synonym_LUT[token]
+    except:
+        token_out = token
+
+    return token_out
 
 def _stripFormatting(collection):
     """
@@ -222,6 +249,43 @@ def tokens2features(tokens):
 
     return feature_sequence
 
+def replaceSynonyms(tokens):
+    """
+    This function replaces all of the words in the synonym list with their synonyms.
+
+    :param tokens: the list of tokens to replace with synonyms.
+    :type tokens: list of strings.
+
+    :return tokens: the synonymized list.
+    :type iterator: iterateas throught the list of strings.
+    """
+
+    tokens = map(lambda x: synonym(x), tokens)
+
+    return tokens
+
+def removeCounties(in_string):
+    """
+    This function will remove any counties which appear in the county list.
+
+    :param in_string: the string from which to remove the counties.
+    :type in_string: str
+
+    :return out_string: the input string with the counties removed.
+    :return out_string: the input string with the counties removed.
+    :type out_string: str
+    """
+
+    separatedCounties = '|'.join(county)
+    countiesRegex = '(?:\\b|\\s)*({sepCounties})(?:\\s|\\Z)*'.format(sepCounties = separatedCounties)
+    separatedSuffixes = '|'.join(nonCountyIdentification)
+    suffixesRegex = '(?!$sepSuffixes&)'.format(sepSuffixes = separatedSuffixes)
+
+    # regexp takes counties that don't have suffixes after them.
+    regexp = re.compile(countiesRegex + suffixesRegex)
+    out_string = regexp.sub(' ', in_string)
+
+    return out_string
 
 def tokenize(raw_string):
     """
@@ -241,8 +305,33 @@ def tokenize(raw_string):
         except:
             raw_string = str(raw_string)
 
+    # Normalize the input string according to the pre-processing in the beta.
+
+    # Convert to uppercase.
+    upperInput = raw_string.upper()
+    inputWithoutCounties = removeCounties(upperInput)
+
+    # Do the regular expression replacements as per the scala parsing.
+    regex1 = re.compile("(\\d+[A-Z]?) *- *(\\d+[A-Z]?)")
+    tokens = regex1.sub("\g<1>-\g<2>", inputWithoutCounties)
+
+    regex2 = re.compile("(\\d+)/(\\d+)")
+    tokens = regex2.sub("\g<1>-\g<2>", tokens)
+
+    regex3 = re.compile("(\\d+) *TO *(\\d+)")
+    tokens = regex3.sub("\g<1>-\g<2>", tokens)
+
+    # Do the non-regular expression replacements.
+    tokens = tokens.replace(" IN ", " ").replace(" CO ", " ").replace(" - ", " ").replace(",", " ").replace("\\", " ")
+
+    # Now split the string by whitespace.
+    tokens = tokens.split()
+
+    # Replace any synonyms from the synonyms list and remove any counties that are now discoverable.
+    preprocessed_string = removeCounties(' '.join(replaceSynonyms(tokens)))
+
     re_tokens = re.compile(r"\(*\b[^\s,;#&()]+[.,;)\n]* | [#&]", re.VERBOSE | re.UNICODE)
-    tokens = re_tokens.findall(raw_string)
+    tokens = re_tokens.findall(preprocessed_string)
 
     if not tokens:
         return []
