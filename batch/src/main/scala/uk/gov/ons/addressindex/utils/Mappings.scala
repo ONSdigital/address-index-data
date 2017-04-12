@@ -121,6 +121,13 @@ object Mappings {
                 "filter": [
                   "asciifolding"
                 ]
+              },
+              "welsh_split_synonyms_analyzer": {
+                "tokenizer": "standard",
+                "filter": [
+                  "asciifolding",
+                  "address_synonym_filter"
+                ]
               }
             },
             "tokenizer": {
