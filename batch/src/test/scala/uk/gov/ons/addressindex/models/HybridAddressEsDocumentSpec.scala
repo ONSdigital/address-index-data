@@ -69,7 +69,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     val pafDependentLocality = "STIXTON"
     val pafBuildingName = "COTTAGE"
     val pafWelshDoubleDependentLocality = "welsh3"
-    val pafOrganizationName = "CIBO"
+    val pafOrganisationName = "CIBO"
     val pafPostTown = "LONDON"
     val pafChangeType = "I"
     val pafDepartmentName = "department"
@@ -190,7 +190,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         pafProOrder,
         pafUprn,
         pafUdprn,
-        pafOrganizationName,
+        pafOrganisationName,
         pafDepartmentName,
         pafSubBuildingName,
         pafBuildingName,
@@ -234,7 +234,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         "dependentLocality" -> pafDependentLocality,
         "buildingName" -> pafBuildingName,
         "welshDoubleDependentLocality" -> pafWelshDoubleDependentLocality,
-        "organisationName" -> pafOrganizationName,
+        "organisationName" -> pafOrganisationName,
         "postTown" -> pafPostTown,
         "changeType" -> pafChangeType,
         "departmentName" -> pafDepartmentName,
@@ -267,7 +267,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val pafDependentLocality = "STIXTON"
       val pafWelshDependentLocality = "welsh4"
       val pafBuildingName = "COTTAGE"
-      val pafOrganizationName = "CIBO"
+      val pafOrganisationName = "CIBO"
       val pafPostTown = "LONDON"
       val pafWelshPostTown = "welsh5"
       val pafDepartmentName = "department"
@@ -279,7 +279,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // When
       val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
-        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
+        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganisationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
@@ -298,7 +298,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val pafDependentLocality = ""
       val pafWelshDependentLocality = ""
       val pafBuildingName = ""
-      val pafOrganizationName = ""
+      val pafOrganisationName = ""
       val pafPostTown = "LONDON"
       val pafWelshPostTown = ""
       val pafDepartmentName = ""
@@ -310,7 +310,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // When
       val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
-        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
+        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganisationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
@@ -329,7 +329,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val pafDependentLocality = "STIXTON"
       val pafWelshDependentLocality = ""
       val pafBuildingName = "COTTAGE"
-      val pafOrganizationName = "CIBO"
+      val pafOrganisationName = "CIBO"
       val pafPostTown = "LONDON"
       val pafWelshPostTown = "welsh5"
       val pafDepartmentName = "department"
@@ -341,7 +341,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // When
       val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
-        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
+        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganisationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 
@@ -360,7 +360,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val pafDependentLocality = "STIXTON"
       val pafWelshDependentLocality = "STIXTON"
       val pafBuildingName = "COTTAGE"
-      val pafOrganizationName = "CIBO"
+      val pafOrganisationName = "CIBO"
       val pafPostTown = "LONDON"
       val pafWelshPostTown = "LONDON"
       val pafDepartmentName = "department"
@@ -372,7 +372,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // When
       val result = HybridAddressEsDocument.concatPaf(pafPoBoxNumber, pafBuildingNumber, pafDependentThoroughfare,
-        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganizationName,
+        pafWelshDependentThoroughfare, pafThoroughfare, pafWelshThoroughfare, pafDepartmentName, pafOrganisationName,
         pafSubBuildingName, pafBuildingName, pafDoubleDependentLocality, pafWelshDoubleDependentLocality,
         pafDependentLocality, pafWelshDependentLocality, pafPostTown, pafWelshPostTown, pafPostcode)
 

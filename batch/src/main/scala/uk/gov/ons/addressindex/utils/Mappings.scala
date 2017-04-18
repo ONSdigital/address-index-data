@@ -365,7 +365,7 @@ object Mappings {
                     "format": "strict_date_optional_time||epoch_millis",
                     "index": "not_analyzed"
                   },
-                  "organizationName": {
+                  "organisationName": {
                     "type": "string",
                     "analyzer": "welsh_split_analyzer"
                   },
