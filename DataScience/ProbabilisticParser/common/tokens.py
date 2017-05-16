@@ -192,7 +192,7 @@ def tokenFeatures(token):
     features = {'digits': digits(token_clean),
                 'word': (token_clean if not token_clean.isdigit() else False),
                 'length': (u'd:' + str(len(token_clean)) if token_clean.isdigit() else u'w:' + str(len(token_clean))),
-                'endsinpunc': (token[-1] if bool(re.match('.+[^.\w]', token, flags=re.UNICODE)) else False),
+                'endsinpunc': (token[-1] if bool(re.match('.+\.$', token, flags=re.UNICODE)) else False),
                 'directional': token_clean in DIRECTIONS,
                 'outcode': token_clean in OUTCODES,
                 'posttown': token_clean in POSTTOWNS,
