@@ -277,9 +277,9 @@ def removeCounties(in_string):
     """
 
     separatedCounties = '|'.join(county)
-    countiesRegex = '(?:\\b|\\s)*({sepCounties})(?:\\s|\\Z)*'.format(sepCounties = separatedCounties)
+    countiesRegex = '(?:\\b|\\s)({sepCounties})(?:\\s|\\Z)'.format(sepCounties = separatedCounties)
     separatedSuffixes = '|'.join(nonCountyIdentification)
-    suffixesRegex = '(?!$sepSuffixes&)'.format(sepSuffixes = separatedSuffixes)
+    suffixesRegex = '(?!{sepSuffixes}|&)'.format(sepSuffixes = separatedSuffixes)
 
     # regexp takes counties that don't have suffixes after them.
     regexp = re.compile(countiesRegex + suffixesRegex)

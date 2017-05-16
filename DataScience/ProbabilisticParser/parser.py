@@ -201,9 +201,10 @@ def test(raw_string='ONS LIMITED FLAT 1 12 OXFORD STREET STREET ST1 2FW', verbos
     print('\nCRFsuite call results:')
     os.system('crfsuite tag -pit -m training/addressCRF.crfsuite training/test.txt')
 
-def test_county(raw_string = '7 Gate Reach, Exeter, Berks, EX2 6GA'):
+def test_county(raw_string = '7a to 10c Devon Wlk, Exeter, Devon, EX2 6GA, ENGLAND'):
     print('Input string:', raw_string)
     print('Python Results:', tag(raw_string))
 
 if __name__ == "__main__":
+    tag(' long street new milton hampshirer po14 ')
     test_county()
