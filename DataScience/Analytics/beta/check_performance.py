@@ -37,6 +37,7 @@ Version
 """
 import datetime
 import glob
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,7 +80,7 @@ def _read_input_data(filename, use_prototype=False):
     return data
 
 
-def _read_response_data(filename):
+def _read_response_data(filename, low_memory =False):
     """
     Read in the beta service response data from a stored JSON file as returned by the /bulk API end point.
 
@@ -91,7 +92,10 @@ def _read_response_data(filename):
     :return: response data in a tabular format with potentially multiple matches
     :rtype: pandas.DataFrame
     """
-    data = pd.read_csv(filename, low_memory=False)
+    if low_memory:
+         data = pd.read_csv(filename, low_memory=True,  usecols=['id', 'uprn'], dtype={'id': str, 'uprn': str})
+    else:
+         data = pd.read_csv(filename, low_memory=False)
 
     data['id'] = data['id'].astype(str)
     data['uprn'] = data['uprn'].astype(np.float64)
@@ -257,14 +261,14 @@ def _generate_performance_figure(all_results, filename, width=0.35):
     plt.close()
 
 
-def main(path):
+def main(directory = os.getcwd()):
     """
     Execute all steps needed to read in original data, beta response, join the tables and finally
     to compute simple performance numbers and to generate a simple bar chart.
 
     :return:
     """
-    response_files = glob.glob(path + '*_response.csv')
+    response_files = glob.glob(directory + '\\*_response.csv')
 
     for response_file in response_files:
         print('Processing', response_file)
@@ -292,4 +296,4 @@ def main(path):
 
 
 if __name__ == '__main__':
-    main(path='./')
+    main()

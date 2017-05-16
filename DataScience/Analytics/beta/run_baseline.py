@@ -37,6 +37,7 @@ Version
 """
 import glob
 import time
+import os
 
 import numpy as np
 import pandas as pd
@@ -61,8 +62,7 @@ def read_data(filename):
     return data
 
 
-def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.gov.uk:80/bulk',
-                  verbose=True):
+def query_elastic(data, uri, verbose=True):
     """
     Post the given data to the given uri, which should be the API bulk endpoint.
 
@@ -94,7 +94,7 @@ def query_elastic(data, uri='http://addressindex-api.apps.cfnpt.ons.statistics.g
     return response
 
 
-def _create_chunks(data, batch_size=10000):
+def _create_chunks(data, batch_size=10000, verbose=True):
     """
     Creates arrays of roughly equal size from input data frames.
 
@@ -106,13 +106,16 @@ def _create_chunks(data, batch_size=10000):
     :return: array of roughly equal size data frames
     :rtype: np.ndarray
     """
-    splits = max(1, int(len(data.index) / batch_size))
+    splits = max(1, int(len(data.index) / batch_size)+1)
     chunks = np.array_split(data, splits)
+    
+    if verbose:
+        print('Data split into',splits, 'chunks.' )
 
     return chunks
 
 
-def _run_baseline(filename, mini_batch=True, return_package_name='bulkAddresses', batch_size=10000):
+def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddresses', batch_size=10000, write_json=False, verbose=True):
     """
     Process a single CSV file, execute bulk point query, and output the response text to a file.
 
@@ -129,25 +132,31 @@ def _run_baseline(filename, mini_batch=True, return_package_name='bulkAddresses'
     :return: None
     """
     print('Processing', filename)
-
     data = read_data(filename)
 
     if mini_batch:
-        data_chunks = _create_chunks(data, batch_size=batch_size)
+        data_chunks = _create_chunks(data, batch_size=batch_size, verbose=verbose)
         results = []
 
         for i, data_chunk in enumerate(data_chunks):
-            print('Executing chunk', i)
-            response = query_elastic(data_chunk)
-
+            print(time.strftime("%H:%M:%S"), 'Executing chunk', i)
+            response = query_elastic(data_chunk, uri=uri, verbose=verbose)
+            
+            if write_json:
+                try:
+                    fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), mode='wb')
+                    fh.write(response.text.encode('utf-8'))
+                    fh.close()
+                except ValueError:
+                    print('Chunk', i, 'has not return text')
+                    print(response)
+                        
             try:
-                fh = open(filename.replace('_minimal.csv', '_response_chunk{}.json'.format(i)), mode='wb')
-                fh.write(response.text.encode('utf-8'))
-                fh.close()
-            except ValueError:
-                print('Chunk', i, 'has not return text')
-                print(response)
-
+                response.json()[return_package_name]
+            except:
+                print('Trying again chunk', i) 
+                response = query_elastic(data_chunk, uri=uri, verbose=verbose)
+                
             try:
                 results.append(response.json()[return_package_name])
             except ConnectionError:
@@ -157,13 +166,13 @@ def _run_baseline(filename, mini_batch=True, return_package_name='bulkAddresses'
         data_frames = [pd.DataFrame.from_dict(result) for result in results]
         data_frame = pd.concat(data_frames)
     else:
-        results = query_elastic(data).json()[return_package_name]
+        results = query_elastic(data, uri=uri, verbose=verbose).json()[return_package_name]
         data_frame = pd.DataFrame.from_dict(results)
 
     data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False, encoding='utf-8')
 
 
-def run_all_baselines():
+def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000, verbose=True):
     """
     Run baselines for all _minimal CSV files present in the working directory.
 
@@ -173,9 +182,10 @@ def run_all_baselines():
 
     :return: None
     """
-    files = glob.glob('*_minimal.csv')
+    uri = 'http://addressindex-api-' + uri_version + '.apps.cfnpt.ons.statistics.gov.uk:80/bulk'
+    files = glob.glob(directory + '\\*_minimal.csv')
     for file in files:
-        _run_baseline(file)
+        _run_baseline(file, uri=uri, verbose=verbose, batch_size=batch_size)
 
 
 if __name__ == '__main__':
