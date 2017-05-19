@@ -151,7 +151,13 @@ def _check_performance(data, verbose=True):
     results = []
 
     # drop duplicates to check how many were matched and for how many of the highest ranking match is correct
-    deduped_original = data.copy().drop_duplicates(subset='ID_original', keep='first')
+#    deduped_original = data.copy().drop_duplicates(subset='ADDRESS', keep='first')    
+    deduped_original = data.copy()
+    # Create a data frame that includes the scores and add a column with the frequency of each row.
+    deduped_original['top_counts'] = deduped_original.groupby(['ID_original', 'score'])['score'].transform('count')
+    # Drop the duplicates so that there is only one entry for each address (if there is choice keep the one with existing UPRN).
+    deduped_original = deduped_original.sort_values(['ADDRESS', 'UPRN_comparison', 'score'], 
+        ascending = [True, True, False], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
 
     number_of_entries = len(deduped_original['UPRN_comparison'].index)
     results.append(number_of_entries)
@@ -167,25 +173,23 @@ def _check_performance(data, verbose=True):
     msk = deduped_original['UPRN_beta'].isnull()
     not_matched_count = len(deduped_original.loc[msk].index)
     print('Not matched:', not_matched_count)
+    deduped_original = deduped_original.loc[~msk]
 
-    # find the top matches for each id and check which match the input UPRN by computing the sum of the boolean
-    msk = deduped_original['UPRN_beta'].notnull()
-    deduped_original = deduped_original.loc[msk]
-    number_of_correct = deduped_original['matches'].sum()
-
-    print('Top Ranking Match is Correct:', number_of_correct)
-    results.append(number_of_correct)
-
-    # find those without existing UPRN but with new beta one found
+    # find those without existing UPRN but with new beta one found and then remove them
     msk = deduped_original['UPRN_comparison'].isnull()
     new_uprns_count = len(deduped_original.loc[msk].index)
     print('New UPRNs:', new_uprns_count)
+    deduped_original = deduped_original.loc[~msk]
+
+    # find those where the top scoring UPRN_beta matches original and it is UNIQUE (strictly larger score than the second)
+    msk = deduped_original['top_counts'] == 1 & deduped_original['matches']
+    number_of_correct = len(deduped_original.loc[msk].index)
+    print('Top Ranking Match is Correct:', number_of_correct)
+    results.append(number_of_correct)
 
     # find those ids where the highest scored match is not the correct match
-    deduped_original = deduped_original.loc[~msk]
-    msk = deduped_original['matches'] == False
-    top_id_is_not_correct = deduped_original.loc[msk, 'ID_original']
-    print('Top ranking is incorrect:', len(top_id_is_not_correct.index))
+    top_id_is_not_correct = deduped_original.loc[~msk, 'ID_original']
+    print('Top ranking is incorrect or non unique:', len(top_id_is_not_correct.index))
 
     correct_in_set = []
     incorrect = []
@@ -218,41 +222,41 @@ def _check_performance(data, verbose=True):
 def _generate_performance_figure(all_results, filename, width=0.35):
     """
     Generate a simple bar chart to show the results.
-
+    
     :param all_results: a list containing all the results as computed by the _check_performance method
     :type all_results: list
     :param filename: name of the output file
     :type filename: str
     :param width: fractional width of the bars
     :type width: float
-
+    
     :return: None
     """
     all_results_names = ['Input Addresses', 'Existing UPRNs', 'Top Ranking Match', 'In the Set', 'New UPRNs',
                          'Different UPRNs', 'Not Matched']
     location = np.arange(len(all_results))
-
+    
     fig = plt.figure(figsize=(12, 10))
     plt.title('Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     ax = fig.add_subplot(1, 1, 1)
-
+    
     max_bar_length = max(all_results)
     plt.barh(location, all_results, width, color='g', alpha=0.6)
-
+    
     for patch in ax.patches:
         if patch.get_x() < 0:
             continue
-
+        
         n_addresses = int(patch.get_width())
         ratio = n_addresses / max_bar_length
-
+        
         if ratio > 0.3:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                         xytext=(-95, 8), textcoords='offset points', color='white', fontsize=24)
         else:
             ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
                         xytext=(10, 8), textcoords='offset points', color='black', fontsize=24)
-
+                        
     plt.xlabel('Number of Addresses')
     plt.yticks(location, all_results_names)
     plt.xlim(0, ax.get_xlim()[1] * 1.02)
@@ -277,7 +281,7 @@ def main(directory = os.getcwd()):
         for name in ('Existing', 'Prototype'):
             print('Calculating Performance using', name, 'UPRNs')
             output_figure_file = response_file.replace('_response.csv', '_performance_' + name + '.png')
-            output_file = response_file.replace('_response.csv', '_beta_' + name + '.csv')
+            output_file = response_file.replace('_response.csv', '_beta_' + name + '.csv')     
 
             if 'Prototype' in name:
                 input_data = _read_input_data(address_file, use_prototype=True)
