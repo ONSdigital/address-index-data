@@ -59,7 +59,7 @@ def _read_input_data(filename, use_prototype=False):
     data = pd.read_csv(filename, dtype={'ID': str, 'UPRN_prev': np.float64, 'ADDRESS': str, 'UPRN_new': np.float64})
 
     if use_prototype:
-        if 'UPRN_prev' in data:
+        if 'UPRN_new' in data:
             data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
         else:
             print('Prototype UPRNs not found, will skip...')
@@ -68,7 +68,7 @@ def _read_input_data(filename, use_prototype=False):
         if ('UPRN_prev' in data) and ('UPRN_new' in data):
             data.rename(columns={'UPRN_prev': 'UPRN_comparison', 'UPRN_new': 'UPRN_prototype'}, inplace=True)
         elif 'UPRN_prev' in data:
-            data.rename(columns={'UPRN_new': 'UPRN_comparison'}, inplace=True)
+            data.rename(columns={'UPRN_prev': 'UPRN_comparison'}, inplace=True)
         else:
             print('No comparison UPRNs available, will skip...')
             return None
@@ -93,7 +93,9 @@ def _read_response_data(filename, low_memory =False):
     :rtype: pandas.DataFrame
     """
     if low_memory:
-         data = pd.read_csv(filename, low_memory=True,  usecols=['id', 'uprn'], dtype={'id': str, 'uprn': str})
+         data = pd.read_csv(filename, low_memory=True,  
+                            usecols=['id', 'score', 'uprn'], 
+                            dtype={'id': str, 'score': np.float64, 'uprn': np.float64})
     else:
          data = pd.read_csv(filename, low_memory=False)
 
@@ -105,7 +107,7 @@ def _read_response_data(filename, low_memory =False):
     return data
 
 
-def _join_data(original, results, output_file):
+def _join_data(original, results, output_file=''):
     """
     Join the original data and the beta matching results to form a single data frame.
     Stores the data frame in CSV format to the given output file.
@@ -126,8 +128,9 @@ def _join_data(original, results, output_file):
     data['matches'] = data['UPRN_comparison'] == data['UPRN_beta']
 
     data.reset_index(inplace=True)
-
-    data.to_csv(output_file, index=False)
+    
+    if output_file != '':
+        data.to_csv(output_file, index=False)
 
     return data
 
@@ -151,14 +154,14 @@ def _check_performance(data, verbose=True):
     results = []
 
     # drop duplicates to check how many were matched and for how many of the highest ranking match is correct
-#    deduped_original = data.copy().drop_duplicates(subset='ADDRESS', keep='first')    
+    #deduped_original = data.copy().drop_duplicates(subset='ADDRESS', keep='first')    
     deduped_original = data.copy()
     # Create a data frame that includes the scores and add a column with the frequency of each row.
     deduped_original['top_counts'] = deduped_original.groupby(['ID_original', 'score'])['score'].transform('count')
     # Drop the duplicates so that there is only one entry for each address (if there is choice keep the one with existing UPRN).
-    deduped_original = deduped_original.sort_values(['ADDRESS', 'UPRN_comparison', 'score'], 
-        ascending = [True, True, False], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
-
+    deduped_original = deduped_original.sort_values(['ADDRESS', 'score', 'UPRN_beta', 'matches',  'UPRN_comparison'], 
+        ascending = [True, False, True, False, True], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
+        
     number_of_entries = len(deduped_original['UPRN_comparison'].index)
     results.append(number_of_entries)
     print('Input addresses (unique IDs):', number_of_entries)
@@ -218,6 +221,67 @@ def _check_performance(data, verbose=True):
 
     return results
 
+def _check_performance_ivy(data, verbose=True,  output_file=''):
+    """
+    Computes the performance on the joined data frame.
+
+    Checks if the top ranking match is the correct one i.e. the boolean matches contains True.
+    For those IDs for which the highest ranking match candidate is not the same is assumed,
+    checks if the expected UPRN is found in the set of found matches. Finally, computes the number
+    of correct and incorrect matches.
+
+    :param data: joined data with beta matches and expected UPRNs
+    :type data: pandas.DataFrame
+    :param verbose: whether or not to output the partial and non-matche IDs
+    :type verbose: bool
+
+    :return: None
+    """
+
+    data['results'] = ''
+
+    # classifications that only need to look at one line at a time:
+    msk0 = data['UPRN_comparison'].notnull()
+    msk1 = data['UPRN_beta'].isnull()
+    data.loc[msk1&msk0, 'results'] = '3_not_found'
+    data.loc[~msk1&~msk0, 'results'] = '5_new_uprn'
+    data.loc[msk1&~msk0, 'results'] = '6_both_missing'
+    data.loc[~msk1&msk0, 'results'] = '4_wrong_match'  # default value - correct matches will be overwritten
+    
+    # classifications where we need to look at all candidates at the same time:
+    # add helper columns and then combine them to create appropriate filters
+    data['score_unique'] = data.groupby(['ID_original', 'score'])['score'].transform('count') == 1
+    data['score_max'] = data.groupby(['ID_original'])['score'].transform('max') == data['score']
+    data['top_match'] = data['matches'] & data['score_max']
+    data['top_match_group'] = data.groupby(['ID_original'])['top_match'].transform('sum')>0
+    data['unique_top_match'] = data['top_match'] & data['score_unique']
+    data['unique_top_match_group'] = data.groupby(['ID_original'])['unique_top_match'].transform('sum')>0
+    data['match_group'] = data.groupby(['ID_original'])['matches'].transform('sum')>0
+
+    data.loc[data['match_group'],'results'] = '2_in_set_lower'
+    data.loc[data['top_match_group'],'results'] = '2_in_set_equal'
+    data.loc[data['unique_top_match_group'],'results'] = '1_top_unique'
+
+    # Drop the duplicates so that there is only one entry for each address (if there is choice keep the one with existing UPRN).
+    deduped_original = data.copy()
+    deduped_original = deduped_original.sort_values(['ADDRESS', 'score', 'UPRN_beta', 'matches',  'UPRN_comparison'], 
+        ascending = [True, False, True, False, True], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
+        
+    results = deduped_original.results.value_counts().sort_index().to_dict()
+
+    result_names = [ '1_top_unique','2_in_set_equal', '2_in_set_lower', '3_not_found', '4_wrong_match','5_new_uprn', '6_both_missing']
+    all_results = pd.Series([results.get(key,0) for key in result_names])
+    all_results.index = result_names   
+
+    if verbose:
+        print(all_results)
+    
+    if output_file != '': 
+        data.drop(['score_unique','score_max','top_match','top_match_group', 'unique_top_match', 'unique_top_match_group', 'match_group'], axis=1, inplace=True)
+        data.to_csv(output_file, index=False)
+
+    return all_results
+
 
 def _generate_performance_figure(all_results, filename, width=0.35):
     """
@@ -237,7 +301,7 @@ def _generate_performance_figure(all_results, filename, width=0.35):
     location = np.arange(len(all_results))
     
     fig = plt.figure(figsize=(12, 10))
-    plt.title('Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    plt.title('Matching performance ' + os.path.dirname(os.path.splitdrive(filename)[1]))# 'Beta Address Linking ({})'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     ax = fig.add_subplot(1, 1, 1)
     
     max_bar_length = max(all_results)
@@ -263,9 +327,63 @@ def _generate_performance_figure(all_results, filename, width=0.35):
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
+    
+def _generate_performance_figure_ivy(all_results, filename, width=0.35):
+    """
+    Generate a simple bar chart to show the results.
+    
+    :param all_results: a list containing all the results as computed by the _check_performance method
+    :type all_results: list
+    :param filename: name of the output file
+    :type filename: str
+    :param width: fractional width of the bars
+    :type width: float
+    
+    :return: None
+    """
+    #results = [all_results[2], all_results[3], all_results[1]-all_results[2]-all_results[3]-all_results[5], all_results[5], 
+    #           all_results[1], all_results[4], all_results[0]-all_results[1]-all_results[4], all_results[0]-all_results[1]]    
+    all_results_names = [ '1 Top match', '2 In the set', '3 Not found', '4 Wrong match', "Input with UPRNs",
+                          "5 New uprn", "6 Both missing", "Input without UPRNs" ]
+    results = [all_results[0], all_results[1]+all_results[2], all_results[3], all_results[4],
+               sum(all_results[0:4]), all_results[5], all_results[6],  all_results[5] + all_results[6]]
+                          
+    results.reverse()
+    all_results_names.reverse()   
+    all_results = results        
+                 
+    location = np.arange(len(all_results))
+    
+    fig = plt.figure(figsize=(12, 10))
+    plt.title('Matching performance ' + os.path.dirname(os.path.splitdrive(filename)[1]))
+    ax = fig.add_subplot(1, 1, 1)
+    
+    max_bar_length = max(all_results)
+    plt.barh(location, all_results, width, color=['b', 'r', 'g','b', 'r', 'r', 'g', 'g'], alpha=0.6)
+    
+    for patch in ax.patches:
+        if patch.get_x() < 0:
+            continue
+        
+        n_addresses = int(patch.get_width())
+        ratio = n_addresses / max_bar_length
+        
+        if ratio > 0.3:
+            ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
+                        xytext=(-95, 8), textcoords='offset points', color='white', fontsize=24)
+        else:
+            ax.annotate("%i" % n_addresses, (patch.get_x() + patch.get_width(), patch.get_y()),
+                        xytext=(10, 8), textcoords='offset points', color='black', fontsize=24)
+                        
+    plt.xlabel('Number of Addresses')
+    plt.yticks(location, all_results_names)
+    plt.xlim(0, ax.get_xlim()[1] * 1.02)
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()    
+    
 
-
-def main(directory = os.getcwd()):
+def main(directory = os.getcwd(), ivy=True):
     """
     Execute all steps needed to read in original data, beta response, join the tables and finally
     to compute simple performance numbers and to generate a simple bar chart.
@@ -273,12 +391,11 @@ def main(directory = os.getcwd()):
     :return:
     """
     response_files = glob.glob(directory + '\\*_response.csv')
-
     for response_file in response_files:
         print('Processing', response_file)
         address_file = response_file.replace('_response.csv', '_minimal.csv')
 
-        for name in ('Existing', 'Prototype'):
+        for name in [('DedupExist')]: #('Existing', 'Prototype'):
             print('Calculating Performance using', name, 'UPRNs')
             output_figure_file = response_file.replace('_response.csv', '_performance_' + name + '.png')
             output_file = response_file.replace('_response.csv', '_beta_' + name + '.csv')     
@@ -289,14 +406,21 @@ def main(directory = os.getcwd()):
                 input_data = _read_input_data(address_file)
 
             if input_data is not None:
-                beta_data = _read_response_data(response_file)
-
-                results = _join_data(input_data, beta_data, output_file)
-
-                results = _check_performance(results)
-
-                _generate_performance_figure(results, output_figure_file)
-                # todo: add computation of precision, recall, and f1 score
+                if input_data.shape[0] > 200000:        # note that we won't read in the tokens, matched address and other fields
+                    beta_data = _read_response_data(response_file, low_memory=True)
+                else:
+                    beta_data = _read_response_data(response_file, low_memory=False)
+               
+                if ivy:
+                    joined_data = _join_data(input_data, beta_data, output_file = '')
+                    del(input_data, beta_data)
+                    results = _check_performance_ivy(joined_data, output_file = output_file)
+                    _generate_performance_figure_ivy(results, response_file.replace('_response.csv', '_performance_' + name + '2.png'))
+                else:
+                   joined_data = _join_data(input_data, beta_data, output_file)
+                   del(input_data, beta_data)
+                   results = _check_performance(joined_data)
+                   _generate_performance_figure(results, output_figure_file)   
 
 
 if __name__ == '__main__':
