@@ -7,7 +7,7 @@ object Mappings {
    {
      "settings": {
        "number_of_shards": 1,
-       "number_of_replicas": 2,
+       "number_of_replicas": 3,
        "analysis": {
          "filter": {
            "address_synonym_filter": {
