@@ -241,8 +241,8 @@ def _check_performance_ivy(data, verbose=True,  output_file=''):
     data['results'] = ''
 
     # classifications that only need to look at one line at a time:
-    msk0 = data['UPRN_comparison'].notnull()
-    msk1 = data['UPRN_beta'].isnull()
+    msk0 = (data['UPRN_comparison'].notnull()) #| (data['UPRN_comparison'] =='')
+    msk1 = (data['UPRN_beta'].isnull()) #| (data['UPRN_beta'] =='')
     data.loc[msk1&msk0, 'results'] = '3_not_found'
     data.loc[~msk1&~msk0, 'results'] = '5_new_uprn'
     data.loc[msk1&~msk0, 'results'] = '6_both_missing'
@@ -346,8 +346,7 @@ def _generate_performance_figure_ivy(all_results, filename, width=0.35):
     all_results_names = [ '1 Top match', '2 In the set', '3 Not found', '4 Wrong match', "Input with UPRNs",
                           "5 New uprn", "6 Both missing", "Input without UPRNs" ]
     results = [all_results[0], all_results[1]+all_results[2], all_results[3], all_results[4],
-               sum(all_results[0:4]), all_results[5], all_results[6],  all_results[5] + all_results[6]]
-                          
+               sum(all_results[0:5]), all_results[5], all_results[6],  all_results[5] + all_results[6]]                    
     results.reverse()
     all_results_names.reverse()   
     all_results = results        
