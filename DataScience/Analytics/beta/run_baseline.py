@@ -62,7 +62,7 @@ def read_data(filename):
     return data
 
 
-def query_elastic(data, uri, verbose=True):
+def query_elastic(data, uri, verbose=True, param_config=''):
     """
     Post the given data to the given uri, which should be the API bulk endpoint.
 
@@ -78,7 +78,10 @@ def query_elastic(data, uri, verbose=True):
     :return: API response
     """
     data = data.to_dict(orient='records')
-    data = {'addresses': data}
+    if (param_config==''):
+        data = {'addresses': data}
+    else:
+          data = {'addresses': data, 'config': param_config}
 
     if verbose:
         start = time.clock()
@@ -115,7 +118,7 @@ def _create_chunks(data, batch_size=10000, verbose=True):
     return chunks
 
 
-def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddresses', batch_size=10000, write_json=False, verbose=True):
+def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddresses', batch_size=10000, write_json=False, verbose=True, param_config=''):
     """
     Process a single CSV file, execute bulk point query, and output the response text to a file.
 
@@ -140,7 +143,7 @@ def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddre
 
         for i, data_chunk in enumerate(data_chunks):
             print(time.strftime("%H:%M:%S"), 'Executing chunk', i)
-            response = query_elastic(data_chunk, uri=uri, verbose=verbose)
+            response = query_elastic(data_chunk, uri=uri, verbose=verbose, param_config=param_config)
             
             if write_json:
                 try:
@@ -155,7 +158,7 @@ def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddre
                 response.json()[return_package_name]
             except:
                 print('Trying again chunk', i) 
-                response = query_elastic(data_chunk, uri=uri, verbose=verbose)
+                response = query_elastic(data_chunk, uri=uri, verbose=verbose, param_config=param_config)
                 
             try:
                 results.append(response.json()[return_package_name])
@@ -166,13 +169,13 @@ def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddre
         data_frames = [pd.DataFrame.from_dict(result) for result in results]
         data_frame = pd.concat(data_frames)
     else:
-        results = query_elastic(data, uri=uri, verbose=verbose).json()[return_package_name]
+        results = query_elastic(data, uri=uri, verbose=verbose, param_config=param_config).json()[return_package_name]
         data_frame = pd.DataFrame.from_dict(results)
 
     data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False, encoding='utf-8')
 
 
-def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000, verbose=True):
+def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000, verbose=True, param_config=''):
     """
     Run baselines for all _minimal CSV files present in the working directory.
 
@@ -185,7 +188,7 @@ def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000
     uri = 'http://addressindex-api-' + uri_version + '.apps.cfnpt.ons.statistics.gov.uk:80/bulk'
     files = glob.glob(directory + '\\*_minimal.csv')
     for file in files:
-        _run_baseline(file, uri=uri, verbose=verbose, batch_size=batch_size)
+        _run_baseline(file, uri=uri, verbose=verbose, batch_size=batch_size, param_config=param_config)
 
 
 if __name__ == '__main__':
