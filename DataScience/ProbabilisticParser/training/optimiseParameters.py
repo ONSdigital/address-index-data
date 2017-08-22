@@ -1,10 +1,12 @@
+#!/usr/bin/env python
 """
 ONS Address Index - Optimise the Probabilistic Parser
 =====================================================
 
 A simple script to run random search over CRF parameters to find an optimised model.
-Uses a smaller training data set to speed up the process. Five-fold cross-validation
-is being used to assess the performance.
+Uses a smaller training data set to speed up the process. Three-fold cross-validation
+is being used to assess the performance. Uses weighted F1-score as the metrics to
+maximise.
 
 
 Requirements
@@ -16,6 +18,15 @@ Requirements
 :requires: matplotlib
 
 
+Running
+-------
+
+After all requirements are satisfied and the training and holdout XML files have been created,
+the script can be invoked using CPython interpreter::
+
+    python optimiseParameters.py
+
+
 Author
 ------
 
@@ -25,29 +36,31 @@ Author
 Version
 -------
 
-:version: 0.2
-:date: 21-Oct-2016
+:version: 0.4
+:date: 6-Feb-2017
 """
-import ProbabilisticParser.common.tokens as t
-from scipy import stats
-import sklearn_crfsuite
-from sklearn_crfsuite import metrics
-from sklearn.metrics import make_scorer
-from sklearn.model_selection import RandomizedSearchCV
-import matplotlib.pyplot as plt
 import pickle
 
+import ProbabilisticParser.common.metrics as metric
+import ProbabilisticParser.common.tokens as tkns
+import matplotlib.pyplot as plt
+import sklearn_crfsuite
+from scipy import stats
+from sklearn.metrics import make_scorer
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn_crfsuite import metrics
 
-def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training100000.xml',
-             holdoutfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml',
-             verbose=True):
+
+def read_data(training_data_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/training100000.xml',
+              holdout_data_file='/Users/saminiemi/Projects/ONS/AddressIndex/data/training/holdout.xml',
+              verbose=True):
     """
     Read in the training and holdout data from XML files.
 
-    :param trainingfile: location of the training data
-    :type trainingfile: str
-    :param holdoutfile: location of the holdout data
-    :type holdoutfile: str
+    :param training_data_file: name of the training data file
+    :type training_data_file: str
+    :param holdout_data_file: name of the holdout data file
+    :type holdout_data_file: str
     :param verbose: whether or not to print to stdout
     :type verbose: bool
 
@@ -56,29 +69,33 @@ def readData(trainingfile='/Users/saminiemi/Projects/ONS/AddressIndex/data/train
     """
     if verbose:
         print('Read in training data...')
-    X_train, y_train = t.readData(trainingfile)
+    X_train, y_train = tkns.readData(training_data_file)
 
     if verbose:
         print('Read in holdout data')
-    X_test, y_test = t.readData(holdoutfile)
+    X_test, y_test = tkns.readData(holdout_data_file)
 
     return X_train, y_train, X_test, y_test
 
 
-def plotSearchSpace(rs, param1='c1', param2='c2', outpath='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
+def plot_search_space(rs, param1='c1', param2='c2', output_path='/Users/saminiemi/Projects/ONS/AddressIndex/figs/'):
     """
+    Generates a figure showing the search results as a function of two parameters.
 
-    :param rs:
-    :param param1:
-    :param param2:
-    :param outpath:
+    :param rs: scikit-learn randomised search object
+    :ttype rs: object
+    :param param1: name of the first parameter that was used in the optimisation
+    :type param1: str
+    :param param2: name of the second parameter that was used in the optimisation
+    :type param2: str
+    :param output_path: location to which the figure will be stored
+    :type output_path: str
 
-    :return:
+    :return: None
     """
     _x = [s.parameters[param1] for s in rs.grid_scores_]
     _y = [s.parameters[param2] for s in rs.grid_scores_]
     _c = [s.mean_validation_score for s in rs.grid_scores_]
-    # print(rs.cv_results_)
 
     plt.figure()
     ax = plt.gca()
@@ -90,11 +107,11 @@ def plotSearchSpace(rs, param1='c1', param2='c2', outpath='/Users/saminiemi/Proj
     sc = ax.scatter(_x, _y, c=_c, s=60, alpha=0.7, edgecolors=[0, 0, 0])
     plt.colorbar(sc)
     plt.tight_layout()
-    plt.savefig(outpath + 'hyperparameterOptimisation.pdf')
+    plt.savefig(output_path + 'hyperparameterOptimisation.pdf')
     plt.close()
 
 
-def optimiseModel(X_train, y_train, X_test, y_test):
+def perform_cv_model_optimisation(X_train, y_train, X_test, y_test, sequence_optimisation=True):
     """
     Randomised search to optimise the regularisation and other parameters of the CRF model.
     The regularisation parameters are drawn from exponential distributions.
@@ -102,36 +119,38 @@ def optimiseModel(X_train, y_train, X_test, y_test):
     :param X_train: training data in 2D array
     :param y_train: training data labels
     :param X_test: holdout data in 2D array
-    :type y_test: holdout data true labels
+    :param y_test: holdout data true labels
+    :param sequence_optimisation: whether to use the full sequence accuracy as the score or individual labels
 
     :return: None
     """
     # define fixed parameters and parameters to search
-    crf = sklearn_crfsuite.CRF(algorithm='lbfgs', verbose=False)
+    crf = sklearn_crfsuite.CRF(algorithm='lbfgs', min_freq=0.001, all_possible_transitions=True, verbose=False)
 
-    # search parameters random draws from exponential functions
-    params_space = {'c1': stats.expon(scale=0.5), 'c2': stats.expon(scale=0.05),
-                    'all_possible_transitions': [True, False]}
+    # search parameters random draws from exponential functions and boolean for transitions
+    params_space = {'c1': stats.expon(scale=0.5), 'c2': stats.expon(scale=0.05)}
 
     # metrics needs a list of labels
-    labels = t.LABELS
-    # labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
-    #           'Locality', 'TownName', 'Postcode']
+    labels = ['OrganisationName', 'SubBuildingName', 'BuildingName', 'BuildingNumber', 'StreetName',
+              'Locality', 'TownName', 'Postcode']
 
-    # use the same metric for evaluation
-    f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
+    if sequence_optimisation:
+        scorer = make_scorer(metric.sequence_accuracy_score)
+    else:
+        # use (flattened) f1-score for evaluation
+        scorer = make_scorer(metrics.flat_f1_score, average='weighted', labels=labels)
 
     print('Performing randomised search using cross-validations...')
     rs = RandomizedSearchCV(crf, params_space,
-                            cv=5,
+                            cv=3,
                             verbose=1,
                             n_jobs=-1,
-                            n_iter=100,
-                            scoring=f1_scorer)
+                            n_iter=50,
+                            scoring=scorer)
     rs.fit(X_train, y_train)
 
     print('saving the optimisation results to a pickled file...')
-    fh = open(t.MODEL_PATH + 'optimisation.pickle', mode='wb')
+    fh = open(tkns.MODEL_PATH + 'optimisation.pickle', mode='wb')
     pickle.dump(rs, fh)
     fh.close()
 
@@ -146,9 +165,9 @@ def optimiseModel(X_train, y_train, X_test, y_test):
     print(metrics.flat_classification_report(y_test, y_pred, labels=sorted_labels, digits=3))
 
     print('Generating a figure...')
-    plotSearchSpace(rs)
+    plot_search_space(rs)
 
 
 if __name__ == '__main__':
-    X_train, y_train, X_test, y_test = readData()
-    optimiseModel(X_train, y_train, X_test, y_test)
+    X_train, y_train, X_test, y_test = read_data()
+    perform_cv_model_optimisation(X_train, y_train, X_test, y_test)

@@ -22,8 +22,8 @@ Author
 Version
 -------
 
-:version: 0.1
-:date: 20-Oct-2016
+:version: 0.2
+:date: 17-Nov-2016
 """
 import pandas as pd
 from lxml import etree
@@ -35,7 +35,8 @@ import string
 
 # hardcoded filename and path
 MODEL_FILE = 'addressCRF.crfsuite'
-MODEL_PATH = '/Users/saminiemi/PycharmProjects/ONSAI/DataScience/ProbabilisticParser/training/'
+directory = os.path.dirname(__file__)  # for relative path definitions
+MODEL_PATH = os.path.join(directory, '../training/')
 
 # set labels - token names expected in the training file
 LABELS = ['OrganisationName',
@@ -64,10 +65,10 @@ Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'
 Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'HIGHER',
               'ATTIC', 'LEFT', 'RIGHT', 'FRONT', 'BACK', 'REAR', 'WHOLE', 'PART', 'SIDE'}
 Ordinal = {'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH',
-           'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHT', '8TH'}
+           'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHTH', '8TH'}
 
 # get some extra info - possible incodes and the linked post towns, used to identify tokens
-df = pd.read_csv('/Users/saminiemi/Projects/ONS/AddressIndex/data/postcode_district_to_town.csv')
+df = pd.read_csv(os.path.join(directory, '../../data/') + 'postcode_district_to_town.csv')
 OUTCODES = set(df['postcode'].values)
 POSTTOWNS = set(df['town'].values)
 # county?
@@ -91,9 +92,13 @@ def _stripFormatting(collection):
 
 def readXML(xmlFile):
     """
+    Parser XML file and yield the raw text and parsed sequence components.
 
-    :param xmlFile:
-    :return:
+    :param xmlFile: name of the XML file to parse
+    :type xmlFile: str
+
+    :return: raw text, sequence components
+    :rtype: list
     """
     component_string_list = []
 
@@ -248,6 +253,11 @@ def tokenize(raw_string):
 def readData(xmlFile):
     """
     Parses the specified data files and returns it in sklearn format.
+
+    :param xmlFile: name of the XML file to parse
+    :type xmlFile: str
+
+    :return: features (X) and labels (y)
     """
     data = readXML(xmlFile)
 

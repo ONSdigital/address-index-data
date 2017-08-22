@@ -1,0 +1,20 @@
+# InteliJ IDEA
+*.iml
+.idea_modules/
+.idea/
+
+# sbt specific
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+
+# MacOS X specific
+.DS_Store
+/batch/src/main/resources/application.conf
+DataScience/ProbabilisticParser/training/model*.txt
