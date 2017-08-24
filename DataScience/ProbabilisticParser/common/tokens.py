@@ -272,18 +272,26 @@ def removeCounties(in_string):
     :type in_string: str
 
     :return out_string: the input string with the counties removed.
-    :return out_string: the input string with the counties removed.
     :type out_string: str
     """
 
-    separatedCounties = '|'.join(county)
-    countiesRegex = '(?:\\b|\\s)({sepCounties})(?:\\s|\\Z)'.format(sepCounties = separatedCounties)
-    separatedSuffixes = '|'.join(nonCountyIdentification)
-    suffixesRegex = '(?!{sepSuffixes}|&)'.format(sepSuffixes = separatedSuffixes)
+    # Step 1 - ON, DINAS and UPON or a number - if a county follows one of these
+    # words (eg. Bradford on Avon, Dinas Powys or Stratford upon Avon, or a 5 Somerset),
+    # do not remove it
+    c_except = [r"ON\s",r"DINAS\s",r"UPON\s",r"[0-9]\s"]
 
-    # regexp takes counties that don't have suffixes after them.
-    regexp = re.compile(countiesRegex + suffixesRegex)
-    out_string = regexp.sub(' ', in_string)
+    # Step 2 - Do look behind for ON, DINAS and POWYS
+    look_behind = r"(?<!\b{0})({1})".format(r")(?<!\b".join(c_except), "|".join(county))
+
+    # Step 3 - Do look ahead. nonCountyIdentification is a list of words (eg.
+    # ROAD, STREET etc.). We don't want to remove counties if they're followed by
+    # road or street
+    a = r"\b|\s".join(nonCountyIdentification)
+    look_ahead = r'(?!(\s{sepSuffixes}\b))'.format(sepSuffixes = a)
+
+    # Step 4 - Combine and run
+    final_regex = look_behind + look_ahead
+    out_string = re.compile(final_regex).sub('', in_string)
 
     return out_string
 
