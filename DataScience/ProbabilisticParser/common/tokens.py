@@ -53,7 +53,7 @@ LABELS = ['OrganisationName',
 # set some features that are being used to identify tokens
 DIRECTIONS = {'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST',
               'NORTHEAST', 'NORTHWEST', 'SOUTHEAST', 'SOUTHWEST'}
-FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
+FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT', 'APTS', 'APT',
         'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'BLK'}
 COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
 ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE', 'AVENEU', 'SQUARE',
@@ -65,8 +65,19 @@ Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'
             'UWE', 'UEA', 'LSE', 'KCL', 'UCL', 'UNI', 'UNIV', 'UNIVERSITY', 'UNIVERISTY'}
 Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'HIGHER',
               'ATTIC', 'LEFT', 'RIGHT', 'FRONT', 'BACK', 'REAR', 'WHOLE', 'PART', 'SIDE'}
-Ordinal = {'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH',
-           'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHTH', '8TH'}
+Ordinal = {'0TH', 'ZEROTH', '0ED', 'SERO', 'SEROFED', 'DIM', 'DIMFED',
+          '1ST', 'FIRST', '1AF', 'CYNTA', 'CYNTAF', 'GYNTAF',
+          '2ND', 'SECOND', '2AIL', 'AIL', 'AILFED',
+          '3RD', 'THIRD', '3YDD', 'TRYDYDD', 'TRYDEDD',
+          '4TH', 'FOURTH', '4YDD', 'PEDWERYDD', 'PEDWAREDD',
+          '5TH', 'FIFTH', '5ED', 'PUMED',
+          '6TH', 'SIXTH', '6ED', 'CHWECHED',
+          '7TH', 'SEVENTH', '7FED', 'SEITHFED',
+          '8TH', 'EIGHTH', '8FED', 'WYTHFED',
+          '9TH', 'NINTH', '9FED', 'NAWFED',
+          '10TH', 'TENTH', '10FED', 'DEGFED',
+          '11TH', 'ELEVENTH', '11FED', 'UNFED', 'DDEG',
+          '12TH', 'TWELFTH', '12FED', 'DEUDDEGFED'}
 
 # Read in the files required for tokenization pre-processing.
 with open(LUT_PATH + '/county') as f:
