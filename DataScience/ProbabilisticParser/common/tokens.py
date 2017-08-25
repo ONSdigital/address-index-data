@@ -79,11 +79,13 @@ Ordinal = {'0TH', 'ZEROTH', '0ED', 'SERO', 'SEROFED', 'DIM', 'DIMFED',
           '11TH', 'ELEVENTH', '11FED', 'UNFED', 'DDEG',
           '12TH', 'TWELFTH', '12FED', 'DEUDDEGFED'}
 
+# Combine these sets for removeCounties function - do not remove counties if they are followed by one of these
+noncounty = Business|COMPANY|FLAT|Residential|ROAD
+nonCountyIdentification = list(noncounty)
+
 # Read in the files required for tokenization pre-processing.
 with open(LUT_PATH + '/county') as f:
     county = f.read().splitlines()
-with open(LUT_PATH + '/non_county_identification') as f:
-    nonCountyIdentification = f.read().splitlines()
 with open(LUT_PATH + '/synonym') as f:
     synonyms = f.read().splitlines()
 # Create a dictionary for the synonyms.
