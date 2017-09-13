@@ -37,6 +37,7 @@ import string
 MODEL_FILE = 'addressCRF.crfsuite'
 directory = os.path.dirname(__file__)  # for relative path definitions
 MODEL_PATH = os.path.join(directory, '../training/')
+LUT_PATH = '/home/james/Clients/ONS/address-index-api/parsers/src/main/resources/input_pre_post_processing'
 
 # set labels - token names expected in the training file
 LABELS = ['OrganisationName',
@@ -52,7 +53,7 @@ LABELS = ['OrganisationName',
 # set some features that are being used to identify tokens
 DIRECTIONS = {'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST',
               'NORTHEAST', 'NORTHWEST', 'SOUTHEAST', 'SOUTHWEST'}
-FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT' 'APTS', 'APT',
+FLAT = {'FLAT', 'FLT', 'APARTMENT', 'APPTS', 'APPT', 'APTS', 'APT',
         'ROOM', 'ANNEX', 'ANNEXE', 'UNIT', 'BLOCK', 'BLK'}
 COMPANY = {'CIC', 'CIO', 'LLP', 'LP', 'LTD', 'LIMITED', 'CYF', 'PLC', 'CCC', 'UNLTD', 'ULTD'}
 ROAD = {'ROAD', 'RAOD', 'RD', 'DRIVE', 'DR', 'STREET', 'STRT', 'AVENUE', 'AVENEU', 'SQUARE',
@@ -64,15 +65,54 @@ Business = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'UK', 'SOCIETY'
             'UWE', 'UEA', 'LSE', 'KCL', 'UCL', 'UNI', 'UNIV', 'UNIVERSITY', 'UNIVERISTY'}
 Locational = {'BASEMENT', 'GROUND', 'UPPER', 'ABOVE', 'TOP', 'LOWER', 'FLOOR', 'HIGHER',
               'ATTIC', 'LEFT', 'RIGHT', 'FRONT', 'BACK', 'REAR', 'WHOLE', 'PART', 'SIDE'}
-Ordinal = {'FIRST', '1ST', 'SECOND', '2ND', 'THIRD', '3RD', 'FOURTH', '4TH',
-           'FIFTH', '5TH', 'SIXTH', '6TH', 'SEVENTH', '7TH', 'EIGHTH', '8TH'}
+Ordinal = {'0TH', 'ZEROTH', '0ED', 'SERO', 'SEROFED', 'DIM', 'DIMFED',
+          '1ST', 'FIRST', '1AF', 'CYNTA', 'CYNTAF', 'GYNTAF',
+          '2ND', 'SECOND', '2AIL', 'AIL', 'AILFED',
+          '3RD', 'THIRD', '3YDD', 'TRYDYDD', 'TRYDEDD',
+          '4TH', 'FOURTH', '4YDD', 'PEDWERYDD', 'PEDWAREDD',
+          '5TH', 'FIFTH', '5ED', 'PUMED',
+          '6TH', 'SIXTH', '6ED', 'CHWECHED',
+          '7TH', 'SEVENTH', '7FED', 'SEITHFED',
+          '8TH', 'EIGHTH', '8FED', 'WYTHFED',
+          '9TH', 'NINTH', '9FED', 'NAWFED',
+          '10TH', 'TENTH', '10FED', 'DEGFED',
+          '11TH', 'ELEVENTH', '11FED', 'UNFED', 'DDEG',
+          '12TH', 'TWELFTH', '12FED', 'DEUDDEGFED'}
+
+# Combine these sets for removeCounties function - do not remove counties if they are followed by one of these
+noncounty = Business|COMPANY|FLAT|Residential|ROAD
+nonCountyIdentification = list(noncounty)
+
+# Read in the files required for tokenization pre-processing.
+with open(LUT_PATH + '/county') as f:
+    county = f.read().splitlines()
+with open(LUT_PATH + '/synonym') as f:
+    synonyms = f.read().splitlines()
+# Create a dictionary for the synonyms.
+synonym_LUT = dict(map(lambda x: x.split(','), synonyms))
 
 # get some extra info - possible incodes and the linked post towns, used to identify tokens
 df = pd.read_csv(os.path.join(directory, '../../data/') + 'postcode_district_to_town.csv')
 OUTCODES = set(df['postcode'].values)
 POSTTOWNS = set(df['town'].values)
-# county?
 
+def synonym(token):
+    """
+    Create a function 'synonym' which will map each of the elements in the synoyms file to the respective synonym.
+
+    :param token: The token to synonymize.
+    :type token: string
+
+    :return token_out: The synonym of the token passed in.
+    :type: string
+    """
+
+    try:
+        token_out = synonym_LUT[token]
+    except:
+        token_out = token
+
+    return token_out
 
 def _stripFormatting(collection):
     """
@@ -165,7 +205,7 @@ def tokenFeatures(token):
     features = {'digits': digits(token_clean),
                 'word': (token_clean if not token_clean.isdigit() else False),
                 'length': (u'd:' + str(len(token_clean)) if token_clean.isdigit() else u'w:' + str(len(token_clean))),
-                'endsinpunc': (token[-1] if bool(re.match('.+[^.\w]', token, flags=re.UNICODE)) else False),
+                'endsinpunc': (token[-1] if bool(re.match('.+\.$', token, flags=re.UNICODE)) else False),
                 'directional': token_clean in DIRECTIONS,
                 'outcode': token_clean in OUTCODES,
                 'posttown': token_clean in POSTTOWNS,
@@ -222,6 +262,51 @@ def tokens2features(tokens):
 
     return feature_sequence
 
+def replaceSynonyms(tokens):
+    """
+    This function replaces all of the words in the synonym list with their synonyms.
+
+    :param tokens: the list of tokens to replace with synonyms.
+    :type tokens: list of strings.
+
+    :return tokens: the synonymized list.
+    :type iterator: iterateas throught the list of strings.
+    """
+
+    tokens = map(lambda x: synonym(x), tokens)
+
+    return tokens
+
+def removeCounties(in_string):
+    """
+    This function will remove any counties which appear in the county list.
+
+    :param in_string: the string from which to remove the counties.
+    :type in_string: str
+
+    :return out_string: the input string with the counties removed.
+    :type out_string: str
+    """
+
+    # Step 1 - ON, DINAS and UPON or a number - if a county follows one of these
+    # words (eg. Bradford on Avon, Dinas Powys or Stratford upon Avon, or a 5 Somerset),
+    # do not remove it
+    c_except = [r"ON\s",r"DINAS\s",r"UPON\s",r"[0-9]\s"]
+
+    # Step 2 - Do look behind for ON, DINAS and POWYS
+    look_behind = r"(?<!\b{0})({1})".format(r")(?<!\b".join(c_except), "|".join(county))
+
+    # Step 3 - Do look ahead. nonCountyIdentification is a list of words (eg.
+    # ROAD, STREET etc.). We don't want to remove counties if they're followed by
+    # road or street
+    a = r"\b|\s".join(nonCountyIdentification)
+    look_ahead = r'(?!(\s{sepSuffixes}\b))'.format(sepSuffixes = a)
+
+    # Step 4 - Combine and run
+    final_regex = look_behind + look_ahead
+    out_string = re.compile(final_regex).sub('', in_string)
+
+    return out_string
 
 def tokenize(raw_string):
     """
@@ -241,8 +326,33 @@ def tokenize(raw_string):
         except:
             raw_string = str(raw_string)
 
+    # Normalize the input string according to the pre-processing in the beta.
+
+    # Convert to uppercase.
+    upperInput = raw_string.upper()
+    inputWithoutCounties = removeCounties(upperInput)
+
+    # Do the regular expression replacements as per the scala parsing.
+    regex1 = re.compile("(\\d+[A-Z]?) *- *(\\d+[A-Z]?)")
+    tokens = regex1.sub("\g<1>-\g<2>", inputWithoutCounties)
+
+    regex2 = re.compile("(\\d+)/(\\d+)")
+    tokens = regex2.sub("\g<1>-\g<2>", tokens)
+
+    regex3 = re.compile("(\\d+) *TO *(\\d+)")
+    tokens = regex3.sub("\g<1>-\g<2>", tokens)
+
+    # Do the non-regular expression replacements.
+    tokens = tokens.replace(" IN ", " ").replace(" CO ", " ").replace(" - ", " ").replace(",", " ").replace("\\", " ")
+
+    # Now split the string by whitespace.
+    tokens = tokens.split()
+
+    # Replace any synonyms from the synonyms list and remove any counties that are now discoverable.
+    preprocessed_string = removeCounties(' '.join(replaceSynonyms(tokens)))
+
     re_tokens = re.compile(r"\(*\b[^\s,;#&()]+[.,;)\n]* | [#&]", re.VERBOSE | re.UNICODE)
-    tokens = re_tokens.findall(raw_string)
+    tokens = re_tokens.findall(preprocessed_string)
 
     if not tokens:
         return []

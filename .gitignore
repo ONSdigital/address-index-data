@@ -18,3 +18,5 @@ project/plugins/project/
 .DS_Store
 /batch/src/main/resources/application.conf
 DataScience/ProbabilisticParser/training/model*.txt
+*.pyc
+*.crfsuite
