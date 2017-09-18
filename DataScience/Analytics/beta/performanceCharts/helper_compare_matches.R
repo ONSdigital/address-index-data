@@ -30,23 +30,23 @@ eval_match <- function(comp, beta, score = length(beta):1, sep_in_set=F){
 #   :return: string describing the quality of the match (agreement bnetween comp and beta)
 #   :rtype: character
 #   
-  ind <- rank(-score, ties.method = "first")
+  ind <- order(-score)
   comp <- comp[ind]
   beta <- beta[ind]
   score <- score[ind]
   topscore <- (length(score)==1) | (score[1]>score[2]) 
   
   if (is.na(comp[1])) 
-    if (is.na(beta[1])) res <- LABELS[6] # both missing uprns
+    if (sum(!is.na(beta))==0) res <- LABELS[6] # both missing uprns
     else res <- LABELS[5] # new uprn found
-  else if (is.na(beta[1])) res <- LABELS[3] # nothing found 
+  else if (sum(!is.na(beta))==0) res <- LABELS[3] # nothing found 
     else if ((beta[1]==comp[1]) & (topscore)) res <- LABELS[1] # top match
     else if (comp[1] %in% beta) res <- LABELS[2] # in the set
     else res <- LABELS[4] # wrong match
   
   if (sep_in_set & (res==LABELS[2])) {
-    if (score[comp[1]==beta]==max(score)) res <- LABELS_sep[2] # in set equal to the maximum 
-    else res <- LABELS_sep[3] # in set lower score than max 
+    if ((score[comp==beta])[1]==max(score)) res <- LABELS_sep[2] # in set equal to the maximum 
+      else res <- LABELS_sep[3] # in set lower score than max 
     }
 
   res
@@ -96,8 +96,8 @@ compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F){
 #   :rtype: list(matrix, data.frame, data.frame, data.frame)
 #  
   
-  prev <- deduplicate_ID_original(prev)
-  curr <- deduplicate_ID_original(curr)
+  prev <- deduplicate_ID_original(prev) 
+  curr <- deduplicate_ID_original(curr) 
   prev_summary <- prev %>% group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
                       summarise(match_prev = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
   curr_summary <- curr %>% group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
