@@ -15,20 +15,18 @@ import os
 import time
 from run_baseline import run_all_baselines
 from check_performance import main as check_performance
+from default_param import DEFAULT_CONFIG
 
 tdata_path = '//tdata8/AddressIndex/Beta_Results/'
 #code_path = '//tdata8/AddressIndex/Beta_Results/codes/'    #depricated, currently assumes the above import is succesful 
 
 uri_version = 'branch'          # currently accepting strings: 'dev' or 'branch'
-new_folder_name =  time.strftime("%B_%d_") +  uri_version  + '_synonyms2'     # change the explanatory name !
-#new_folder_name = 'April_28_branch_locality_etc'
+new_folder_name =  time.strftime("%B_%d_") +  uri_version  + '_baseline'     # change the explanatory name !
 wait_hours = 0                  # wait 5 hours before firing the queries 
 
-#datasets=['EdgeCases',  'PatientRecords', 'LifeEvents', 'CQC',   'WelshGov2',  'WelshGov3', 'WelshGov', 'CompaniesHouse']
-#datasets=['PatientRecords', 'WelshGov']#, 'CompaniesHouse']                    #or just the big ones 
+datasets=['EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC', 'PatientRecords', 'WelshGov'] 
+#datasets=['PatientRecords', 'WelshGov', 'CompaniesHouse']                      #or just the big ones 
 #datasets=['EdgeCases',  'LifeEvents', 'WelshGov2', 'WelshGov3',  'CQC']        #or just the small ones 
-datasets=['EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC', 'PatientRecords', 'WelshGov']
-
 
 def main(datasets=datasets, new_folder_name= new_folder_name, tdata_path=tdata_path):
     print('Current time: ' + time.strftime("%H:%M:%S"))
@@ -43,7 +41,7 @@ def main(datasets=datasets, new_folder_name= new_folder_name, tdata_path=tdata_p
             copy(tdata_path + 'DataSets/' + dataset + '_minimal.csv', new_folder_path)  
         try: 
             # try running the baseline scripts            
-            run_all_baselines(directory = new_folder_path, uri_version=uri_version, batch_size=6000)
+            run_all_baselines(directory = new_folder_path, uri_version=uri_version, batch_size=6000, param_config = DEFAULT_CONFIG)
             check_performance(directory = new_folder_path, ivy = True)
             report[dataset] = 'successful'
         except:
