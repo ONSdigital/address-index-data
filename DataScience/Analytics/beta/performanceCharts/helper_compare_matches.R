@@ -62,7 +62,8 @@ deduplicate_ID_original <- function(df, verbose=T){
   #   :rtype: data.frame
   #   
   unique_ID_per_address <- df %>% group_by(ADDRESS) %>% 
-      summarise(ID_min = ID_original[order(UPRN_comparison)[1]],  #if there are diff UPRN's keep the non missing (lower)
+      summarise(ID_min = ID_original[order(score, UPRN_beta, results, UPRN_comparison)[1]],  
+                #if there are diff UPRN's keep the non missing (lower) but also keep better match!
                 ID_count= n_distinct(ID_original), 
                 UPRN_count = n_distinct(UPRN_comparison)) %>% 
       ungroup()
@@ -76,7 +77,7 @@ deduplicate_ID_original <- function(df, verbose=T){
   res <- df %>% filter(ID_original %in% unique_ID_per_address$ID_min)
 }
 
-compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F){
+compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F, onlytable=F){
 #   
 #   This function compare two different matching results on the same dataset. It prints a cross-tabulation of the achieved classification and plots a sankey diagram.
 #   It returns a list containing the cross-table, joined data, got_worse, got_better.  
@@ -102,9 +103,13 @@ compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F){
                       summarise(match_prev = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
   curr_summary <- curr %>% group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
                       summarise(match_curr = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
-  joined_data <- left_join (prev_summary, curr_summary, by= c("ID_original", "UPRN_comparison", "ADDRESS")) %>% ungroup()
+  joined_data <- left_join (prev_summary, curr_summary, by= c( "ADDRESS")) %>% ungroup()
   cross_table <- table (joined_data$match_prev, joined_data$match_curr, dnn=c('previous' ,'current')) 
   
+  if (onlytable){
+  got_worse <- NA
+  got_better <- NA
+  }else{
   joined_full <- full_join(prev %>% group_by(ID_original) %>% mutate (index = paste0(ID_original,  index - min(index))) %>% ungroup(),                                   
                            curr %>% group_by(ID_original) %>% mutate (index = paste0(ID_original,  index - min(index))) %>% ungroup(),
                            by = c('index', 'ID_original', 'UPRN_comparison', 'ADDRESS', 'UPRN_prototype', 'id_response', 'inputAddress'))
@@ -114,6 +119,7 @@ compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F){
                                       ungroup() %>% arrange(desc(match_curr), match_prev, index)   #reordering by severity of the problem
   got_better <- joined_full %>% filter(as.numeric(substr(match_prev,1,1))>as.numeric(substr(match_curr,1,1))) %>%
                                       ungroup() %>% arrange(desc(match_prev), match_curr, index)
+  }
   
   if (viz){
     
