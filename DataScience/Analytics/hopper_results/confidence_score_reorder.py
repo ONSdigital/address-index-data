@@ -60,7 +60,7 @@ def add_confidence_score(data):
     
     return data
 
-def check_performance_karen(data):
+def check_performance_karen(data, remove0s = True ):
     """
     Computes the performance using Confidence score.
 
@@ -81,11 +81,12 @@ def check_performance_karen(data):
 
     #in case of confidence score we need to filter only candidates with score >0
     #here (not nice) we just rename the variables and then swith them back
-    msk2 = data['score'] > 0
     data['elastic_matches'] = data['matches']
-    data['matches'] = data['matches'] & msk2
     data['elastic_UPRN_beta'] =data['UPRN_beta']
-    data.loc[~msk2,'UPRN_beta'] = None
+    if (remove0s):
+      msk2 = data['score'] > 0
+      data['matches'] = data['matches'] & msk2
+      data.loc[~msk2,'UPRN_beta'] = None
     
     # classifications that only need to look at one line at a time:
     msk0 = (data['UPRN_comparison'].notnull()) #| (data['UPRN_comparison'] =='')
@@ -148,14 +149,14 @@ for dataset in datasets:
     
     # Run functions
     data = add_confidence_score(data)
-    data = check_performance_karen(data)
+    data = check_performance_karen(data, remove0s = True)
     
     # Export results
-    data.to_csv(out_filename)
+    #data.to_csv(out_filename)
     
     # Without duplicates ie. without five possible matched addresses, just one for summary
-    data_dedup = data.sort_values(['ADDRESS', 'confidence_score', 'matches'], 
-        ascending = [True, False, False], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
+    data_dedup = data.sort_values(['ADDRESS', 'confidence_score', 'UPRN_beta', 'matches',  'UPRN_comparison'], 
+        ascending =  [True, False, True, False, True], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
 
     #data_dedup.to_csv(out_filename_dedup)
     
