@@ -83,13 +83,24 @@ melted_df <- function(tab, name = 'dataset', labels=LABELS){
 
 S_power_trans <- function() trans_new("S_power",transform = function(x){sign(x)*(abs(x)^.5)},inverse = function(x){sign(x)*(abs(x)^2)})
 
-percentage_heatmap <- function(cross_tables, datasets=names(cross_tables), add_title = '', labels=NULL){
+percentage_heatmap <- function(cross_tables, datasets=names(cross_tables), add_title = '', labels=NULL, confidenceScore =F){
   if (is.null(labels)) 
       labels <- sort(setdiff(do.call(c, lapply(cross_tables, function(x) union(rownames(x), colnames(x)))), 'Sum'))
   
   plot_df <- lapply(1:length(datasets), function(i) melted_df(cross_tables[[i]], name=datasets[i], labels=labels))
+
   df <-  do.call(rbind, plot_df) %>% 
-    mutate(label=paste0(formatC(abs(percentage),digits=2,format="f"),'% (',abs(Freq), ')'))
+         mutate(curr_miss = current %in% LABELS[5:6],
+                prev_miss = previous %in% LABELS[5:6],
+                # there can't be any movement between categories with known UPRN <-> unknown true UPRN
+                label=ifelse(((curr_miss + prev_miss) == 1) & Freq==0 , '', 
+                             paste0(formatC(abs(percentage),digits=2,format="f"),'% (',abs(Freq), ')')))
+  if (confidenceScore)
+    df<- df %>% # remove places which can't have movement, e.g. from not found anywhere else
+       mutate(impossible = ((previous == LABELS[3]) & (current %in% c(LABELS[c(1:2,4)], LABELS_sep[2:3]) ))|
+                           ((previous == LABELS[6]) & (current == LABELS[5]))|
+                           ((previous == LABELS[4]) & !(current %in% LABELS[3:6])),
+              label = ifelse (impossible & Freq == 0, '--', label))             
   
   xlims <- max(abs(df$colour)) # max(2.5, abs(df$colour))
   

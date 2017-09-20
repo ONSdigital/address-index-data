@@ -17,8 +17,8 @@ library("ggplot2")
 #library("googleVis")
 
 setwd('~/R/address-index')
-source('compare_matches.R')
-source('plot_match_changes.R')
+source('helper_compare_matches.R')
+source('helper_plot_match_changes.R')
 
 datasets <- c('EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC',   'PatientRecords','WelshGov')
 
