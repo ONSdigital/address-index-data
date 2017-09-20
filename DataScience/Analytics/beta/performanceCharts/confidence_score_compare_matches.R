@@ -45,16 +45,27 @@ wrap_dataset_compare_bespoke <- function(input, viz=F, sep_in_set=F){
   tab <- compare_performance(PREV, CURR, viz=viz, sep_in_set=sep_in_set)
 } 
 
-read_pivot <- function(data_name, curr_date){
-  curr_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', curr_date, '/' , data_name ,'_pivot_ivy.csv')
+read_pivot <- function(data_name, curr_date, remove0s =T){
+  # using Karen's python scripts small pivot tables are saved in the beta results folders
+  # this function reads them in and converts them to the R 'table' format
+  curr_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', curr_date, '/' , data_name ,
+                      '_pivot_ivy', ifelse(remove0s,'','_without_dropping_0s'),'.csv')
   pivot <- read.table(curr_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
   rownames(pivot) <- pivot$results
   pivot$results <- NULL
   colnames(pivot) <- as.vector(sapply(colnames(pivot), substring, first=2))
-  as.matrix(pivot)  
-  # some more tweaks needed to the format....
+  tab <- as.matrix(pivot)  
+  colnames(tab)[colnames(tab)=='1_top_unique']<-'1_top_match'
+  rownames(tab)[rownames(tab)=='1_top_unique']<-'1_top_match'  
+  if (!remove0s) {
+    keep_labels <- c( '1_top_match', '2_in_set_equal', '2_in_set_lower','2_in_set', 'Sum')
+    tab <- tab[intersect( keep_labels, rownames(tab)), intersect( keep_labels, colnames(tab)), drop=F ]
+  }
+  tab <- tab %>% rbind(Sum = colSums(tab)) 
+  tab <-  tab %>% cbind(Sum = rowSums(tab)) 
+  names(dimnames(tab)) <- c('previous', 'current')
+  as.table(tab)
 }
-
 
 ########## example calculation for one dataset (using R to parse json)
 data_name <-  'EdgeCases' 
@@ -72,28 +83,30 @@ out_list <- compare_performance(PREV, CURR, sep_in_set=T,viz=F)
 
 ########### running on all datasets (reading files with JSON parsed in python)
 datasets <- c('EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC',   'PatientRecords','WelshGov')
-curr_date <- curr_date <- 'September_15_dev_baseline'
+curr_date <- 'September_15_dev_baseline'
 
-#create a scoring_summary for all dataset in a list
-if (F) {# calculate tables in r 
-scoring_summary <- apply(data.frame(data_name=datasets, curr_date=curr_date, stringsAsFactors=F), 
+#create a cross_tables for all dataset in a list
+if (F) { # calculate tables in r - very slow
+  scoring_summary <- apply(data.frame(data_name=datasets, curr_date=curr_date, stringsAsFactors=F), 
                       1, wrap_dataset_compare_bespoke, viz=F, sep_in_set=T)
-names(scoring_summary) <- datasets
-save(scoring_summary, file = paste0('cross_tables/compare_scoring_',curr_date,'.RData'))
-cross_tables <- lapply(scoring_summary, function(x) x$cross_table)
-} else if (F) { # read in python pivot tables
-  cross_tables <- lapply(datasets, read_pivot, curr_date = curr_date)
-  names(cross_tables) <- datasets
-}else{ # read in saved Rdata
+  names(scoring_summary) <- datasets
+  save(scoring_summary, file = paste0('cross_tables/compare_scoring_',curr_date,'.RData'))
+  cross_tables <- lapply(scoring_summary, function(x) x$cross_table)
+} else if (F) { # read in saved Rdata
   load( file = paste0('cross_tables/compare_scoring_',curr_date,'.RData'))
   cross_tables <- lapply(scoring_summary, function(x) x$cross_table)
+}else{  # read in python pivot tables
+  remove0s = F #whether we should remove candidates with 0 confidence score
+  cross_tables <- lapply(datasets, read_pivot, curr_date = curr_date, remove0s = remove0s)
+  names(cross_tables) <- datasets
+  if (!remove0s) cross_tables<-cross_tables[c(1,4:7)]
 }
   
 # save heatmap of the cross tables
-pdf(file= paste0('pictures/confidence_scoring_',curr_date,'_heat.pdf'), width = 15, height = 10)
+pdf(file= paste0('pictures/confidence_scoring_',ifelse(remove0s,'','without_dropping_0s_'),curr_date,'_heat.pdf'), width = 15, height = 10)
 g<-percentage_heatmap (cross_tables, datasets=names(cross_tables), curr_date, confidenceScore=T) +
   xlab("Confidence score") +
   ylab("ElasticSearch score") +
-  ggtitle(paste0("Matching performance based on different scores - ", curr_date) )
+  ggtitle(paste0("Matching performance based on different scores ", ifelse(remove0s,'- ','(without_dropping 0s) - '), curr_date) )
 print(g)
 dev.off()
