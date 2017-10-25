@@ -78,9 +78,11 @@ Ordinal = {'0TH', 'ZEROTH', '0ED', 'SERO', 'SEROFED', 'DIM', 'DIMFED',
           '10TH', 'TENTH', '10FED', 'DEGFED',
           '11TH', 'ELEVENTH', '11FED', 'UNFED', 'DDEG',
           '12TH', 'TWELFTH', '12FED', 'DEUDDEGFED'}
+non_county = {'OFFICE', 'HOSPITAL', 'CARE', 'CLUB', 'BANK', 'BAR', 'SOCIETY', 'PRISON', 
+              'HMP', 'UNI', 'UNIV', 'UNIVERSITY', 'UNIVERISTY'}
 
 # Combine these sets for removeCounties function - do not remove counties if they are followed by one of these
-noncounty = Business|COMPANY|FLAT|Residential|ROAD
+noncounty = non_county|COMPANY|FLAT|Residential|ROAD
 nonCountyIdentification = list(noncounty)
 
 # Read in the files required for tokenization pre-processing.
