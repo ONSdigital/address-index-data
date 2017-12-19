@@ -35,18 +35,17 @@ For usage see below:
   }
 
   // each run of this application has a unique index name
-//  val indexName = generateIndexName()
-    val indexName = "test10"
+  val indexName = generateIndexName()
 
   saveHybridAddresses()
 
-//  if (!opts.help()) {
-//    AddressIndexFileReader.validateFileNames()
-//
-//    if (opts.mapping()) postMapping(indexName)
-//    if (opts.hybrid()) saveHybridAddresses()
-//
-//  } else opts.printHelp()
+  if (!opts.help()) {
+    AddressIndexFileReader.validateFileNames()
+
+    if (opts.mapping()) postMapping(indexName)
+    if (opts.hybrid()) saveHybridAddresses()
+
+  } else opts.printHelp()
 
   private def generateIndexName(): String = AddressIndexFileReader.generateIndexNameFromFileName()
 
@@ -79,18 +78,17 @@ For usage see below:
     val hierarchy = generateHierarchyData()
     val crossRef = generateCrossRefData()
 
-//    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
     val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef)
 
     ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
 
-//  private def postMapping(indexName: String) = {
-//    val nodes = config.getString("addressindex.elasticsearch.nodes")
-//    val port = config.getString("addressindex.elasticsearch.port")
-//    val url = s"http://$nodes:$port/$indexName"
-//
-//    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
-//    if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
-//  }
+  private def postMapping(indexName: String) = {
+    val nodes = config.getString("addressindex.elasticsearch.nodes")
+    val port = config.getString("addressindex.elasticsearch.port")
+    val url = s"http://$nodes:$port/$indexName"
+
+    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
+    if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
+  }
 }
