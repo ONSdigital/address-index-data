@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
-import uk.gov.ons.addressindex.models.HierarchyDocument
+import uk.gov.ons.addressindex.models.{CrossRefDocument, HierarchyDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
@@ -35,15 +35,18 @@ For usage see below:
   }
 
   // each run of this application has a unique index name
-  val indexName = generateIndexName()
+//  val indexName = generateIndexName()
+    val indexName = "test10"
 
-  if (!opts.help()) {
-    AddressIndexFileReader.validateFileNames()
+  saveHybridAddresses()
 
-    if (opts.mapping()) postMapping(indexName)
-    if (opts.hybrid()) saveHybridAddresses()
-
-  } else opts.printHelp()
+//  if (!opts.help()) {
+//    AddressIndexFileReader.validateFileNames()
+//
+//    if (opts.mapping()) postMapping(indexName)
+//    if (opts.hybrid()) saveHybridAddresses()
+//
+//  } else opts.printHelp()
 
   private def generateIndexName(): String = AddressIndexFileReader.generateIndexNameFromFileName()
 
@@ -54,8 +57,7 @@ For usage see below:
     val classification = AddressIndexFileReader.readClassificationCSV()
     val street = AddressIndexFileReader.readStreetCSV()
     val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-    val crossRef = AddressIndexFileReader.readCrossrefCSV()
-    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
+    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
   }
 
   private def generateHierarchyData(): RDD[HierarchyDocument] = {
@@ -64,23 +66,31 @@ For usage see below:
     SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
   }
 
+  private def generateCrossRefData(): RDD[CrossRefDocument] = {
+    val crossRefData = AddressIndexFileReader.readCrossrefCSV()
+    val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRefData)
+    SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
+  }
+
   private def saveHybridAddresses() = {
 
     val nag = generateNagAddresses()
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val hierarchy = generateHierarchyData()
+    val crossRef = generateCrossRefData()
 
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
+//    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy)
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef)
 
     ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
 
-  private def postMapping(indexName: String) = {
-    val nodes = config.getString("addressindex.elasticsearch.nodes")
-    val port = config.getString("addressindex.elasticsearch.port")
-    val url = s"http://$nodes:$port/$indexName"
-
-    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
-    if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
-  }
+//  private def postMapping(indexName: String) = {
+//    val nodes = config.getString("addressindex.elasticsearch.nodes")
+//    val port = config.getString("addressindex.elasticsearch.port")
+//    val url = s"http://$nodes:$port/$indexName"
+//
+//    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
+//    if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
+//  }
 }

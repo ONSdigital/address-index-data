@@ -26,7 +26,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).sort("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).sort("uprn").collect()
 
       // Then
       result.length shouldBe 3
@@ -69,11 +69,9 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getString(33) shouldBe "TOWNY TOWN" // TOWN_NAME
       firstLine.getString(34) shouldBe "A GREAT LOCALITY" // LOCALITY
       firstLine.getByte(35) shouldBe 8 // STREET_CLASSIFICATION
-      firstLine.getString(36) shouldBe "E04000324" // CROSS_REFERENCE
-      firstLine.getString(37) shouldBe "7666MI" // SOURCE
-      firstLine.getDate(38) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
-      firstLine.getDate(39) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
-      firstLine.getDate(40) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getDate(36) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
+      firstLine.getDate(37) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getDate(38) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {
@@ -88,7 +86,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef).orderBy("locality").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).orderBy("locality").collect()
 
       // Then
       result.length shouldBe 3
@@ -216,19 +214,21 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-      val crossRef = AddressIndexFileReader.readCrossrefCSV()
+      val crossRefData = AddressIndexFileReader.readCrossrefCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, crossRef)
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
 
       val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
       val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
       val hierarchy = SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
+      val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRefData)
+      val crossRef = SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
 
       // When
-      val result = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 2
+      result.length shouldBe 6
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -236,15 +236,17 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.postcodeIn shouldBe "1JQ"
       firstResult.parentUprn shouldBe 1l
       firstResult.relatives.length shouldBe 3
+      firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(1)
+      val secondResult = result(4)
       secondResult.uprn shouldBe 100010971565L
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
+      secondResult.crossRefs.length shouldBe 4
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
@@ -253,6 +255,59 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf(0)("recordIdentifier") shouldBe 27
 
+    }
+
+    "update addresses with crossrefs" in {
+      // Given
+      val crossRef = AddressIndexFileReader.readCrossrefCSV()
+
+      val expectedFirstCrossRefs = Array(
+        Map(
+          "crossReference" -> "E04000324",
+          "source" -> "7666MI"
+        ),
+        Map(
+          "crossReference" -> "E05001602",
+          "source" -> "7666OW"
+        )
+      )
+
+      val expectedSecondCrossRefs = Array(
+        Map(
+          "crossReference" -> "E05001602",
+          "source" -> "7666MI"
+        ),
+        Map(
+          "crossReference" -> "E03001901",
+          "source" -> "7666OP"
+        ),
+        Map(
+          "crossReference" -> "E01001700",
+          "source" -> "7666OL"
+        ),
+        Map(
+          "crossReference" -> "E03801409",
+          "source" -> "7666OU"
+        )
+      )
+
+      val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRef)
+
+      // When
+      val results = SqlHelper.constructCrossRefRdd(crossRef, crossRefGrouped).sortBy(_.uprn).collect()
+
+      // Then
+      results.length shouldBe 8
+
+      results.map(_.uprn) shouldBe Array[Long](2, 2, 10090373276L, 10090373277L, 100010971565L, 100010971565L, 100010971565L, 100010971565L)
+
+      results.take(2).foreach{ result =>
+        result.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedFirstCrossRefs.toList.sortBy(_("crossReference"))
+      }
+
+      results.takeRight(4).foreach{ result =>
+        result.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
+      }
     }
   }
 }

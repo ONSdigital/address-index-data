@@ -10,7 +10,8 @@ case class HybridAddressEsDocument(
   parentUprn: Long,
   relatives: Array[Map[String, Any]],
   lpi: Seq[Map[String, Any]],
-  paf: Seq[Map[String, Any]]
+  paf: Seq[Map[String, Any]],
+  crossRefs: Array[Map[String, String]]
 )
 
 object HybridAddressEsDocument {
@@ -52,11 +53,9 @@ object HybridAddressEsDocument {
     "townName" -> row.getString(33),
     "locality" -> row.getString(34),
     "streetClassification" -> (if (row.isNullAt(35)) null else row.getByte(35)),
-    "crossReference" -> row.getString(36),
-    "source" -> row.getString(37),
-    "lpiStartDate" -> row.getDate(38),
-    "lpiLastUpdateDate" -> row.getDate(39),
-    "lpiEndDate" -> row.getDate(40),
+    "lpiStartDate" -> row.getDate(36),
+    "lpiLastUpdateDate" -> row.getDate(37),
+    "lpiEndDate" -> row.getDate(38),
     "nagAll" ->  concatNag(
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       if (row.isNullAt(25)) "" else row.getShort(25).toString,

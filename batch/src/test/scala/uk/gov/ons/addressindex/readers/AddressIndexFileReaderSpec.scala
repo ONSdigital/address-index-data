@@ -112,7 +112,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readCrossrefCSV().collect()
 
       // Then
-      result.length shouldBe 3 // 4 with the header
+      result.length shouldBe 8 // 9 with the header
 
       val firstLine = result(0)
 
