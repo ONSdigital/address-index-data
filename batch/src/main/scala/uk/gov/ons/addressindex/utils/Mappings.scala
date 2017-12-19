@@ -438,14 +438,6 @@ object Mappings {
                  "type": "string",
                  "index": "not_analyzed"
                },
-               "crossReference": {
-                 "type": "string",
-                 "index": "not_analyzed"
-               },
-               "source": {
-                 "type": "string",
-                 "index": "not_analyzed"
-               },
                "nagAll": {
                  "type": "string",
                  "analyzer": "welsh_split_analyzer",
@@ -639,6 +631,22 @@ object Mappings {
                  "index": "not_analyzed"
                }
              }
+           },
+           "crossRefs": {
+              "properties": {
+                "uprn": {
+                  "type": "long",
+                  "index": "not_analyzed"
+                },
+                "crossReference": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                },
+                "source": {
+                  "type": "string",
+                  "index": "not_analyzed"
+                }
+              }
            }
          }
        }
