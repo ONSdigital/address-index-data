@@ -37,8 +37,6 @@ For usage see below:
   // each run of this application has a unique index name
   val indexName = generateIndexName()
 
-  saveHybridAddresses()
-
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
 

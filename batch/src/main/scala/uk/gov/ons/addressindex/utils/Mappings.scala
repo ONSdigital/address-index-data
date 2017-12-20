@@ -634,10 +634,6 @@ object Mappings {
            },
            "crossRefs": {
               "properties": {
-                "uprn": {
-                  "type": "long",
-                  "index": "not_analyzed"
-                },
                 "crossReference": {
                   "type": "string",
                   "index": "not_analyzed"
