@@ -6,25 +6,36 @@ Created on Mon Jul  3 08:08:17 2017
 """
 
 DEFAULT_CONFIG = { 
-              "subBuildingName":{  
+              "subBuildingName":{
+                 "pafSubBuildingNameBoost":1.5,
+                 "lpiSaoTextBoost":1.5,
+                 "lpiSaoStartNumberBoost":1.0,
+                 "lpiSaoStartSuffixBoost":1.0
+              },
+              "subBuildingRange":{  
                  "lpiSaoStartNumberBoost":1.0,
                  "lpiSaoStartSuffixBoost":1.0,
                  "lpiSaoEndNumberBoost":1.0,
                  "lpiSaoEndSuffixBoost":1.0,
-                 "pafSubBuildingNameBoost":1.5,
-                 "lpiSaoTextBoost":1.5
+                 "lpiSaoStartEndBoost":0.1
               },
               "buildingName":{  
-                 "lpiPaoStartNumberBoost":2.5,
-                 "lpiPaoStartSuffixBoost":3.5,
-                 "lpiPaoEndNumberBoost":2.5,
-                 "lpiPaoEndSuffixBoost":2.5,
+                 "lpiPaoStartSuffixBoost":3.0,
                  "pafBuildingNameBoost":2.5,
                  "lpiPaoTextBoost":2.5
               },
               "buildingNumber":{  
-                 "pafBuildingNumberBoost":2.0,
-                 "lpiPaoStartNumberBoost":2.0
+                 "pafBuildingNumberBoost":3.0, #lower because they sometimes put the sao number there 
+                 "lpiPaoStartNumberBoost":3.5,
+                 "lpiPaoEndNumberBoost":0.1                 
+              },
+              "buildingRange":{  
+                 "lpiPaoStartNumberBoost":2.0,
+                 "lpiPaoStartSuffixBoost":2.0,
+                 "lpiPaoEndNumberBoost":2.0,
+                 "lpiPaoEndSuffixBoost":2.0,
+                 "lpiPaoStartEndBoost":0.1,
+                 "pafBuildingNumberBoost":0.1
               },
               "streetName":{  
                  "pafThoroughfareBoost":2.0,
@@ -46,9 +57,7 @@ DEFAULT_CONFIG = {
               "postcode":{  
                  "pafPostcodeBoost":1.0,
                  "lpiPostcodeLocatorBoost":1.0,
-                 "postcodeInOutBoost":0.8,
-                 "postcodeOutBoost":0.8,
-                 "postcodeInBoost":0.3
+                 "postcodeInOutBoost":0.5
               },
               "organisationName":{  
                  "pafOrganisationNameBoost":1.0,
@@ -65,25 +74,25 @@ DEFAULT_CONFIG = {
                  "pafPostTownBoost":0.2,
                  "pafWelshPostTownBoost":0.2,
                  "lpiTownNameBoost":0.2,
-                 "pafDependentLocalityBoost":0.5,
-                 "pafWelshDependentLocalityBoost":0.5,
-                 "lpiLocalityBoost":0.5,
+                 "pafDependentLocalityBoost":0.6,
+                 "pafWelshDependentLocalityBoost":0.6,
+                 "lpiLocalityBoost":0.6,
                  "pafDoubleDependentLocalityBoost":0.3,
                  "pafWelshDoubleDependentLocalityBoost":0.3
               },
+              "fallback":{
+                "fallbackQueryBoost":0.075,
+                "fallbackPafBoost": 1.0,
+                "fallbackLpiBoost": 1.0,
+                "fallbackPafBigramBoost": 0.2,
+                "fallbackLpiBigramBoost": 0.2,
+                "fallbackMinimumShouldMatch": "-40%",
+                "bigramFuzziness": "0"
+              },
               "excludingDisMaxTieBreaker":0.0,
               "includingDisMaxTieBreaker":0.5,
+              "topDisMaxTieBreaker":1.0,
               "paoSaoMinimumShouldMatch": "-45%",
-              "organisationDepartmentMinimumShouldMatch": "30%",
-              "fallbackQueryBoost":0.2,
-              "defaultBoost":1.0,
-              "mainMinimumShouldMatch": "-35%",
-              "fallbackMinimumShouldMatch": "-40%",
-              #"nagQueryBoost": 2,
-              #"pafQueryBoost": 1,
-              "fallbackPafBoost": 1.0,
-              "fallbackLpiBoost": 1.0,
-              "fallbackPafBigramBoost": 0.2,
-              "fallbackLpiBigramBoost": 0.2,
-              "bigramFuzziness": "0"
+              "organisationDepartmentMinimumShouldMatch": "30%",             
+              "mainMinimumShouldMatch": "-40%"
            }
