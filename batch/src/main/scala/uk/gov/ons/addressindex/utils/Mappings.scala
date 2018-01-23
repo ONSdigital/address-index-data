@@ -8,6 +8,13 @@ object Mappings {
      "settings": {
        "number_of_shards": 1,
        "number_of_replicas": 3,
+       "index": {
+         "similarity": {
+           "default": {
+             "type": "classic"
+           }
+         }
+       },
        "analysis": {
          "filter": {
            "address_synonym_filter": {
