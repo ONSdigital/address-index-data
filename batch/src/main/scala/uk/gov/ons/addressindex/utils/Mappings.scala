@@ -6,8 +6,8 @@ object Mappings {
   """
    {
      "settings": {
-       "number_of_shards": 4,
-       "number_of_replicas": 1,
+       "number_of_shards": 1,
+       "number_of_replicas": 3,
        "index.queries.cache.enabled": false,
        "index": {
          "similarity": {
@@ -292,7 +292,7 @@ object Mappings {
          "tokenizer": {
            "custom_keyword": {
              "type": "keyword",
-             "buffer_size": 128
+             "buffer_size": 256
            }
          }
        }
@@ -303,155 +303,155 @@ object Mappings {
            "lpi": {
              "properties": {
                "addressBasePostal": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "classificationCode": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "easting": {
                  "type": "float",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "location": {
                  "type": "geo_point",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "legalName": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "level": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "locality": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "lpiLogicalStatus": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "blpuLogicalStatus": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "lpiKey": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "northing": {
                  "type": "float",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "officialFlag": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "organisation": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "paoEndNumber": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "true"
                },
                "paoEndSuffix": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "paoStartNumber": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "true"
                },
                "paoStartSuffix": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "paoText": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "postcodeLocator": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "saoEndNumber": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "saoEndSuffix": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "saoStartNumber": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "true"
                },
                "saoStartSuffix": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "saoText": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "streetDescriptor": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "townName": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "uprn": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "usrn": {
                  "type": "integer",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "parentUprn": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "multiOccCount": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "localCustodianCode": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "rpc": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "usrnMatchIndicator": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "language": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "streetClassification": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "classScheme": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "nagAll": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer",
                  "fields": {
                    "bigram": {
-                     "type": "string",
+                     "type": "text",
                      "analyzer": "welsh_bigram_analyzer"
                    }
                  }
@@ -459,149 +459,149 @@ object Mappings {
                "lpiStartDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "lpiLastUpdateDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "lpiEndDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                }
              }
            },
            "paf": {
              "properties": {
                "buildingName": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "buildingNumber": {
                  "type": "short",
-                 "index": "not_analyzed"
+                 "index": "true"
                },
                "changeType": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "deliveryPointSuffix": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "departmentName": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "dependentLocality": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "dependentThoroughfare": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "doubleDependentLocality": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "endDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "entryDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "lastUpdateDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "organisationName": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer"
                },
                "poBoxNumber": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "postTown": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "postcode": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "postcodeType": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "false"
                },
                "proOrder": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "processDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "recordIdentifier": {
                  "type": "byte",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "startDate": {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "subBuildingName": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "thoroughfare": {
-                 "type": "string",
-                 "index": "not_analyzed"
+                 "type": "text",
+                 "index": "true"
                },
                "udprn": {
                  "type": "integer",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "uprn": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "welshDependentLocality": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "welshDependentThoroughfare": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "welshDoubleDependentLocality": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "welshPostTown": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "welshThoroughfare": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_no_split_analyzer"
                },
                "pafAll": {
-                 "type": "string",
+                 "type": "text",
                  "analyzer": "welsh_split_analyzer",
                  "fields": {
                    "bigram": {
-                     "type": "string",
+                     "type": "text",
                      "analyzer": "welsh_bigram_analyzer"
                    }
                  }
@@ -610,45 +610,45 @@ object Mappings {
            },
            "uprn": {
              "type": "long",
-             "index": "not_analyzed"
+             "index": "false"
            },
            "postcodeIn": {
-             "type": "string",
-             "index": "not_analyzed"
+             "type": "text",
+             "index": "true"
            },
            "postcodeOut": {
-             "type": "string",
-             "index": "not_analyzed"
+             "type": "text",
+             "index": "true"
            },
            "parentUprn": {
-             "type": "string",
-             "index": "not_analyzed"
+             "type": "text",
+             "index": "false"
            },
            "relatives": {
              "properties": {
                "level": {
                  "type": "integer",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "siblings": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                },
                "parents": {
                  "type": "long",
-                 "index": "not_analyzed"
+                 "index": "false"
                }
              }
            },
            "crossRefs": {
               "properties": {
                 "crossReference": {
-                  "type": "string",
-                  "index": "not_analyzed"
+                  "type": "text",
+                  "index": "false"
                 },
                 "source": {
-                  "type": "string",
-                  "index": "not_analyzed"
+                  "type": "text",
+                  "index": "false"
                 }
               }
            }
