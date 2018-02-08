@@ -360,7 +360,7 @@ object Mappings {
                },
                "paoEndSuffix": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "paoStartNumber": {
                  "type": "short",
@@ -368,7 +368,7 @@ object Mappings {
                },
                "paoStartSuffix": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "paoText": {
                  "type": "text",
@@ -380,11 +380,11 @@ object Mappings {
                },
                "saoEndNumber": {
                  "type": "short",
-                 "index": "false"
+                 "index": "true"
                },
                "saoEndSuffix": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "saoStartNumber": {
                  "type": "short",
@@ -392,7 +392,7 @@ object Mappings {
                },
                "saoStartSuffix": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "saoText": {
                  "type": "text",
