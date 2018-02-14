@@ -6,7 +6,7 @@ object Mappings {
   """
    {
      "settings": {
-       "number_of_shards": 2,
+       "number_of_shards": 4,
        "number_of_replicas": 1,
        "index.queries.cache.enabled": false,
        "index": {
@@ -308,7 +308,7 @@ object Mappings {
                },
                "classificationCode": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "easting": {
                  "type": "float",
