@@ -308,7 +308,8 @@ object Mappings {
                },
                "classificationCode": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "easting": {
                  "type": "float",
@@ -328,7 +329,8 @@ object Mappings {
                },
                "locality": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "lpiLogicalStatus": {
                  "type": "byte",
@@ -360,7 +362,8 @@ object Mappings {
                },
                "paoEndSuffix": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "paoStartNumber": {
                  "type": "short",
@@ -368,7 +371,8 @@ object Mappings {
                },
                "paoStartSuffix": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "paoText": {
                  "type": "text",
@@ -376,7 +380,8 @@ object Mappings {
                },
                "postcodeLocator": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "saoEndNumber": {
                  "type": "short",
@@ -384,7 +389,8 @@ object Mappings {
                },
                "saoEndSuffix": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "saoStartNumber": {
                  "type": "short",
@@ -392,7 +398,8 @@ object Mappings {
                },
                "saoStartSuffix": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "saoText": {
                  "type": "text",
@@ -404,7 +411,8 @@ object Mappings {
                },
                "townName": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "uprn": {
                  "type": "long",
@@ -497,15 +505,18 @@ object Mappings {
                },
                "dependentLocality": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "dependentThoroughfare": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "doubleDependentLocality": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "endDate": {
                  "type": "date",
@@ -532,11 +543,13 @@ object Mappings {
                },
                "postTown": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "postcode": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "postcodeType": {
                  "type": "text",
@@ -566,7 +579,8 @@ object Mappings {
                },
                "thoroughfare": {
                  "type": "text",
-                 "index": "true"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "udprn": {
                  "type": "integer",
@@ -614,11 +628,13 @@ object Mappings {
            },
            "postcodeIn": {
              "type": "text",
-             "index": "true"
+             "index": "true",
+             "analyzer": "keyword"
            },
            "postcodeOut": {
              "type": "text",
-             "index": "true"
+             "index": "true",
+             "analyzer": "keyword"
            },
            "parentUprn": {
              "type": "text",
