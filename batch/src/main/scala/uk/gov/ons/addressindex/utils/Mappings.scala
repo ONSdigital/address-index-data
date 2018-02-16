@@ -624,8 +624,7 @@ object Mappings {
            },
            "uprn": {
              "type": "long",
-             "index": "true",
-             "analyzer": "keyword"
+             "index": "true"
            },
            "postcodeIn": {
              "type": "text",
