@@ -334,7 +334,7 @@ object Mappings {
                },
                "lpiLogicalStatus": {
                  "type": "byte",
-                 "index": "false"
+                 "index": "true"
                },
                "blpuLogicalStatus": {
                  "type": "byte",
