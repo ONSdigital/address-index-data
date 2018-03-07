@@ -304,7 +304,7 @@ object Mappings {
              "properties": {
                "addressBasePostal": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true"
                },
                "classificationCode": {
                  "type": "text",
@@ -338,7 +338,7 @@ object Mappings {
                },
                "blpuLogicalStatus": {
                  "type": "byte",
-                 "index": "false"
+                 "index": "true"
                },
                "lpiKey": {
                  "type": "text",
