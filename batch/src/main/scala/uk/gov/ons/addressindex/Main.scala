@@ -28,33 +28,40 @@ Example: java -jar ons-ai-batch.jar --mapping --hybrid
 For usage see below:
       """)
 
-    val hybrid = opt[Boolean]("hybrid", noshort = true, descr = "Index hybrid PAF & NAG")
+    val hybrid = opt[Boolean]("hybrid", noshort = true, descr = "Index hybrid PAF & NAG including historical data")
+    val hybridNoHist = opt[Boolean]("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
     val mapping = opt[Boolean]("mapping", noshort = true, descr = "Creates mapping for the index")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
     verify()
   }
 
   // each run of this application has a unique index name
-  val indexName = generateIndexName()
+  val indexName =
+    if (opts.hybridNoHist()) {
+      generateIndexName(false)
+    } else {
+      generateIndexName()
+    }
 
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
 
     if (opts.mapping()) postMapping(indexName)
     if (opts.hybrid()) saveHybridAddresses()
+    if (opts.hybridNoHist()) saveHybridAddresses(false)
 
   } else opts.printHelp()
 
-  private def generateIndexName(): String = AddressIndexFileReader.generateIndexNameFromFileName()
+  private def generateIndexName(historical : Boolean = true): String = AddressIndexFileReader.generateIndexNameFromFileName(historical)
 
-  private def generateNagAddresses(): DataFrame = {
+  private def generateNagAddresses(historical : Boolean = true): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
     val lpi = AddressIndexFileReader.readLpiCSV()
     val organisation = AddressIndexFileReader.readOrganisationCSV()
     val classification = AddressIndexFileReader.readClassificationCSV()
     val street = AddressIndexFileReader.readStreetCSV()
     val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
+    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical)
   }
 
   private def generateHierarchyData(): RDD[HierarchyDocument] = {
@@ -69,14 +76,13 @@ For usage see below:
     SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
   }
 
-  private def saveHybridAddresses() = {
+  private def saveHybridAddresses(historical : Boolean = true) = {
 
-    val nag = generateNagAddresses()
+    val nag = generateNagAddresses(historical)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val hierarchy = generateHierarchyData()
     val crossRef = generateCrossRefData()
-
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef)
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef, historical)
 
     ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }

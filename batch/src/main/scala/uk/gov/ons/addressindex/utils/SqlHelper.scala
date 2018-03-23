@@ -10,63 +10,77 @@ import uk.gov.ons.addressindex.models.{CrossRefDocument, HierarchyDocument, Hybr
 object SqlHelper {
 
   def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, classification: DataFrame, street: DataFrame,
-               streetDescriptor: DataFrame): DataFrame = {
+               streetDescriptor: DataFrame, historical: Boolean = true): DataFrame = {
 
-    val blpuTable = SparkProvider.registerTempTable(blpu, "blpu")
+    val blpuTable =
+      if (historical) {
+        SparkProvider.registerTempTable(blpu, "blpu")
+      } else {
+        val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
+        val blpuNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+        SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
+      }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
     val classificationTable = SparkProvider.registerTempTable(classification, "classification")
-    val lpiTable = SparkProvider.registerTempTable(lpi, "lpi")
+    val lpiTable =
+      if (historical) {
+        SparkProvider.registerTempTable(lpi, "lpi")
+      } else {
+        val lpiNoHistory = SparkProvider.registerTempTable(lpi, "lpiNoHistory")
+        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8""")
+        SparkProvider.registerTempTable(lpiNoHistoryDF, "lpi")
+      }
     val streetTable = SparkProvider.registerTempTable(street, "street")
     val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
     SparkProvider.sqlContext.sql(
       s"""SELECT
-          $blpuTable.uprn,
-          $blpuTable.postcodeLocator,
-          $blpuTable.addressbasePostal as addressBasePostal,
-          array($blpuTable.longitude, $blpuTable.latitude) as location,
-          $blpuTable.xCoordinate as easting,
-          $blpuTable.yCoordinate as northing,
-          $blpuTable.parentUprn,
-          $blpuTable.multiOccCount,
-          $blpuTable.logicalStatus as blpuLogicalStatus,
-          $blpuTable.localCustodianCode,
-          $blpuTable.rpc,
-          $organisationTable.organisation,
-          $organisationTable.legalName,
-          $classificationTable.classScheme,
-          $classificationTable.classificationCode,
-          $lpiTable.usrn,
-          $lpiTable.lpiKey,
-          $lpiTable.paoText,
-          $lpiTable.paoStartNumber,
-          $lpiTable.paoStartSuffix,
-          $lpiTable.paoEndNumber,
-          $lpiTable.paoEndSuffix,
-          $lpiTable.saoText,
-          $lpiTable.saoStartNumber,
-          $lpiTable.saoStartSuffix,
-          $lpiTable.saoEndNumber,
-          $lpiTable.saoEndSuffix,
-          $lpiTable.level,
-          $lpiTable.officialFlag,
-          $lpiTable.logicalStatus as lpiLogicalStatus,
-          $lpiTable.usrnMatchIndicator,
-          $lpiTable.language,
-          $streetDescriptorTable.streetDescriptor,
-          $streetDescriptorTable.townName,
-          $streetDescriptorTable.locality,
-          $streetTable.streetClassification,
-          $lpiTable.startDate as lpiStartDate,
-          $lpiTable.lastUpdateDate as lpiLastUpdateDate,
-          $lpiTable.endDate as lpiEndDate
-        FROM $blpuTable
-        LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
-        LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn
-        LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
-        LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
-        LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
-        AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
+        $blpuTable.uprn,
+        $blpuTable.postcodeLocator,
+        $blpuTable.addressbasePostal as addressBasePostal,
+        array($blpuTable.longitude, $blpuTable.latitude) as location,
+        $blpuTable.xCoordinate as easting,
+        $blpuTable.yCoordinate as northing,
+        $blpuTable.parentUprn,
+        $blpuTable.multiOccCount,
+        $blpuTable.logicalStatus as blpuLogicalStatus,
+        $blpuTable.localCustodianCode,
+        $blpuTable.rpc,
+        $organisationTable.organisation,
+        $organisationTable.legalName,
+        $classificationTable.classScheme,
+        $classificationTable.classificationCode,
+        $lpiTable.usrn,
+        $lpiTable.lpiKey,
+        $lpiTable.paoText,
+        $lpiTable.paoStartNumber,
+        $lpiTable.paoStartSuffix,
+        $lpiTable.paoEndNumber,
+        $lpiTable.paoEndSuffix,
+        $lpiTable.saoText,
+        $lpiTable.saoStartNumber,
+        $lpiTable.saoStartSuffix,
+        $lpiTable.saoEndNumber,
+        $lpiTable.saoEndSuffix,
+        $lpiTable.level,
+        $lpiTable.officialFlag,
+        $lpiTable.logicalStatus as lpiLogicalStatus,
+        $lpiTable.usrnMatchIndicator,
+        $lpiTable.language,
+        $streetDescriptorTable.streetDescriptor,
+        $streetDescriptorTable.townName,
+        $streetDescriptorTable.locality,
+        $streetTable.streetClassification,
+        $lpiTable.startDate as lpiStartDate,
+        $lpiTable.lastUpdateDate as lpiLastUpdateDate,
+        $lpiTable.endDate as lpiEndDate
+      FROM $blpuTable
+      LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
+      LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn
+      LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
+      LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
+      LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
+      AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
   }
 
   /**
@@ -141,50 +155,59 @@ object SqlHelper {
     * We couldn't use Spark Sql because it does not contain `collect_list` until 2.0
     * Hive does not support aggregating complex types in the `collect_list` udf
     */
-    def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, hierarchy: RDD[HierarchyDocument], crossRef: RDD[CrossRefDocument]): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, hierarchy: RDD[HierarchyDocument], crossRef: RDD[CrossRefDocument], historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
-      val pafWithKey = paf.rdd.keyBy(row => row.getLong(3))
-      val nagWithKey = nag.rdd.keyBy(row => row.getLong(0))
-      val hierarchyWithKey = hierarchy.keyBy(document => document.uprn)
-      val crossRefWithKey = crossRef.keyBy(document => document.uprn)
+    val nagWithKey = nag.rdd.keyBy(row => row.getLong(0))
+    // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
+    // out at the joinCsvs stage. These need to be removed.
+    val pafWithKey =
+    if (historical) {
+      paf.rdd.keyBy(row => row.getLong(3))
+    } else {
+      val fullPaf = paf.rdd.keyBy(row => row.getLong(3))
+      fullPaf.subtractByKey(fullPaf.subtractByKey(nagWithKey))
+    }
+    val hierarchyWithKey = hierarchy.keyBy(document => document.uprn)
+    val crossRefWithKey = crossRef.keyBy(document => document.uprn)
 
-      // Following line will group rows in 2 groups: lpi and paf
-      // The first element in each new row will contain `uprn` as the first key
-      val groupedRdd = nagWithKey.cogroup(pafWithKey)
+    // Following line will group rows in 2 groups: lpi and paf
+    // The first element in each new row will contain `uprn` as the first key
+    val groupedRdd = nagWithKey.cogroup(pafWithKey)
 
-      val groupedRddWithHierarchyCrossRef = groupedRdd.leftOuterJoin(hierarchyWithKey).leftOuterJoin(crossRefWithKey)
+    val groupedRddWithHierarchyCrossRef = groupedRdd.leftOuterJoin(hierarchyWithKey).leftOuterJoin(crossRefWithKey)
 
-      groupedRddWithHierarchyCrossRef.map {
-        case (uprn, (((lpiArray, pafArray), hierarchyDocument), crossRefDocument)) =>
-          val lpis = lpiArray.toSeq.map(HybridAddressEsDocument.rowToLpi)
-          val pafs = pafArray.toSeq.map(HybridAddressEsDocument.rowToPaf)
+    groupedRddWithHierarchyCrossRef.map {
+      case (uprn, (((lpiArray, pafArray), hierarchyDocument), crossRefDocument)) =>
 
-          val lpiPostCode: Option[String] = lpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
-          val pafPostCode: Option[String] = pafs.headOption.flatMap(_.get("postcode").map(_.toString))
+        val lpis = lpiArray.toSeq.map(HybridAddressEsDocument.rowToLpi)
+        val pafs = pafArray.toSeq.map(HybridAddressEsDocument.rowToPaf)
 
-          val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
-          else lpiPostCode.getOrElse("")
+        val lpiPostCode: Option[String] = lpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = pafs.headOption.flatMap(_.get("postcode").map(_.toString))
 
-          val splitPostCode = postCode.split(" ")
-          val (postCodeOut, postCodeIn) =
-            if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
-            else ("", "")
+        val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
+        else lpiPostCode.getOrElse("")
 
-          // fun fact: `null.asInstanceOf[Long]` is actually equal to `0l`
-          val parentUprn = hierarchyDocument.map(_.parentUprn).getOrElse(0l)
-          val relatives = hierarchyDocument.map(_.relations).getOrElse(Array())
-          val crossRefs = crossRefDocument.map(_.crossRefs).getOrElse(Array())
+        val splitPostCode = postCode.split(" ")
+        val (postCodeOut, postCodeIn) =
+          if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
+          else ("", "")
 
-          HybridAddressEsDocument(
-            uprn,
-            postCodeIn,
-            postCodeOut,
-            parentUprn,
-            relatives,
-            lpis,
-            pafs,
-            crossRefs
-          )
-      }
+        // fun fact: `null.asInstanceOf[Long]` is actually equal to `0l`
+        val parentUprn = hierarchyDocument.map(_.parentUprn).getOrElse(0l)
+        val relatives = hierarchyDocument.map(_.relations).getOrElse(Array())
+        val crossRefs = crossRefDocument.map(_.crossRefs).getOrElse(Array())
+
+        HybridAddressEsDocument(
+          uprn,
+          postCodeIn,
+          postCodeOut,
+          parentUprn,
+          relatives,
+          lpis,
+          pafs,
+          crossRefs
+        )
+    }
   }
 }

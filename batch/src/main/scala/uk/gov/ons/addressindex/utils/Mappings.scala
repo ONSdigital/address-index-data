@@ -317,7 +317,7 @@ object Mappings {
                },
                "location": {
                  "type": "geo_point",
-                 "index": "false"
+                 "index": "true"
                },
                "legalName": {
                  "type": "text",
