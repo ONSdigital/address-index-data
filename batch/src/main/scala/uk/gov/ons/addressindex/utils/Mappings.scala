@@ -304,7 +304,8 @@ object Mappings {
              "properties": {
                "addressBasePostal": {
                  "type": "text",
-                 "index": "false"
+                 "index": "true",
+                 "analyzer": "keyword"
                },
                "classificationCode": {
                  "type": "text",
@@ -317,7 +318,7 @@ object Mappings {
                },
                "location": {
                  "type": "geo_point",
-                 "index": "false"
+                 "index": "true"
                },
                "legalName": {
                  "type": "text",
@@ -334,11 +335,11 @@ object Mappings {
                },
                "lpiLogicalStatus": {
                  "type": "byte",
-                 "index": "false"
+                 "index": "true"
                },
                "blpuLogicalStatus": {
                  "type": "byte",
-                 "index": "false"
+                 "index": "true"
                },
                "lpiKey": {
                  "type": "text",
@@ -372,7 +373,12 @@ object Mappings {
                "paoStartSuffix": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "keyword",
+                 "fields": {
+                   "keyword": {
+                     "type": "keyword"
+                   }
+                 }
                },
                "paoText": {
                  "type": "text",
@@ -407,7 +413,12 @@ object Mappings {
                },
                "streetDescriptor": {
                  "type": "text",
-                 "analyzer": "welsh_no_split_analyzer"
+                 "analyzer": "welsh_no_split_analyzer",
+                 "fields": {
+                   "keyword": {
+                     "type": "keyword"
+                   }
+                 }
                },
                "townName": {
                  "type": "text",
