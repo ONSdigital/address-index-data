@@ -161,12 +161,18 @@ object SqlHelper {
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafWithKey =
-    if (historical) {
-      paf.rdd.keyBy(row => row.getLong(3))
-    } else {
-      val fullPaf = paf.rdd.keyBy(row => row.getLong(3))
-      fullPaf.subtractByKey(fullPaf.subtractByKey(nagWithKey))
-    }
+      if (historical) {
+        paf.rdd.keyBy(row => row.getLong(3))
+      } else {
+        paf.join(nag, Seq("uprn"), "leftsemi")
+          .select("recordIdentifier","changeType","proOrder","uprn","udprn","organisationName","departmentName",
+            "subBuildingName","buildingName","buildingNumber","dependentThoroughfare","thoroughfare",
+            "doubleDependentLocality","dependentLocality","postTown","postcode","postcodeType","deliveryPointSuffix",
+            "welshDependentThoroughfare","welshThoroughfare","welshDoubleDependentLocality","welshDependentLocality",
+            "welshPostTown","poBoxNumber","processDate","startDate","endDate","lastUpdateDate","entryDate")
+          .rdd.keyBy(row => row.getAs[Long]("uprn"))
+      }
+
     val hierarchyWithKey = hierarchy.keyBy(document => document.uprn)
     val crossRefWithKey = crossRef.keyBy(document => document.uprn)
 
