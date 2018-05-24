@@ -215,8 +215,10 @@ object HybridAddressEsDocument {
     val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
     val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
       .map(_.trim).mkString
+
     val sao =
       if (saoText == organisation || saoText.isEmpty) saoNumbers
+      else if (saoText.contains("PO BOX")) if (saoNumbers.isEmpty) s"$saoText," else s"$saoNumbers, $saoText," // e.g. EX2 5ZX
       else if (saoNumbers.isEmpty) s"${splitAndCapitalise(saoText)},"
       else s"$saoNumbers, ${splitAndCapitalise(saoText)},"
 

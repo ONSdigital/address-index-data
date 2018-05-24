@@ -338,6 +338,25 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
+    "change uppercase nag address containing 'PO BOX' to mixed case" in {
+      // Given
+      val nagOrganisation = "ACME STATS PLC"
+      val saoText = "PO BOX 5678"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
+        expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
+        expectedNag("saoEndSuffix").toString, saoText ,
+        nagOrganisation, expectedNag("paoStartNumber").toString,
+        expectedNag("paoStartSuffix").toString, expectedNag("paoEndNumber").toString,
+        expectedNag("paoEndSuffix").toString, expectedNag("paoText").toString,
+        expectedNag("streetDescriptor").toString, expectedNag("locality").toString,
+        expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
+
+      // Then
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+    }
+
     "concatenate the required paf fields and handle empty strings" in {
 
       // Given
