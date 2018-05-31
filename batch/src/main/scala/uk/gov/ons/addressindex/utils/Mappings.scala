@@ -258,7 +258,12 @@ object Mappings {
              "min_shingle_size": 2,
              "max_shingle_size": 2,
              "output_unigrams": false
-           }
+           },
+            "autocomplete_filter": {
+              "type": "edge_ngram",
+              "min_gram": "1",
+              "max_gram": "20"
+            }
          },
          "analyzer": {
            "welsh_no_split_analyzer": {
@@ -280,6 +285,14 @@ object Mappings {
                "address_synonym_filter"
              ]
            },
+           "autocomplete": {
+            "filter": [
+              "lowercase",
+              "autocomplete_filter"
+             ],
+            "type": "custom",
+            "tokenizer": "standard"
+            },
            "welsh_bigram_analyzer": {
              "type": "custom",
              "tokenizer": "standard",
@@ -472,7 +485,11 @@ object Mappings {
                    "bigram": {
                      "type": "text",
                      "analyzer": "welsh_bigram_analyzer"
-                   }
+                   },
+                    "typeahead": {
+                      "type": "text",
+                      "analyzer": "autocomplete"
+                    }
                  }
                },
                "lpiStartDate": {
