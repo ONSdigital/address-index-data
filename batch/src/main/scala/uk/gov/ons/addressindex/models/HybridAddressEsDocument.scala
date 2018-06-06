@@ -1,7 +1,10 @@
 package uk.gov.ons.addressindex.models
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.Row
 import uk.gov.ons.addressindex.utils.SparkProvider
+
+import scala.io.{BufferedSource, Source}
 
 case class HybridAddressEsDocument(
   uprn: Long,
@@ -15,6 +18,8 @@ case class HybridAddressEsDocument(
 )
 
 object HybridAddressEsDocument {
+
+  private val config = ConfigFactory.load()
 
   def rowToLpi(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(0),
@@ -65,6 +70,16 @@ object HybridAddressEsDocument {
       if (row.isNullAt(20)) "" else row.getShort(20).toString,
       row.getString(21), row.getString(17), row.getString(32),
       row.getString(33), row.getString(34), row.getString(1)
+    ),
+    "mixedNag" -> generateFormattedNagAddress(
+      if (row.isNullAt(23)) "" else row.getShort(23).toString,
+      row.getString(24),
+      if (row.isNullAt(25)) "" else row.getShort(25).toString,
+      row.getString(26), row.getString(22), row.getString(11),
+      if (row.isNullAt(18)) "" else row.getShort(18).toString,
+      row.getString(19),
+      if (row.isNullAt(20)) "" else row.getShort(20).toString,
+      row.getString(21), row.getString(17), row.getString(32), row.getString(34), row.getString(33), row.getString(1)
     )
   )
 
@@ -100,8 +115,133 @@ object HybridAddressEsDocument {
     "entryDate" -> row.getDate(28),
     "pafAll" -> concatPaf(row.getString(23), if (row.isNullAt(9)) "" else row.getShort(9).toString, row.getString(10),
       row.getString(18), row.getString(11), row.getString(19), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
-      row.getString(12), row.getString(20), row.getString(13), row.getString(21), row.getString(14), row.getString(22), row.getString(15))
+      row.getString(12), row.getString(20), row.getString(13), row.getString(21), row.getString(14), row.getString(22), row.getString(15)),
+    "mixedPaf" -> generateFormattedPafAddress(
+      row.getString(23),
+      if (row.isNullAt(9)) "" else row.getShort(9).toString,
+      row.getString(10), row.getString(11), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
+      row.getString(12), row.getString(13), row.getString(14), row.getString(15)
+    ),
+    "mixedWelshPaf" -> generateWelshFormattedPafAddress(
+      row.getString(23),
+      if (row.isNullAt(9)) "" else row.getShort(9).toString,
+      row.getString(18), row.getString(19), row.getString(6), row.getString(5), row.getString(7), row.getString(8),
+      row.getString(20), row.getString(21), row.getString(22), row.getString(15)
+    )
   )
+
+  def splitAndCapitalise(input: String) : String = {
+    input.trim.split(" ").map({case y => if (!acronyms.contains(y)) y.toLowerCase.capitalize else y }).mkString(" ")
+  }
+
+  /**
+    * Creates formatted address from PAF address
+    * Adapted from API code
+    * @return String of formatted address
+    */
+  def generateFormattedPafAddress(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String,
+                                  thoroughfare: String, departmentName: String, organisationName: String,
+                                  subBuildingName: String, buildingName: String, doubleDependentLocality: String,
+                                  dependentLocality: String, postTown: String, postcode: String): String = {
+
+    val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
+
+    val trimmedBuildingNumber = buildingNumber.trim
+    val trimmedDependentThoroughfare = splitAndCapitalise(dependentThoroughfare)
+    val trimmedThoroughfare = splitAndCapitalise(thoroughfare)
+
+    val buildingNumberWithStreetName =
+      s"$trimmedBuildingNumber ${ if(trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else "" }$trimmedThoroughfare"
+
+    val departmentNameEdit = splitAndCapitalise(departmentName)
+    val organisationNameEdit = splitAndCapitalise(organisationName)
+    val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
+    val buildingNameEdit = splitAndCapitalise(buildingName)
+    val doubleDependentLocalityEdit = splitAndCapitalise(doubleDependentLocality)
+    val dependentLocalityEdit = splitAndCapitalise(dependentLocality)
+    val postTownEdit = splitAndCapitalise(postTown)
+
+    Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
+      poBoxNumberEdit, buildingNumberWithStreetName, doubleDependentLocalityEdit, dependentLocalityEdit,
+      postTownEdit, postcode).map(_.trim).filter(_.nonEmpty).mkString(", ")
+  }
+
+  /**
+    * Creates Welsh formatted address from PAF address
+    * Adapted from API code
+    * @return String of Welsh formatted address
+    */
+  def generateWelshFormattedPafAddress(poBoxNumber: String, buildingNumber: String, welshDependentThoroughfare: String,
+                                       welshThoroughfare: String, departmentName: String, organisationName: String,
+                                       subBuildingName: String, buildingName: String, welshDoubleDependentLocality: String,
+                                       welshDependentLocality: String, welshPostTown: String, postcode: String): String = {
+
+    val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
+
+    val trimmedBuildingNumber = buildingNumber.trim
+    val trimmedDependentThoroughfare = splitAndCapitalise(welshDependentThoroughfare)
+    val trimmedThoroughfare = splitAndCapitalise(welshThoroughfare)
+
+    val buildingNumberWithStreetName =
+      s"$trimmedBuildingNumber ${ if(trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else "" }$trimmedThoroughfare"
+
+    val departmentNameEdit = splitAndCapitalise(departmentName)
+    val organisationNameEdit = splitAndCapitalise(organisationName)
+    val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
+    val buildingNameEdit = splitAndCapitalise(buildingName)
+    val welshDoubleDependentLocalityEdit = splitAndCapitalise(welshDoubleDependentLocality)
+    val welshDependentLocalityEdit = splitAndCapitalise(welshDependentLocality)
+    val welshPostTownEdit = splitAndCapitalise(welshPostTown)
+
+    Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
+      poBoxNumberEdit, buildingNumberWithStreetName, welshDoubleDependentLocalityEdit, welshDependentLocalityEdit,
+      welshPostTownEdit, postcode).map(_.trim).filter(_.nonEmpty).mkString(", ")
+  }
+
+  /**
+    * Formatted address should contain commas between all fields except after digits
+    * The actual logic is pretty complex and should be treated on example-to-example level
+    * (with unit tests)
+    * Adapted from API code
+    * @return String of formatted address
+    */
+  def generateFormattedNagAddress(saoStartNumber: String, saoStartSuffix: String, saoEndNumber: String,
+                               saoEndSuffix: String, saoText: String, organisation: String, paoStartNumber: String,
+                               paoStartSuffix: String, paoEndNumber: String, paoEndSuffix: String, paoText: String,
+                               streetDescriptor: String, locality: String, townName: String, postcodeLocator: String): String = {
+
+    val saoLeftRangeExists = saoStartNumber.nonEmpty || saoStartSuffix.nonEmpty
+    val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
+    val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
+    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
+      .map(_.trim).mkString
+
+    val sao =
+      if (saoText == organisation || saoText.isEmpty) saoNumbers
+      else if (saoText.contains("PO BOX")) if (saoNumbers.isEmpty) s"$saoText," else s"$saoNumbers, $saoText," // e.g. EX2 5ZX
+      else if (saoNumbers.isEmpty) s"${splitAndCapitalise(saoText)},"
+      else s"$saoNumbers, ${splitAndCapitalise(saoText)},"
+
+    val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
+    val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
+    val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
+    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix)
+      .map(_.trim).mkString
+    val pao =
+      if (paoText == organisation || paoText.isEmpty) paoNumbers
+      else if (paoNumbers.isEmpty) s"${splitAndCapitalise(paoText)},"
+      else s"${splitAndCapitalise(paoText)}, $paoNumbers"
+
+    val trimmedStreetDescriptor = splitAndCapitalise(streetDescriptor)
+    val buildingNumberWithStreetDescription =
+      if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
+      else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
+      else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
+      else s"$sao $pao $trimmedStreetDescriptor"
+
+    Seq(splitAndCapitalise(organisation), buildingNumberWithStreetDescription, splitAndCapitalise(locality),
+      splitAndCapitalise(townName), postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(", ")
+  }
 
   def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
   String, thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
@@ -168,6 +308,34 @@ object HybridAddressEsDocument {
 
     Seq(organisation, buildingNumberWithStreetDescription, locality,
       townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
+  }
+
+  /**
+    * List of acronyms to not capitalise
+    */
+  lazy val acronyms: Seq[String] = fileToList(s"acronyms")
+
+  /**
+    * Convert external file into list
+    * @param fileName
+    * @return
+    */
+  private def fileToList(fileName: String): Seq[String] = {
+    val resource = getResource(fileName)
+    resource.getLines().toList
+  }
+
+  /**
+    * Fetch file stream as buffered source
+    * @param fileName
+    * @return
+    */
+  def getResource(fileName: String): BufferedSource = {
+    val path = "/" + fileName
+    val currentDirectory = new java.io.File(".").getCanonicalPath
+    // `Source.fromFile` needs an absolute path to the file, and current directory depends on where sbt was lauched
+    // `getResource` may return null, that's why we wrap it into an `Option`
+    Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile(currentDirectory + path))
   }
 
 }

@@ -506,6 +506,10 @@ object Mappings {
                  "type": "date",
                  "format": "strict_date_optional_time||epoch_millis",
                  "index": "false"
+               },
+               "mixedNag": {
+                 "type": "text",
+                 "index": "false"
                }
              }
            },
@@ -647,6 +651,14 @@ object Mappings {
                      "analyzer": "welsh_bigram_analyzer"
                    }
                  }
+               },
+               "mixedPaf": {
+                 "type": "text",
+                 "index": "false"
+               },
+               "mixedWelshPaf": {
+                 "type": "text",
+                 "index": "false"
                }
              }
            },
