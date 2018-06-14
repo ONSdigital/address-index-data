@@ -391,6 +391,136 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
+    "create NAG with expected formatted address (sao empty)" in {
+      // Given
+      val saoStartNumber = ""
+      val saoStartSuffix  = ""
+      val saoEndNumber = ""
+      val saoEndSuffix = ""
+      val saoText = ""
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(saoStartNumber,
+        saoStartSuffix, saoEndNumber, saoEndSuffix, saoText, nagOrganisation,
+        expectedNag("paoStartNumber").toString, expectedNag("paoStartSuffix").toString,
+        expectedNag("paoEndNumber").toString, expectedNag("paoEndSuffix").toString,
+        expectedNag("paoText").toString, expectedNag("streetDescriptor").toString,
+        expectedNag("locality").toString, expectedNag("townName").toString,
+        expectedNag("postcodeLocator").toString)
+
+      val expected = "Something Else, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+
+      // Then
+      result shouldBe expected
+    }
+
+    "create NAG with expected formatted address (pao empty)" in {
+      // Given
+      val paoStartNumber = ""
+      val paoStartSuffix  = ""
+      val paoEndNumber = ""
+      val paoEndSuffix = ""
+      val paoText = ""
+      val saoText = "PO BOX 5678"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
+        expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
+        expectedNag("saoEndSuffix").toString, saoText, nagOrganisation, paoStartNumber,
+        paoStartSuffix, paoEndNumber, paoEndSuffix, paoText,
+        expectedNag("streetDescriptor").toString, expectedNag("locality").toString,
+        expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
+
+      val expected = "Something Else, 6473FF-6623JJ, PO BOX 5678, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+
+      // Then
+      result shouldBe expected
+    }
+
+    "create NAG with expected formatted address (saoText field)" in {
+      // Given
+      val paoStartNumber = ""
+      val saoText = "UNIT"
+      val saoStartNumber = ""
+      val saoStartSuffix  = ""
+      val saoEndNumber = ""
+      val saoEndSuffix = ""
+      val paoStartSuffix  = ""
+      val paoEndNumber = ""
+      val paoEndSuffix = ""
+      val paoText = ""
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(saoStartNumber,
+        saoStartSuffix, saoEndNumber, saoEndSuffix, saoText, nagOrganisation,
+        paoStartNumber, paoStartSuffix,
+        paoEndNumber, paoEndSuffix,
+        paoText, expectedNag("streetDescriptor").toString,
+        expectedNag("locality").toString, expectedNag("townName").toString,
+        expectedNag("postcodeLocator").toString)
+
+      val expected = "Something Else, Unit, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+
+      // Then
+      result shouldBe expected
+    }
+
+    "create NAG with expected formatted address (paoText field)" in {
+      // Given
+      val paoStartNumber = ""
+      val saoText = ""
+      val saoStartNumber = ""
+      val saoStartSuffix  = ""
+      val saoEndNumber = ""
+      val saoEndSuffix = ""
+      val paoStartSuffix  = ""
+      val paoEndNumber = ""
+      val paoEndSuffix = ""
+      val paoText = "UNIT"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(saoStartNumber,
+        saoStartSuffix, saoEndNumber, saoEndSuffix, saoText, nagOrganisation,
+        paoStartNumber, paoStartSuffix,
+        paoEndNumber, paoEndSuffix,
+        paoText, expectedNag("streetDescriptor").toString,
+        expectedNag("locality").toString, expectedNag("townName").toString,
+        expectedNag("postcodeLocator").toString)
+
+      val expected = "Something Else, Unit, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+
+      // Then
+      result shouldBe expected
+    }
+
+    "create NAG with expected formatted address (saoText and paoText fields)" in {
+      // Given
+      val paoStartNumber = ""
+      val saoText = "UNIT"
+      val saoStartNumber = ""
+      val saoStartSuffix  = ""
+      val saoEndNumber = ""
+      val saoEndSuffix = ""
+      val paoStartSuffix  = ""
+      val paoEndNumber = ""
+      val paoEndSuffix = ""
+      val paoText = "BUNIT"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(saoStartNumber,
+        saoStartSuffix, saoEndNumber, saoEndSuffix, saoText, nagOrganisation,
+        paoStartNumber, paoStartSuffix,
+        paoEndNumber, paoEndSuffix,
+        paoText, expectedNag("streetDescriptor").toString,
+        expectedNag("locality").toString, expectedNag("townName").toString,
+        expectedNag("postcodeLocator").toString)
+
+      val expected = "Something Else, Unit, Bunit, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+
+      // Then
+      result shouldBe expected
+    }
+
     "concatenate the required paf fields and handle empty strings" in {
 
       // Given
