@@ -145,6 +145,7 @@ object HybridAddressEsDocument {
                                   dependentLocality: String, postTown: String, postcode: String): String = {
 
     val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
+    val numberAndLetter = "\\d+[A-Z]".r
 
     val trimmedBuildingNumber = buildingNumber.trim
     val trimmedDependentThoroughfare = splitAndCapitalise(dependentThoroughfare)
@@ -156,7 +157,7 @@ object HybridAddressEsDocument {
     val departmentNameEdit = splitAndCapitalise(departmentName)
     val organisationNameEdit = splitAndCapitalise(organisationName)
     val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
-    val buildingNameEdit = splitAndCapitalise(buildingName)
+    val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
     val doubleDependentLocalityEdit = splitAndCapitalise(doubleDependentLocality)
     val dependentLocalityEdit = splitAndCapitalise(dependentLocality)
     val postTownEdit = splitAndCapitalise(postTown)
@@ -177,6 +178,7 @@ object HybridAddressEsDocument {
                                        welshDependentLocality: String, welshPostTown: String, postcode: String): String = {
 
     val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
+    val numberAndLetter = "\\d+[A-Z]".r
 
     val trimmedBuildingNumber = buildingNumber.trim
     val trimmedDependentThoroughfare = splitAndCapitalise(welshDependentThoroughfare)
@@ -188,7 +190,7 @@ object HybridAddressEsDocument {
     val departmentNameEdit = splitAndCapitalise(departmentName)
     val organisationNameEdit = splitAndCapitalise(organisationName)
     val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
-    val buildingNameEdit = splitAndCapitalise(buildingName)
+    val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
     val welshDoubleDependentLocalityEdit = splitAndCapitalise(welshDoubleDependentLocality)
     val welshDependentLocalityEdit = splitAndCapitalise(welshDependentLocality)
     val welshPostTownEdit = splitAndCapitalise(welshPostTown)

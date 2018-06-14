@@ -303,6 +303,23 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Department, Cibo, Flat E, HMP Whiteley, PO BOX 6, 1 Throughfare, Some_street, Locality, Stixton, London, POSTCODE"
     }
 
+    "change uppercase address containing number and character building name to mixed case" in {
+      // Given
+      val pafBuildingName = "50A"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(expectedPaf("poBoxNumber").toString,
+        expectedPaf("buildingNumber").toString, expectedPaf("dependentThoroughfare").toString,
+        expectedPaf("thoroughfare").toString, expectedPaf("departmentName").toString ,
+        expectedPaf("organisationName").toString, expectedPaf("subBuildingName").toString,
+        pafBuildingName, expectedPaf("doubleDependentLocality").toString,
+        expectedPaf("dependentLocality").toString, expectedPaf("postTown").toString,
+        expectedPaf("postcode").toString)
+
+      // Then
+      result shouldBe "Department, Cibo, Flat E, 50A, PO BOX 6, 1 Throughfare, Some_street, Locality, Stixton, London, POSTCODE"
+    }
+
     "change uppercase Welsh address to mixed case" in {
       // Given
       val pafBuildingName = "HMP NEWPORT"
@@ -318,6 +335,23 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // Then
       result shouldBe "Department, Cibo, Flat E, HMP Newport, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE"
+    }
+
+    "change uppercase Welsh address containing number and character building name to mixed case" in {
+      // Given
+      val pafBuildingName = "500A"
+
+      // When
+      val result = HybridAddressEsDocument.generateWelshFormattedPafAddress(expectedPaf("poBoxNumber").toString,
+        expectedPaf("buildingNumber").toString, expectedPaf("welshDependentThoroughfare").toString,
+        expectedPaf("welshThoroughfare").toString, expectedPaf("departmentName").toString ,
+        expectedPaf("organisationName").toString, expectedPaf("subBuildingName").toString,
+        pafBuildingName, expectedPaf("welshDoubleDependentLocality").toString,
+        expectedPaf("welshDependentLocality").toString, expectedPaf("welshPostTown").toString,
+        expectedPaf("postcode").toString)
+
+      // Then
+      result shouldBe "Department, Cibo, Flat E, 500A, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE"
     }
 
     "change uppercase nag address to mixed case" in {
