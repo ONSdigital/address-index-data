@@ -26,7 +26,7 @@ Requirements
 Author
 ------
 
-:author: Sami Niemi (sami.niemi@valtech.co.uk)
+:author: Sami Niemi (sami.niemi@valtech.co.uk), ivyONS
 
 
 Version
@@ -94,15 +94,17 @@ def _read_response_data(filename, low_memory =False):
     """
     if low_memory:
          data = pd.read_csv(filename, low_memory=True,  
-                            usecols=['id', 'score', 'uprn'], 
-                            dtype={'id': str, 'score': np.float64, 'uprn': np.float64})
+                            usecols=['id', 'confidenceScore', 'score', 'uprn'], 
+                            dtype={'id': str, 'confidenceScore': np.float64, 'score': np.float64, 'uprn': np.float64})
     else:
          data = pd.read_csv(filename, low_memory=False)
 
     data['id'] = data['id'].astype(str)
     data['uprn'] = data['uprn'].astype(np.float64)
 
-    data.rename(columns={'uprn': 'UPRN_beta', 'id': 'id_response'}, inplace=True)
+
+    data.rename(columns={'uprn': 'UPRN_beta', 'id': 'id_response', 'score': 'elasticScore'}, inplace=True)
+    data['score'] = data['confidenceScore'] #+ data['elasticScore']/100
 
     return data
 
@@ -264,8 +266,8 @@ def _check_performance_ivy(data, verbose=True,  output_file=''):
 
     # Drop the duplicates so that there is only one entry for each address (if there is choice keep the one with existing UPRN).
     deduped_original = data.copy()
-    deduped_original = deduped_original.sort_values(['ADDRESS', 'score', 'UPRN_beta', 'matches',  'UPRN_comparison'], 
-        ascending = [True, False, True, False, True], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
+    deduped_original = deduped_original.sort_values(['ADDRESS', 'results', 'UPRN_comparison'], 
+        ascending = [True, True,  True], na_position='last').drop_duplicates(subset='ADDRESS', keep='first')
         
     results = deduped_original.results.value_counts().sort_index().to_dict()
 

@@ -2,8 +2,9 @@
 """
 Created on Mon Jul  3 08:08:17 2017
 
-@author: spakui
+@author: ivyONS
 """
+IVY_AUTHORISATION = ''###please enter yours credentials
 
 DEFAULT_CONFIG = { 
               "subBuildingName":{

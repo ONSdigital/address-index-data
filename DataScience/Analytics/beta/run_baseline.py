@@ -26,7 +26,7 @@ Requirements
 Author
 ------
 
-:author: Sami Niemi (sami.niemi@valtech.co.uk)
+:author: Sami Niemi (sami.niemi@valtech.co.uk), ivyONS 
 
 
 Version
@@ -42,7 +42,7 @@ import os
 import numpy as np
 import pandas as pd
 import requests
-
+from default_param import IVY_AUTHORISATION
 
 def read_data(filename):
     """
@@ -86,8 +86,10 @@ def query_elastic(data, uri, verbose=True, param_config=''):
     if verbose:
         start = time.clock()
         print('Starting to execute Elastic query...')
+    
+    head = {"Content-Type": "application/json", 'Authorization': IVY_AUTHORISATION}    
 
-    response = requests.post(uri, headers={"Content-Type": "application/json"}, json=data, timeout=1000000.)
+    response = requests.post(uri, headers=head, json=data, timeout=1000000., verify=False)
 
     if verbose:
         stop = time.clock()
@@ -175,7 +177,7 @@ def _run_baseline(filename, uri, mini_batch=True, return_package_name='bulkAddre
     data_frame.to_csv(filename.replace('_minimal.csv', '_response.csv'), index=False, encoding='utf-8')
 
 
-def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000, verbose=True, param_config=''):
+def run_all_baselines(directory=os.getcwd(), uri_version='test', batch_size=10000, verbose=True, param_config='', matchthreshold=''):
     """
     Run baselines for all _minimal CSV files present in the working directory.
 
@@ -185,8 +187,19 @@ def run_all_baselines(directory=os.getcwd(), uri_version='dev', batch_size=10000
 
     :return: None
     """
-    uri = 'http://addressindex-api-' + uri_version + '.apps.cfnpt.ons.statistics.gov.uk:80/bulk'
-    files = glob.glob(directory + '\\*_minimal.csv')
+    #### ruzne mozne uri, but note access is limited to only some ONS IP addresses at this stage
+    #   'http://addressindex-api-' + uri_version + '.apps.cf1.ons.statistics.gov.uk:80/bulk'
+    #   'https://api-lb-in-l-vip.ons.statistics.gov.uk:9443/bulk'
+    #   'https://10.50.14.210:8443/ai/develop/bulk'
+    if uri_version == 'test':
+        uri = 'https://apigw-in-d-01:9443/ai/develop/bulk'
+    else:
+        uri = 'https://apigw-in-d-01:9443/ai/branch/bulk'
+        
+
+    if (matchthreshold != ''):
+        uri = uri + '?matchthreshold=' + str(matchthreshold)
+    files = glob.glob(directory + '/*_minimal.csv')
     for file in files:
         _run_baseline(file, uri=uri, verbose=verbose, batch_size=batch_size, param_config=param_config)
 
