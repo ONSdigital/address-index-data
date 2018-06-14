@@ -22,8 +22,8 @@ source('helper_plot_match_changes.R')
 
 datasets <- c('EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC',   'PatientRecords','WelshGov')
 
-prev_date <- 'July_19_branch_bigrams_sep.2_fallbackboost.075_baseline'
-curr_date <- 'September_07_branch_skipEnd_buldingNum_param_townlocality'
+prev_date <- 'January_16_test_e54_baseline'
+curr_date <- 'February_20_test_check'
 
 #create a cross-tables for all dataset in a list
 cross_tables <- apply(data.frame(data_name=datasets, prev_date=prev_date, curr_date=curr_date, stringsAsFactors=F), 

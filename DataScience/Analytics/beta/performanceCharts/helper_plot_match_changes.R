@@ -25,8 +25,8 @@ wrap_dataset2cross_table <- function(input, viz=F, sep_in_set=F){
   prev_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', prev_date, '/' , data_name ,'_beta_DedupExist.csv')
   curr_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', curr_date, '/' , data_name ,'_beta_DedupExist.csv')
   print(prev_file)
-  PREV <- read.table(prev_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
-  CURR <- read.table(curr_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
+  PREV <- read.table(prev_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F, encoding = "UTF-8")
+  CURR <- read.table(curr_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F, encoding = "UTF-8")
   tab <- compare_performance(PREV, CURR, viz=viz, sep_in_set=sep_in_set)$cross_table
 } 
 
