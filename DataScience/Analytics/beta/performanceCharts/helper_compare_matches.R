@@ -62,14 +62,13 @@ deduplicate_ID_original <- function(df, verbose=T){
   #   :rtype: data.frame
   #   
   unique_ID_per_address <- df %>% group_by(ADDRESS) %>% 
-      summarise(ID_min = ID_original[order(score, UPRN_beta, results, UPRN_comparison)[1]],  
+      summarise(ID_min = ID_original[order(results, UPRN_comparison)[1]],  
                 #if there are diff UPRN's keep the non missing (lower) but also keep better match!
                 ID_count= n_distinct(ID_original), 
                 UPRN_count = n_distinct(UPRN_comparison)) %>% 
       ungroup()
-  bad_addresses <- df %>% filter(ADDRESS %in% unique_ID_per_address$ADDRESS[unique_ID_per_address$UPRN_count>1]) %>%
-    group_by(ID_original,UPRN_comparison, ADDRESS) %>% summarise(matchedFormattedAddress=matchedFormattedAddress[1]) %>%
-     ungroup() %>% arrange(ADDRESS, ID_original)
+  bad_addresses <- df %>% filter(ADDRESS %in% unique_ID_per_address$ADDRESS[unique_ID_per_address$ID_count>1]) %>%
+    group_by(ID_original, UPRN_comparison, ADDRESS, results) %>% summarise() %>% arrange(ADDRESS, results, UPRN_comparison)
   if (nrow(bad_addresses)>0 & verbose) {
     print('Deduplication conflicts: ')
     print(bad_addresses)
@@ -97,12 +96,12 @@ compare_performance <- function(prev=PREV,curr=CURR, viz=F, sep_in_set=F, onlyta
 #   :rtype: list(matrix, data.frame, data.frame, data.frame)
 #  
   
-  prev <- deduplicate_ID_original(prev) 
-  curr <- deduplicate_ID_original(curr) 
   prev_summary <- prev %>% group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
-                      summarise(match_prev = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
+                      summarise(results = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
   curr_summary <- curr %>% group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
-                      summarise(match_curr = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
+                      summarise(results = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=sep_in_set)) %>% ungroup()
+  prev_summary <- deduplicate_ID_original(prev_summary) %>% mutate(match_prev = results)
+  curr_summary <- deduplicate_ID_original(curr_summary) %>% mutate(match_curr = results)
   joined_data <- left_join (prev_summary, curr_summary, by= c( "ADDRESS")) %>% ungroup()
   cross_table <- table (joined_data$match_prev, joined_data$match_curr, dnn=c('previous' ,'current')) 
   
@@ -145,8 +144,14 @@ if(F){
 setwd('~/R/address-index')
 
 data_name <-  'EdgeCases' 
-prev_date <-  'July_19_branch_bigrams_sep.2_fallbackboost.075_baseline'
-curr_date <- 'September_07_branch_skipEnd_buldingNum_param_townlocality'
+prev_date <-  'December_13_dev_es5_classic'
+prev_date <-  'January_11_test_lpi_classic'
+curr_date <-  'January_12_test_lpi_boost2'
+
+data_name <-  'PatientRecords' 
+prev_date <-   'November_28_branch_county_CO_baseline'
+curr_date <-   'January_11_test_lpi_classic'
+
 
 # load data
 prev_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', prev_date, '/' , data_name ,'_beta_DedupExist.csv')
@@ -154,8 +159,8 @@ curr_file <- paste0('//tdata8/AddressIndex/Beta_Results/',data_name, '/', curr_d
 
 
 # run comparison and save bad cases
-PREV <- read.table(prev_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
-CURR <- read.table(curr_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
+PREV <- read.table(prev_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F, encoding = "UTF-8")
+CURR <- read.table(curr_file, header=T, sep=',',  quote = "\"", stringsAsFactors=F, encoding = "UTF-8")
 out_list <- compare_performance(PREV, CURR, viz=F)
 write.table(out_list$got_worse, file=paste0('got_worse/',data_name,'_', curr_date ,'.csv'), sep=',', row.names=F)
 rm(PREV, CURR)

@@ -10,6 +10,7 @@
 
 
 library("dplyr")
+library("tidyr")
 library("ggplot2")
 setwd('~/R/address-index')
 
@@ -65,13 +66,14 @@ if (F) {
   baseline_dirs <-c('May_24_branch_locality_40_baseline', 
                     'May_31_dev_e48_baseline', 
                     'July_19_branch_bigrams_sep.2_fallbackboost.075_baseline',
-                    'September_07_branch_skipEnd_buldingNum_param_townlocality')
+                    'September_07_branch_skipEnd_buldingNum_param_townlocality',
+                    'September_15_dev-baseline')
   
   summaries <- do.call('rbind', read_summaries(datasets = datasets, dirs = c(sami_baseline,baseline_dirs)  )) 
 
   summaries <- summaries %>% mutate( date = as.Date(date, "%Y-%m-%d"), 
-                                     text = paste(format(date, '%h%y'), ifelse(explanatory == 'dev_e48_baseline', '_e48',
-                                                   ifelse(explanatory == 'branch_locality_40_baseline', '_e39',''))))
+                                     text = paste(ifelse(explanatory == 'dev_e48_baseline', 'e48',
+                                                   ifelse(explanatory == 'branch_locality_40_baseline', 'e39',format(date, '%h%y')))))
   
   type_code <- function(x)  if (grepl('townlocality',x)) 'latest' else
     if (grepl('baseline',x)) 'baseline' else  'experimental'
@@ -90,7 +92,7 @@ if (F) {
     arrange(type, date, explanatory) %>%
     mutate(label= paste0(dataset, ' (', size, ')'))
   
-  # add dummy values to garantee the x & y axes will have same units for each dataset
+  # add dummy values to garantee that x & y axes have same units (separately for each dataset)
   dummy_var <- create_dummy(df_spread, ratio =1, scale=F)
   
   g<-ggplot(df_spread, aes(x= `4_wrong_match`, y= `1_top_match`)) +
@@ -108,12 +110,13 @@ if (F) {
     mutate(count = ifelse(is.na(count),0, count ),
            x_date = as.numeric(factor(text, levels=factor_levels)))
       
-  g<-ggplot(df_gather, aes(x= x_date, y= count)) +
+  g<-ggplot(df_gather, aes(x= x_date, y= count, color = match_category)) +
     geom_path()+
     geom_point()+
     facet_wrap(match_category~label, scales="free_y")  + 
-    theme_bw() +
-    scale_x_continuous(labels= factor_levels)
+    theme_bw() + guides(color='none') +
+    scale_x_continuous(labels= factor_levels) + 
+    scale_color_manual(values = c('#4daf4a', '#377eb8', '#984ea3', '#e41a1c'))
   
   print(g)
 }

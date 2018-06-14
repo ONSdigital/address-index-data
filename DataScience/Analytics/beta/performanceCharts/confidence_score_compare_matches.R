@@ -1,7 +1,7 @@
 #####################################################################
 # ONS Address Index - performance visualization
 # 
-# This scripts calculates performance of elastic score vs hopper score
+# This scripts calculates performance of elastic score vs confidence score
 # and visualise it
 #
 # date: Sep 2017

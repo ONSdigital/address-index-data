@@ -2,7 +2,7 @@
 """
 Created on Wed May 10 11:37:44 2017
 
-:author: iva
+:author: ivyONS
 
 script to automatically run baselines on most of the datasets during the night
 
@@ -18,15 +18,14 @@ from check_performance import main as check_performance
 from default_param import DEFAULT_CONFIG
 
 tdata_path = '//tdata8/AddressIndex/Beta_Results/'
-#code_path = '//tdata8/AddressIndex/Beta_Results/codes/'    #depricated, currently assumes the above import is succesful 
 
-uri_version = 'branch'          # currently accepting strings: 'dev' or 'branch'
-new_folder_name =  time.strftime("%B_%d_") +  uri_version  + '_baseline'     # change the explanatory name !
+uri_version = 'test'          # currently accepting strings: 'test' or 'branch'
+new_folder_name =  time.strftime("%B_%d_") +  uri_version  + '_unitdebug'     # change the explanatory name !
 wait_hours = 0                  # wait 5 hours before firing the queries 
 
 datasets=['EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC', 'PatientRecords', 'WelshGov'] 
-#datasets=['PatientRecords', 'WelshGov', 'CompaniesHouse']                      #or just the big ones 
-#datasets=['EdgeCases',  'LifeEvents', 'WelshGov2', 'WelshGov3',  'CQC']        #or just the small ones 
+#or just the big ones:  datasets=[ 'PatientRecords', 'WelshGov']#, 'CompaniesHouse']                    
+
 
 def main(datasets=datasets, new_folder_name= new_folder_name, tdata_path=tdata_path):
     print('Current time: ' + time.strftime("%H:%M:%S"))
@@ -41,7 +40,8 @@ def main(datasets=datasets, new_folder_name= new_folder_name, tdata_path=tdata_p
             copy(tdata_path + 'DataSets/' + dataset + '_minimal.csv', new_folder_path)  
         try: 
             # try running the baseline scripts            
-            run_all_baselines(directory = new_folder_path, uri_version=uri_version, batch_size=6000, param_config = DEFAULT_CONFIG)
+            run_all_baselines(directory = new_folder_path, uri_version = uri_version, batch_size=6000, 
+                              param_config = DEFAULT_CONFIG, matchthreshold = 0)
             check_performance(directory = new_folder_path, ivy = True)
             report[dataset] = 'successful'
         except:

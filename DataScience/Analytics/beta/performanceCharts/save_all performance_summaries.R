@@ -20,7 +20,7 @@ datasets <- c('EdgeCases',  'LifeEvents',  'WelshGov2',  'WelshGov3', 'CQC', 'Pa
 
 
 ########### create summary for all response files  newer than given date
-date_threshold <- as.Date('July_09', "%b_%d")
+date_threshold <- as.Date('January_01', "%b_%d")
 overwrite <- F
 
 for (data_name in datasets){
@@ -45,12 +45,15 @@ for (data_name in datasets){
         # calculate summary and save 
           print(paste('Processing', dd))
           PREV <- read.table(file_name, header=T, sep=',',  quote = "\"", stringsAsFactors=F)
-          prev_summary <- PREV %>% deduplicate_ID_original(verbose=F)  %>% 
+          prev_summary <- PREV %>% 
             group_by(ID_original, UPRN_comparison, ADDRESS) %>% 
-            summarise(match_type = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=F)) %>% 
-            group_by(match_type) %>%  summarise (count= n()) %>% 
+            summarise(results = eval_match(UPRN_comparison, UPRN_beta, score, sep_in_set=F)) %>% 
+            ungroup() %>%
+            deduplicate_ID_original(verbose=F) %>%
+            group_by(match_type = results) %>%  summarise (count= n()) %>% 
             ungroup() %>% mutate(dataset = data_name, date = ddate, explanatory = dexpl)
           write.csv(prev_summary, file=target_name, row.names=F)
     }}
   }
 }
+
