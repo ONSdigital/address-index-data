@@ -28,8 +28,8 @@ object SparkProvider {
 
   conf.set("es.nodes", config.getString("addressindex.elasticsearch.nodes"))
   conf.set("es.port", config.getString("addressindex.elasticsearch.port"))
-  conf.set("es.net.http.auth.user", config.getString("addressindex.elasticsearch.user"))
-  conf.set("es.net.http.auth.pass", config.getString("addressindex.elasticsearch.pass"))
+//  conf.set("es.net.http.auth.user", config.getString("addressindex.elasticsearch.user"))
+//  conf.set("es.net.http.auth.pass", config.getString("addressindex.elasticsearch.pass"))
 
   conf.set("es.batch.write.retry.count", config.getString("addressindex.elasticsearch.retry.count"))
   conf.set("es.batch.size.bytes", config.getString("addressindex.elasticsearch.batch.size.bytes"))
