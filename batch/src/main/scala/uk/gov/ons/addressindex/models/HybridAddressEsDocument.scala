@@ -318,6 +318,11 @@ object HybridAddressEsDocument {
   lazy val acronyms: Seq[String] = fileToList(s"acronyms")
 
   /**
+    * List of placenames with hyphens
+    */
+  lazy val hyphenplaces: Seq[String] = fileToList(s"hyphenplaces")
+
+  /**
     * Convert external file into list
     * @param fileName
     * @return
@@ -325,6 +330,21 @@ object HybridAddressEsDocument {
   private def fileToList(fileName: String): Seq[String] = {
     val resource = getResource(fileName)
     resource.getLines().toList
+  }
+
+  /**
+    * Make external file such as score matrix file into Map
+    *
+    * @param fileName name of the file
+    * @param delimiter optional, delimiter of values in the file, defaults to "="
+    * @return Map containing key -> value from the file
+    */
+  def fileToMap(fileName: String, delimiter: String = "="): Map[String,String] = {
+    val resource = getResource(fileName)
+    resource.getLines().map { l =>
+      val Array(k,v1,_*) = l.split(delimiter)
+      k -> v1
+    }.toMap
   }
 
   /**
