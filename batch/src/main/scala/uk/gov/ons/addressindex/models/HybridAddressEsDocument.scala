@@ -130,8 +130,15 @@ object HybridAddressEsDocument {
     )
   )
 
+  // check to see if the token is a listed acronym, if so skip capitilization
+  // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
+  // if neither of the above capitalize in the standard way
   def splitAndCapitalise(input: String) : String = {
-    input.trim.split(" ").map({case y => if (!acronyms.contains(y)) y.toLowerCase.capitalize else y }).mkString(" ")
+    input.trim.split(" ").map(
+      {case y => if (acronyms.contains(y)) y
+      else if (!hyphenplaces.getOrElse(y,"").equals("")) hyphenplaces.getOrElse(y,"")
+      else y.toLowerCase.capitalize}
+    ).mkString(" ")
   }
 
   /**
@@ -320,7 +327,7 @@ object HybridAddressEsDocument {
   /**
     * List of placenames with hyphens
     */
-  lazy val hyphenplaces: Seq[String] = fileToList(s"hyphenplaces")
+  lazy val hyphenplaces: Map[String,String] = fileToMap(s"hyphenplaces","=")
 
   /**
     * Convert external file into list
@@ -339,7 +346,7 @@ object HybridAddressEsDocument {
     * @param delimiter optional, delimiter of values in the file, defaults to "="
     * @return Map containing key -> value from the file
     */
-  def fileToMap(fileName: String, delimiter: String = "="): Map[String,String] = {
+  def fileToMap(fileName: String, delimiter: String ): Map[String,String] = {
     val resource = getResource(fileName)
     resource.getLines().map { l =>
       val Array(k,v1,_*) = l.split(delimiter)
