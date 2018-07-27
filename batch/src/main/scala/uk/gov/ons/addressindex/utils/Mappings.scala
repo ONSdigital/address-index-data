@@ -261,8 +261,19 @@ object Mappings {
            },
             "autocomplete_filter": {
               "type": "edge_ngram",
-              "min_gram": "1",
-              "max_gram": "20"
+              "min_gram": "4",
+              "max_gram": "10",
+              "token_chars": [
+                "letter"
+              ]
+            },
+            "autocomplete_number": {
+              "type": "edge_ngram",
+              "min_gram": "2",
+              "max_gram": "5",
+              "token_chars": [
+                "digit"
+              ]
             }
          },
          "analyzer": {
@@ -293,6 +304,14 @@ object Mappings {
             "type": "custom",
             "tokenizer": "standard"
             },
+            "autocompleteNumber": {
+             "filter": [
+               "lowercase",
+               "autocomplete_number"
+              ],
+             "type": "custom",
+             "tokenizer": "standard"
+             },
            "welsh_bigram_analyzer": {
              "type": "custom",
              "tokenizer": "standard",
@@ -488,7 +507,12 @@ object Mappings {
                    },
                     "typeahead": {
                       "type": "text",
-                      "analyzer": "autocomplete"
+                      "analyzer": "autocomplete",
+                      "index_options": "docs"
+                    },
+                    "typeaheadNumber": {
+                      "type": "text",
+                      "analyzer": "autocompleteNumber"
                     }
                  }
                },
