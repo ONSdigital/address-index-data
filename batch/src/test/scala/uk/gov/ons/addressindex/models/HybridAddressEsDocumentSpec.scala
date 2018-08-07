@@ -380,7 +380,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       // When
       val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
         expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
-        expectedNag("saoEndSuffix").toString, saoText ,
+        expectedNag("saoEndSuffix").toString, saoText,
         nagOrganisation, expectedNag("paoStartNumber").toString,
         expectedNag("paoStartSuffix").toString, expectedNag("paoEndNumber").toString,
         expectedNag("paoEndSuffix").toString, expectedNag("paoText").toString,
@@ -389,6 +389,26 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // Then
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+    }
+
+    "change uppercase nag address containing a hyphenated town name to mixed case" in {
+      // Given
+      val nagOrganisation = "ACME STATS PLC"
+      val nagLocality = "LEE-ON-THE-SOLENT"
+      val nagTown = "BORTH-Y-GÂST"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
+        expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
+        expectedNag("saoEndSuffix").toString, expectedNag("saoText").toString ,
+        nagOrganisation, expectedNag("paoStartNumber").toString,
+        expectedNag("paoStartSuffix").toString, expectedNag("paoEndNumber").toString,
+        expectedNag("paoEndSuffix").toString, expectedNag("paoText").toString,
+        expectedNag("streetDescriptor").toString, nagLocality,
+        nagTown, expectedNag("postcodeLocator").toString)
+
+      // Then
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Borth-y-Gâst, KL8 7HQ"
     }
 
     "create NAG with expected formatted address (sao empty)" in {
