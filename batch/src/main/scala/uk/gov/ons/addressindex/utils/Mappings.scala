@@ -259,11 +259,16 @@ object Mappings {
              "max_shingle_size": 2,
              "output_unigrams": false
            },
-            "autocomplete_filter": {
-              "type": "edge_ngram",
-              "min_gram": "1",
-              "max_gram": "20"
-            }
+           "english_poss_stemmer": {
+              "type": "stemmer",
+              "name": "possessive_english"
+           },
+           "edge_ngram": {
+             "type": "edgeNGram",
+             "min_gram": "1",
+             "max_gram": "25",
+             "token_chars": ["letter", "digit"]
+           }
          },
          "analyzer": {
            "welsh_no_split_analyzer": {
@@ -285,14 +290,6 @@ object Mappings {
                "address_synonym_filter"
              ]
            },
-           "autocomplete": {
-            "filter": [
-              "lowercase",
-              "autocomplete_filter"
-             ],
-            "type": "custom",
-            "tokenizer": "standard"
-            },
            "welsh_bigram_analyzer": {
              "type": "custom",
              "tokenizer": "standard",
@@ -300,6 +297,14 @@ object Mappings {
                "asciifolding",
                "shingle_filter"
              ]
+           },
+           "edge_ngram_analyzer": {
+             "filter": ["lowercase", "english_poss_stemmer", "edge_ngram"],
+             "tokenizer": "standard"
+           },
+           "keyword_analyzer": {
+             "filter": ["lowercase", "english_poss_stemmer"],
+             "tokenizer": "standard"
            }
          },
          "tokenizer": {
@@ -486,9 +491,10 @@ object Mappings {
                      "type": "text",
                      "analyzer": "welsh_bigram_analyzer"
                    },
-                    "typeahead": {
-                      "type": "text",
-                      "analyzer": "autocomplete"
+                    "partial": {
+                      "search_analyzer": "keyword_analyzer",
+                      "type": "string",
+                      "analyzer": "edge_ngram_analyzer"
                     }
                  }
                },
