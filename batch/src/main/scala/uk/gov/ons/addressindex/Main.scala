@@ -36,21 +36,25 @@ For usage see below:
   }
 
   // each run of this application has a unique index name
-  val indexName =
-    if (opts.hybridNoHist()) {
-      generateIndexName(false)
-    } else {
-      generateIndexName()
-    }
+//  val indexName =
+//    if (opts.hybridNoHist()) {
+//      generateIndexName(false)
+//    } else {
+//      generateIndexName()
+//    }
+//
+//  if (!opts.help()) {
+//    AddressIndexFileReader.validateFileNames()
+//
+//    if (opts.mapping()) postMapping(indexName)
+//    if (opts.hybrid()) saveHybridAddresses()
+//    if (opts.hybridNoHist()) saveHybridAddresses(false)
+//
+//  } else opts.printHelp()
 
-  if (!opts.help()) {
-    AddressIndexFileReader.validateFileNames()
-
-    if (opts.mapping()) postMapping(indexName)
-    if (opts.hybrid()) saveHybridAddresses()
-    if (opts.hybridNoHist()) saveHybridAddresses(false)
-
-  } else opts.printHelp()
+  val indexName = "test3v2d"
+  postMapping(indexName)
+  saveHybridAddresses(true)
 
   private def generateIndexName(historical : Boolean = true): String = AddressIndexFileReader.generateIndexNameFromFileName(historical)
 
