@@ -395,7 +395,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       // Given
       val nagOrganisation = "ACME STATS PLC"
       val nagLocality = "LEE-ON-THE-SOLENT"
-      val nagTown = "BORTH-Y-GÂST"
+      val nagTown = "BARROW-IN-FURNESS"
 
       // When
       val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
@@ -408,7 +408,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagTown, expectedNag("postcodeLocator").toString)
 
       // Then
-      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Borth-y-Gâst, KL8 7HQ"
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Barrow-in-Furness, KL8 7HQ"
     }
 
     "create NAG with expected formatted address (sao empty)" in {
