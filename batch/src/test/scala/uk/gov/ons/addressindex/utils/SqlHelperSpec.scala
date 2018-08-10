@@ -146,20 +146,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val crossRef = AddressIndexFileReader.readCrossrefCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).orderBy("locality").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).orderBy("locality").orderBy("postcodeLocator").collect()
 
       // Then
       result.length shouldBe 9
 
-      val firstLine = result(1)
+      val firstLine = result(4)
 
-      firstLine.getLong(0) shouldBe 100010971565L // UPRN
-      firstLine.getInt(15) shouldBe 9402538 // USRN
-      firstLine.getString(34) shouldBe "FSDF DSFSDF DSF" // LOCALITY
+      firstLine.getLong(0) shouldBe 2L // UPRN
+      firstLine.getInt(15) shouldBe 9401385 // USRN
+      firstLine.getString(34) shouldBe "A GREAT LOCALITY" // LOCALITY
 
       val secondLine = result(8)
 
-      secondLine.getLong(0) shouldBe 100010971565L // UPRN
+      secondLine.getLong(0) shouldBe 99L // UPRN
       secondLine.getInt(15) shouldBe 9402538 // USRN
       secondLine.getString(34) shouldBe "LOCALITY XYZ" // LOCALITY
     }
@@ -340,9 +340,9 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
-      secondResult.lpi(0)("lpiKey") shouldBe "1610L000056911"
-      secondResult.lpi(1)("lpiKey") shouldBe "1610L000056913"
-      secondResult.lpi(2)("lpiKey") shouldBe "1610L000014429"
+      List(secondResult.lpi(0)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
+      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
+      List(secondResult.lpi(2)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
 
       secondResult.paf(0)("recordIdentifier") shouldBe 27
 
@@ -406,8 +406,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
-      secondResult.lpi(0)("lpiKey") shouldBe "1610L000056913"
-      secondResult.lpi(1)("lpiKey") shouldBe "1610L000014429"
+      List(secondResult.lpi(0)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
+      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
 
       secondResult.paf(0)("recordIdentifier") shouldBe 27
 
