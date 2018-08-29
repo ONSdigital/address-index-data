@@ -662,11 +662,23 @@ object Mappings {
                },
                "mixedPaf": {
                  "type": "text",
-                 "index": "false"
+                 "fields": {
+                     "partial": {
+                       "search_analyzer": "keyword_analyzer",
+                       "type": "string",
+                       "analyzer": "edge_ngram_analyzer"
+                     }
+                  }
                },
                "mixedWelshPaf": {
                  "type": "text",
-                 "index": "false"
+                 "fields": {
+                      "partial": {
+                        "search_analyzer": "keyword_analyzer",
+                        "type": "string",
+                        "analyzer": "edge_ngram_analyzer"
+                      }
+                   }
                }
              }
            },
