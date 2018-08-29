@@ -147,15 +147,15 @@ object HybridAddressEsDocument {
     "mixedWelshPaf" -> generateWelshFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
-      Option(row.getString(18)).getOrElse(""),
-      Option(row.getString(19)).getOrElse(""),
+      Option(row.getString(18)).getOrElse(Option(row.getString(10)).getOrElse("")),
+      Option(row.getString(19)).getOrElse(Option(row.getString(11)).getOrElse("")),
       Option(row.getString(6)).getOrElse(""),
       Option(row.getString(5)).getOrElse(""),
       Option(row.getString(7)).getOrElse(""),
       Option(row.getString(8)).getOrElse(""),
-      Option(row.getString(20)).getOrElse(""),
-      Option(row.getString(21)).getOrElse(""),
-      Option(row.getString(22)).getOrElse(""),
+      Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse("")),
+      Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse("")),
+      Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse("")),
       Option(row.getString(15)).getOrElse("")
     )
   )
