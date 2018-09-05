@@ -372,7 +372,7 @@ object HybridAddressEsDocument {
   /**
     * List of placenames with hyphens
     */
-  lazy val lowercaseparts: Map[String,String] = fileToMap(s"lowercasparts","=")
+  lazy val lowercaseparts: Map[String,String] = fileToMap(s"lowercaseparts","=")
 
   /**
     * Convert external file into list
