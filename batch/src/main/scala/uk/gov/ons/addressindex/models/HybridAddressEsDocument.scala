@@ -2,7 +2,6 @@ package uk.gov.ons.addressindex.models
 
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.Row
-import uk.gov.ons.addressindex.utils.SparkProvider
 
 import scala.io.{BufferedSource, Source}
 
@@ -11,10 +10,10 @@ case class HybridAddressEsDocument(
   postcodeIn: String,
   postcodeOut: String,
   parentUprn: Long,
-  relatives: Array[Map[String, Any]],
+  relatives: Seq[Map[String, Any]],
   lpi: Seq[Map[String, Any]],
   paf: Seq[Map[String, Any]],
-  crossRefs: Array[Map[String, String]]
+  crossRefs: Seq[Map[String, String]]
 )
 
 object HybridAddressEsDocument {
@@ -158,6 +157,17 @@ object HybridAddressEsDocument {
       Option(row.getString(22)).getOrElse(""),
       Option(row.getString(15)).getOrElse("")
     )
+  )
+
+  def rowToHierarchy(row: Row): Map[String, Any] = Map(
+    "level" -> row.getAs[String]("level"),
+    "siblings" -> row.getAs[Array[Long]]("siblings"),
+    "parents" -> row.getAs[Array[Long]]("parents")
+  )
+
+  def rowToCrossRef(row: Row): Map[String, String] = Map(
+    "crossReference" -> row.getAs[String]("crossReference"),
+    "source" -> row.getAs[String]("source")
   )
 
   // check to see if the token is a listed acronym, if so skip capitilization

@@ -1,10 +1,8 @@
 package uk.gov.ons.addressindex.utils
 
-import org.apache.spark.sql.types._
 import org.scalatest.{Matchers, WordSpec}
-import uk.gov.ons.addressindex.models.{CSVSchemas, HybridAddressEsDocument}
+import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
-import org.apache.spark.sql._
 
 /**
   * Test that the csv files are joined correctly.
@@ -234,9 +232,54 @@ class SqlHelperSpec extends WordSpec with Matchers {
       fifthLine.getAs[Array[Long]](3) shouldBe Array(10l, 10l)
     }
 
-    "update addresses with relatives" in {
+    "aggregate crossrefs from crossref table" in {
       // Given
-      val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+      val crossref = AddressIndexFileReader.readCrossrefCSV()
+
+      // When
+      val result = SqlHelper.aggregateCrossRefInformation(crossref).orderBy("uprn", "crossReference").collect()
+
+      // Then
+      result.length shouldBe 8
+      val firstLine = result(0)
+      firstLine.getAs[Long]("uprn") shouldBe 2L
+      firstLine.getAs[String]("crossReference") shouldBe "E04000324"
+      firstLine.getAs[String]("source") shouldBe "7666MI"
+
+      val thirdLine = result(2)
+      thirdLine.getAs[Long]("uprn") shouldBe 10090373276L
+      thirdLine.getAs[String]("crossReference") shouldBe "E05001602"
+      thirdLine.getAs[String]("source") shouldBe "7666OW"
+
+      val fifthLine = result(4)
+      fifthLine.getAs[Long]("uprn") shouldBe 100010971565L
+      fifthLine.getAs[String]("crossReference") shouldBe "E01001700"
+      fifthLine.getAs[String]("source") shouldBe "7666OL"
+
+      val seventhLine = result(6)
+      seventhLine.getAs[Long]("uprn") shouldBe 100010971565L
+      seventhLine.getAs[String]("crossReference") shouldBe "E03801409"
+      seventhLine.getAs[String]("source") shouldBe "7666OU"
+    }
+
+    "aggregate information from paf and nag to construct a single table containing grouped documents" in {
+
+      // Given
+      val paf = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
+
       val expectedFirstRelations = Array(
         Map(
           "level" -> 1,
@@ -255,70 +298,30 @@ class SqlHelperSpec extends WordSpec with Matchers {
         )
       )
 
-      val expectedSecondRelations = Array(
+      val expectedSecondCrossRefs = Array(
         Map(
-          "level" -> 1,
-          "siblings" -> Array(10).deep,
-          "parents" -> Array().deep
+          "crossReference" -> "E05001602",
+          "source" -> "7666MI"
         ),
         Map(
-          "level" -> 2,
-          "siblings" -> Array(11,12).deep,
-          "parents" -> Array(10, 10).deep
+          "crossReference" -> "E03001901",
+          "source" -> "7666OP"
+        ),
+        Map(
+          "crossReference" -> "E01001700",
+          "source" -> "7666OL"
+        ),
+        Map(
+          "crossReference" -> "E03801409",
+          "source" -> "7666OU"
         )
       )
 
-      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchy)
-
       // When
-      val results = SqlHelper.constructHierarchyRdd(hierarchy, hierarchyGrouped).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
 
       // Then
-      results.length shouldBe 12
-
-      results.map(_.uprn) shouldBe Array[Long](1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-      results.map(_.parentUprn) shouldBe Array[Long](null.asInstanceOf[Long], 1, 1, 1, 2, 2, 2, 3, 3, null.asInstanceOf[Long], 10, 10)
-
-      results.take(9).foreach{ result =>
-        // relations may not be sorted as we'd expect them to be (and that's OK)
-        result.relations.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
-      }
-
-      results.takeRight(3).foreach{ result =>
-        result.relations.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedSecondRelations.toList
-      }
-    }
-
-    "aggregate information from paf and nag to construct a single table containing grouped documents" in {
-
-      // Given
-      val paf = SparkProvider.sqlContext.read
-        .format("com.databricks.spark.csv")
-        .option("header", "true")
-        .schema(CSVSchemas.postcodeAddressFileSchema)
-        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
-
-      val blpu = AddressIndexFileReader.readBlpuCSV()
-      val lpi = AddressIndexFileReader.readLpiCSV()
-      val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
-      val street = AddressIndexFileReader.readStreetCSV()
-      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-      val crossRefData = AddressIndexFileReader.readCrossrefCSV()
-
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
-
-      val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
-      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
-      val hierarchy = SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
-      val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRefData)
-      val crossRef = SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
-
-      // When
-      val result = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef).sortBy(_.uprn).collect()
-
-      // Then
-      result.length shouldBe 8
+      result.length shouldBe 4
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -330,7 +333,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(4)
+      val secondResult = result(3)
       secondResult.uprn shouldBe 100010971565L
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
@@ -340,12 +343,17 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
+      // Hierarchy test
+      firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
+
+      // CrossRefs Test
+      secondResult.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
+
       List(secondResult.lpi(0)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
       List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
       List(secondResult.lpi(2)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
 
       secondResult.paf(0)("recordIdentifier") shouldBe 27
-
     }
 
     "aggregate information from paf and nag to construct a single table containing grouped documents without historical data" in {
@@ -370,61 +378,24 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-      val crossRefData = AddressIndexFileReader.readCrossrefCSV()
 
       val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, false)
 
-      val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
-      val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
-      val hierarchy = SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
-      val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRefData)
-      val crossRef = SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
-
-      // When
-      val result = SqlHelper.aggregateHybridIndex(paf1.unionAll(paf2), nag, hierarchy, crossRef, false).sortBy(_.uprn).collect()
-
-      // Then
-      result.length shouldBe 7
-
-      val firstResult = result(0)
-      firstResult.uprn shouldBe 2L
-      firstResult.postcodeOut shouldBe "KL8"
-      firstResult.postcodeIn shouldBe "1JQ"
-      firstResult.parentUprn shouldBe 1l
-      firstResult.relatives.length shouldBe 3
-      firstResult.crossRefs.length shouldBe 2
-      firstResult.lpi.size shouldBe 1
-      firstResult.paf shouldBe empty
-
-      val secondResult = result(4)
-      secondResult.uprn shouldBe 100010971565L
-      secondResult.postcodeOut shouldBe "PO15"
-      secondResult.postcodeIn shouldBe "5RZ"
-      secondResult.parentUprn shouldBe 0L
-      secondResult.relatives.length shouldBe 0
-      secondResult.crossRefs.length shouldBe 4
-      secondResult.lpi.size shouldBe 2
-      secondResult.paf.size shouldBe 1
-
-      List(secondResult.lpi(0)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
-      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
-
-      secondResult.paf(0)("recordIdentifier") shouldBe 27
-
-    }
-
-    "update addresses with crossrefs" in {
-      // Given
-      val crossRef = AddressIndexFileReader.readCrossrefCSV()
-
-      val expectedFirstCrossRefs = Array(
+      val expectedFirstRelations = Array(
         Map(
-          "crossReference" -> "E04000324",
-          "source" -> "7666MI"
+          "level" -> 1,
+          "siblings" -> Array(1).deep,
+          "parents" -> Array().deep
         ),
         Map(
-          "crossReference" -> "E05001602",
-          "source" -> "7666OW"
+          "level" -> 2,
+          "siblings" -> Array(2, 3, 4).deep,
+          "parents" -> Array(1, 1, 1).deep
+        ),
+        Map(
+          "level" -> 3,
+          "siblings" -> Array(5, 6, 7, 8, 9).deep,
+          "parents" -> Array(2, 2, 2, 3, 3).deep
         )
       )
 
@@ -447,23 +418,42 @@ class SqlHelperSpec extends WordSpec with Matchers {
         )
       )
 
-      val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRef)
-
       // When
-      val results = SqlHelper.constructCrossRefRdd(crossRef, crossRefGrouped).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf1.union(paf2), nag, false).sortBy(_.uprn).collect()
 
       // Then
-      results.length shouldBe 8
+      result.length shouldBe 3
 
-      results.map(_.uprn) shouldBe Array[Long](2, 2, 10090373276L, 10090373277L, 100010971565L, 100010971565L, 100010971565L, 100010971565L)
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.postcodeOut shouldBe "KL8"
+      firstResult.postcodeIn shouldBe "1JQ"
+      firstResult.parentUprn shouldBe 1l
+      firstResult.relatives.length shouldBe 3
+      firstResult.crossRefs.length shouldBe 2
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
 
-      results.take(2).foreach{ result =>
-        result.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedFirstCrossRefs.toList.sortBy(_("crossReference"))
-      }
+      val secondResult = result(2)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.postcodeOut shouldBe "PO15"
+      secondResult.postcodeIn shouldBe "5RZ"
+      secondResult.parentUprn shouldBe 0L
+      secondResult.relatives.length shouldBe 0
+      secondResult.crossRefs.length shouldBe 4
+      secondResult.lpi.size shouldBe 2
+      secondResult.paf.size shouldBe 1
 
-      results.takeRight(4).foreach{ result =>
-        result.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
-      }
+      // Hierarchy test
+      firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
+
+      // CrossRefs Test
+      secondResult.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
+
+      List(secondResult.lpi(0)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
+      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
+
+      secondResult.paf(0)("recordIdentifier") shouldBe 27
     }
   }
 }
