@@ -161,12 +161,22 @@ object HybridAddressEsDocument {
   )
 
   // check to see if the token is a listed acronym, if so skip capitilization
-  // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
-  // if neither of the above capitalize in the standard way
   def splitAndCapitalise(input: String) : String = {
     input.trim.split(" ").map(
       {case y => if (acronyms.contains(y)) y
+      else y.toLowerCase.capitalize}
+    ).mkString(" ")
+  }
+
+  // check to see if the token is a listed acronym, if so skip capitilization
+  // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
+  // next check for parts in non-hyphenated names that are always lower case
+  // if noneof the above capitalize in the standard way
+  def splitAndCapitaliseTowns(input: String) : String = {
+    input.trim.split(" ").map(
+      {case y => if (acronyms.contains(y)) y
       else if (!hyphenplaces.getOrElse(y,"").equals("")) hyphenplaces.getOrElse(y,"")
+      else if (!lowercaseparts.getOrElse(y,"").equals("")) lowercaseparts.getOrElse(y,"")
       else y.toLowerCase.capitalize}
     ).mkString(" ")
   }
@@ -195,9 +205,9 @@ object HybridAddressEsDocument {
     val organisationNameEdit = splitAndCapitalise(organisationName)
     val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
     val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
-    val doubleDependentLocalityEdit = splitAndCapitalise(doubleDependentLocality)
-    val dependentLocalityEdit = splitAndCapitalise(dependentLocality)
-    val postTownEdit = splitAndCapitalise(postTown)
+    val doubleDependentLocalityEdit = splitAndCapitaliseTowns(doubleDependentLocality)
+    val dependentLocalityEdit = splitAndCapitaliseTowns(dependentLocality)
+    val postTownEdit = splitAndCapitaliseTowns(postTown)
 
     Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
       poBoxNumberEdit, buildingNumberWithStreetName, doubleDependentLocalityEdit, dependentLocalityEdit,
@@ -228,9 +238,9 @@ object HybridAddressEsDocument {
     val organisationNameEdit = splitAndCapitalise(organisationName)
     val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
     val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
-    val welshDoubleDependentLocalityEdit = splitAndCapitalise(welshDoubleDependentLocality)
-    val welshDependentLocalityEdit = splitAndCapitalise(welshDependentLocality)
-    val welshPostTownEdit = splitAndCapitalise(welshPostTown)
+    val welshDoubleDependentLocalityEdit = splitAndCapitaliseTowns(welshDoubleDependentLocality)
+    val welshDependentLocalityEdit = splitAndCapitaliseTowns(welshDependentLocality)
+    val welshPostTownEdit = splitAndCapitaliseTowns(welshPostTown)
 
     Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
       poBoxNumberEdit, buildingNumberWithStreetName, welshDoubleDependentLocalityEdit, welshDependentLocalityEdit,
@@ -278,8 +288,8 @@ object HybridAddressEsDocument {
       else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
       else s"$sao $pao $trimmedStreetDescriptor"
 
-    Seq(splitAndCapitalise(organisation), buildingNumberWithStreetDescription, splitAndCapitalise(locality),
-      splitAndCapitalise(townName), postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(", ")
+    Seq(splitAndCapitalise(organisation), buildingNumberWithStreetDescription, splitAndCapitaliseTowns(locality),
+      splitAndCapitaliseTowns(townName), postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(", ")
   }
 
   def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
@@ -358,6 +368,11 @@ object HybridAddressEsDocument {
     * List of placenames with hyphens
     */
   lazy val hyphenplaces: Map[String,String] = fileToMap(s"hyphenplaces","=")
+
+  /**
+    * List of placenames with hyphens
+    */
+  lazy val lowercaseparts: Map[String,String] = fileToMap(s"lowercaseparts","=")
 
   /**
     * Convert external file into list
