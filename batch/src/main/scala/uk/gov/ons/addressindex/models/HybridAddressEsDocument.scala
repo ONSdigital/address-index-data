@@ -18,8 +18,6 @@ case class HybridAddressEsDocument(
 
 object HybridAddressEsDocument {
 
-  private val config = ConfigFactory.load()
-
   def rowToLpi(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(0),
     "postcodeLocator" -> row.getString(1),

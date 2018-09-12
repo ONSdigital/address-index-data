@@ -493,7 +493,7 @@ object Mappings {
                    },
                     "partial": {
                       "search_analyzer": "keyword_analyzer",
-                      "type": "string",
+                      "type": "text",
                       "analyzer": "edge_ngram_analyzer"
                     }
                  }

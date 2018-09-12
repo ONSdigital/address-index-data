@@ -1,7 +1,7 @@
 package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, functions}
+import org.apache.spark.sql._
 import uk.gov.ons.addressindex.models.HybridAddressEsDocument
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -124,7 +124,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-    def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -133,11 +133,11 @@ object SqlHelper {
         paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
       } else {
         paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-          .select("recordIdentifier","changeType","proOrder","uprn","udprn","organisationName","departmentName",
-            "subBuildingName","buildingName","buildingNumber","dependentThoroughfare","thoroughfare",
-            "doubleDependentLocality","dependentLocality","postTown","postcode","postcodeType","deliveryPointSuffix",
-            "welshDependentThoroughfare","welshThoroughfare","welshDoubleDependentLocality","welshDependentLocality",
-            "welshPostTown","poBoxNumber","processDate","startDate","endDate","lastUpdateDate","entryDate")
+          .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+            "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+            "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+            "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+            "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
           .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
       }
 
@@ -169,8 +169,8 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
 
-    pafNagCrossHierGrouped.rdd.map{
-      row => row
+    pafNagCrossHierGrouped.rdd.map {
+      row =>
         val uprn = row.getAs[Long]("uprn")
         val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
