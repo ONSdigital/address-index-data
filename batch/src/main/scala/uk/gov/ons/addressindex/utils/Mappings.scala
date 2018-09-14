@@ -665,7 +665,7 @@ object Mappings {
                  "fields": {
                      "partial": {
                        "search_analyzer": "keyword_analyzer",
-                       "type": "string",
+                       "type": "text",
                        "analyzer": "edge_ngram_analyzer"
                      }
                   }
@@ -675,7 +675,7 @@ object Mappings {
                  "fields": {
                       "partial": {
                         "search_analyzer": "keyword_analyzer",
-                        "type": "string",
+                        "type": "text",
                         "analyzer": "edge_ngram_analyzer"
                       }
                    }
