@@ -1,8 +1,9 @@
 package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row}
-import uk.gov.ons.addressindex.models.{CrossRefDocument, HierarchyDocument, HybridAddressEsDocument}
+import org.apache.spark.sql._
+import uk.gov.ons.addressindex.models.HybridAddressEsDocument
+import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
   * Join the Csv files into single DataFrame
@@ -121,75 +122,69 @@ object SqlHelper {
   }
 
   /**
-    * Construct an RDD of hierarchical documents from the intial hierarchy data and the aggregated hierarchy data
-    * @param hierarchy initial hierarchy data
-    * @param aggregatedHierarchy aggregated hiearachy data
-    * @return RDD of hierarchical documents containing information about relatives of a particular address
-    */
-  def constructHierarchyRdd(hierarchy: DataFrame, aggregatedHierarchy: DataFrame): RDD[HierarchyDocument] = {
-
-    val hierarchyGroupedByPrimaryUprn = aggregatedHierarchy.rdd
-      // The following code is a replacement for `groupBy(_.getLong(0))`, that works without additional shuffling (faster)
-      .keyBy(row => row.getLong(0))
-      .aggregateByKey(Seq.empty[Row])((acc: Seq[Row], row: Row) => acc :+ row, (acc1: Seq[Row], acc2: Seq[Row]) => acc1 ++ acc2)
-
-    val hierarchyRdd = hierarchy.rdd.keyBy(row => row.getLong(1))
-
-    hierarchyRdd.join(hierarchyGroupedByPrimaryUprn).map { case (_, (hierarchyRow: Row, relations: Iterable[Row])) =>
-      HierarchyDocument.fromJoinData(hierarchyRow, relations)
-    }
-  }
-
-  def constructCrossRefRdd(crossRef: DataFrame, aggregatedCrossRef: DataFrame): RDD[CrossRefDocument] = {
-
-    val crossRefGroupedByUprn = aggregatedCrossRef.rdd.groupBy(row => row.getLong(0))
-    val crossRefRdd = crossRef.rdd.keyBy(row => row.getLong(3))
-
-    crossRefRdd.join(crossRefGroupedByUprn).map{ case (_, (crossRefRow: Row, crossRefs: Iterable[Row])) =>
-        CrossRefDocument.fromJoinData(crossRefRow, crossRefs)
-    }
-  }
-
-  /**
     * Constructs a hybrid index from nag and paf dataframes
-    * We couldn't use Spark Sql because it does not contain `collect_list` until 2.0
-    * Hive does not support aggregating complex types in the `collect_list` udf
     */
-  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, hierarchy: RDD[HierarchyDocument], crossRef: RDD[CrossRefDocument], historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
-    val nagWithKey = nag.rdd.keyBy(row => row.getLong(0))
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
-    val pafWithKey =
+    val pafGrouped =
       if (historical) {
-        paf.rdd.keyBy(row => row.getLong(3))
+        paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
       } else {
-        paf.join(nag, Seq("uprn"), "leftsemi")
-          .select("recordIdentifier","changeType","proOrder","uprn","udprn","organisationName","departmentName",
-            "subBuildingName","buildingName","buildingNumber","dependentThoroughfare","thoroughfare",
-            "doubleDependentLocality","dependentLocality","postTown","postcode","postcodeType","deliveryPointSuffix",
-            "welshDependentThoroughfare","welshThoroughfare","welshDoubleDependentLocality","welshDependentLocality",
-            "welshPostTown","poBoxNumber","processDate","startDate","endDate","lastUpdateDate","entryDate")
-          .rdd.keyBy(row => row.getAs[Long]("uprn"))
+        paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+          .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+            "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+            "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+            "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+            "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+          .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
       }
 
-    val hierarchyWithKey = hierarchy.keyBy(document => document.uprn)
-    val crossRefWithKey = crossRef.keyBy(document => document.uprn)
+    // DataFrame of lpis by uprn
+    val nagGrouped = nag
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
 
-    // Following line will group rows in 2 groups: lpi and paf
-    // The first element in each new row will contain `uprn` as the first key
-    val groupedRdd = nagWithKey.cogroup(pafWithKey)
+    // DataFrame of paf and lpis by uprn
+    val pafNagGrouped = nagGrouped.join(pafGrouped, Seq("uprn"), "left_outer")
 
-    val groupedRddWithHierarchyCrossRef = groupedRdd.leftOuterJoin(hierarchyWithKey).leftOuterJoin(crossRefWithKey)
+    // DataFrame of CrossRefs by uprn
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
 
-    groupedRddWithHierarchyCrossRef.map {
-      case (uprn, (((lpiArray, pafArray), hierarchyDocument), crossRefDocument)) =>
+    // Construct Hierarchy DataFrame
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
-        val lpis = lpiArray.toSeq.map(HybridAddressEsDocument.rowToLpi)
-        val pafs = pafArray.toSeq.map(HybridAddressEsDocument.rowToPaf)
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
-        val lpiPostCode: Option[String] = lpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
-        val pafPostCode: Option[String] = pafs.headOption.flatMap(_.get("postcode").map(_.toString))
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives")
+
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+
+    pafNagCrossHierGrouped.rdd.map {
+      row =>
+        val uprn = row.getAs[Long]("uprn")
+        val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
+        val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
+        val relatives = Option(row.getAs[Seq[Row]]("relatives")).getOrElse(Seq())
+        val parentUprn = Option(row.getAs[Long]("parentUprn"))
+
+        val outputLpis = lpis.map(row => HybridAddressEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
+        val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
+        val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
+
+        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
 
         val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
@@ -199,20 +194,15 @@ object SqlHelper {
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
           else ("", "")
 
-        // fun fact: `null.asInstanceOf[Long]` is actually equal to `0l`
-        val parentUprn = hierarchyDocument.map(_.parentUprn).getOrElse(0l)
-        val relatives = hierarchyDocument.map(_.relations).getOrElse(Array())
-        val crossRefs = crossRefDocument.map(_.crossRefs).getOrElse(Array())
-
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
           postCodeOut,
-          parentUprn,
-          relatives,
-          lpis,
-          pafs,
-          crossRefs
+          parentUprn.getOrElse(0L),
+          outputRelatives,
+          outputLpis,
+          outputPaf,
+          outputCrossRefs
         )
     }
   }

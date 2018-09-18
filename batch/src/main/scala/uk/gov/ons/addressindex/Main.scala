@@ -1,15 +1,12 @@
 package uk.gov.ons.addressindex
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.ScallopConf
-import uk.gov.ons.addressindex.models.{CrossRefDocument, HierarchyDocument}
+import scalaj.http.{Http, HttpResponse}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
-
-import scalaj.http.{Http, HttpResponse}
 
 /**
  * Main executed file
@@ -64,25 +61,11 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical)
   }
 
-  private def generateHierarchyData(): RDD[HierarchyDocument] = {
-    val hierarchyData = AddressIndexFileReader.readHierarchyCSV()
-    val hierarchyGrouped = SqlHelper.aggregateHierarchyInformation(hierarchyData)
-    SqlHelper.constructHierarchyRdd(hierarchyData, hierarchyGrouped)
-  }
-
-  private def generateCrossRefData(): RDD[CrossRefDocument] = {
-    val crossRefData = AddressIndexFileReader.readCrossrefCSV()
-    val crossRefGrouped = SqlHelper.aggregateCrossRefInformation(crossRefData)
-    SqlHelper.constructCrossRefRdd(crossRefData, crossRefGrouped)
-  }
-
   private def saveHybridAddresses(historical : Boolean = true) = {
 
     val nag = generateNagAddresses(historical)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-    val hierarchy = generateHierarchyData()
-    val crossRef = generateCrossRefData()
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, hierarchy, crossRef, historical)
+    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, historical)
 
     ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
   }
