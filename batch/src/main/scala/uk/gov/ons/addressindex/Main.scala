@@ -96,29 +96,29 @@ For usage see below:
       .put("""{"index":{"refresh_interval":"-1"}}""")
       .asString
     if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
-    val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
-      .put("""{"index":{"number_of_replicas":0}}""")
-      .asString
-    if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
+//    val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
+//      .put("""{"index":{"number_of_replicas":0}}""")
+//      .asString
+//    if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
   }
 
   private def postLoad(indexName: String) = {
-    val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
+    val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"number_of_replicas":1}}""")
       .asString
-    if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
-    val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
+    if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
+    val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"refresh_interval":"1s"}}""")
       .asString
-    if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
+    if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
 
     // When we start updating the index we shouldn't be doing a force merge as it will create large segments that
     // will likely never be considered for merging again until filled with deleted documents.
-    val mergeResponse: HttpResponse[String] = Http(url + "/_forcemerge")
-      .param("max_num_segments", "1")
-      .header("Content-type", "application/json")
-      .postData("")
-      .asString
-    if (mergeResponse.code != 200) throw new Exception(s"Could not force merge using POST: code ${mergeResponse.code} body ${mergeResponse.body}")
+//    val mergeResponse: HttpResponse[String] =
+//    Http(url + "/_forcemerge")
+//      .postForm(Seq("max_num_segments" -> "1"))
+//      .header("Content-type", "application/json")
+//      .asString
+//    if (mergeResponse.code != 200) throw new Exception(s"Could not force merge using POST: code ${mergeResponse.code} body ${mergeResponse.body}")
   }
 }
