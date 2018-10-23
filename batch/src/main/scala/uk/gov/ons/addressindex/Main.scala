@@ -32,6 +32,9 @@ For usage see below:
     verify()
   }
 
+  val nodes = config.getString("addressindex.elasticsearch.nodes")
+  val port = config.getString("addressindex.elasticsearch.port")
+
   // each run of this application has a unique index name
   val indexName =
     if (opts.hybridNoHist()) {
@@ -40,12 +43,22 @@ For usage see below:
       generateIndexName()
     }
 
+  val url = s"http://$nodes:$port/$indexName"
+
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
 
     if (opts.mapping()) postMapping(indexName)
-    if (opts.hybrid()) saveHybridAddresses()
-    if (opts.hybridNoHist()) saveHybridAddresses(false)
+    if (opts.hybrid()) {
+      preLoad(indexName)
+      saveHybridAddresses()
+      postLoad(indexName)
+    }
+    if (opts.hybridNoHist()) {
+      preLoad(indexName)
+      saveHybridAddresses(false)
+      postLoad(indexName)
+    }
 
   } else opts.printHelp()
 
@@ -71,11 +84,28 @@ For usage see below:
   }
 
   private def postMapping(indexName: String) = {
-    val nodes = config.getString("addressindex.elasticsearch.nodes")
-    val port = config.getString("addressindex.elasticsearch.port")
-    val url = s"http://$nodes:$port/$indexName"
-
-    val response: HttpResponse[String] = Http(url).put(Mappings.hybrid).header("Content-type", "application/json").asString
+    val response: HttpResponse[String] = Http(url)
+      .put(Mappings.hybrid)
+      .header("Content-type", "application/json")
+      .asString
     if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
+  }
+
+  private def preLoad(indexName: String) = {
+    val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
+      .put("""{"index":{"refresh_interval":"-1"}}""")
+      .asString
+    if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
+  }
+
+  private def postLoad(indexName: String) = {
+    val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
+      .put("""{"index":{"number_of_replicas":1}}""")
+      .asString
+    if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
+    val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
+      .put("""{"index":{"refresh_interval":"1s"}}""")
+      .asString
+    if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
   }
 }
