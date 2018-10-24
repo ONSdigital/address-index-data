@@ -127,6 +127,8 @@ object SqlHelper {
             classScheme
           FROM
             $classificationsTable
+          WHERE
+            classScheme = 'AddressBase Premium Classification Scheme'
           GROUP BY uprn, classificationCode, classScheme
        """
     )
@@ -202,6 +204,8 @@ object SqlHelper {
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
         val outputClassifications = classifications.map(row => HybridAddressEsDocument.rowToClassification(row))
 
+        val classificationCode: Option[String] = outputClassifications.headOption.flatMap(_.get("classificationCode").map(_.toString))
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
 
@@ -222,7 +226,7 @@ object SqlHelper {
           outputLpis,
           outputPaf,
           outputCrossRefs,
-          outputClassifications
+          classificationCode
         )
     }
   }

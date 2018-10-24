@@ -312,6 +312,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
       firstResult.parentUprn shouldBe 1l
@@ -322,6 +323,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondResult = result(3)
       secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
@@ -412,6 +414,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
       firstResult.parentUprn shouldBe 1l
@@ -422,6 +425,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondResult = result(2)
       secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L

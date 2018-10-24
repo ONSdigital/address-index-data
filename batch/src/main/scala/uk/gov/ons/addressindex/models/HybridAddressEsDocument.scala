@@ -14,7 +14,7 @@ case class HybridAddressEsDocument(
   lpi: Seq[Map[String, Any]],
   paf: Seq[Map[String, Any]],
   crossRefs: Seq[Map[String, String]],
-  classifications: Seq[Map[String, String]]
+  classificationCode: Option[String]
 )
 
 object HybridAddressEsDocument {

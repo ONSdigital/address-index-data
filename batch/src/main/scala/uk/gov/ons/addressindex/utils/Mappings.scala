@@ -728,18 +728,10 @@ object Mappings {
                 }
               }
            },
-           "classifications": {
-              "properties": {
-               "classificationCode": {
-                 "type": "text",
-                 "index": "true",
-                 "analyzer": "keyword"
-               },
-               "classScheme": {
-                 "type": "text",
-                 "index": "false"
-               }
-              }
+           "classificationCode": {
+             "type": "text",
+             "index": "true",
+             "analyzer": "keyword"
            }
          }
        }
