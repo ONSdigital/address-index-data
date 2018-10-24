@@ -121,6 +121,21 @@ object SqlHelper {
     )
   }
 
+  def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
+    val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
+
+    SparkProvider.sqlContext.sql(
+      s"""SELECT
+            uprn,
+            classificationCode,
+            classScheme
+          FROM
+            $classificationsTable
+          GROUP BY uprn, classificationCode, classScheme
+       """
+    )
+  }
+
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
@@ -154,6 +169,11 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
 
+    // DataFrame of Classifications by uprn
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode", "classScheme")).as("classifications"))
+
     // Construct Hierarchy DataFrame
     val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
@@ -168,6 +188,7 @@ object SqlHelper {
     val pafNagCrossHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -176,12 +197,14 @@ object SqlHelper {
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
         val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
         val relatives = Option(row.getAs[Seq[Row]]("relatives")).getOrElse(Seq())
+        val classifications = Option(row.getAs[Seq[Row]]("classifications")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
 
         val outputLpis = lpis.map(row => HybridAddressEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
+        val outputClassifications = classifications.map(row => HybridAddressEsDocument.rowToClassification(row))
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -202,7 +225,8 @@ object SqlHelper {
           outputRelatives,
           outputLpis,
           outputPaf,
-          outputCrossRefs
+          outputCrossRefs,
+          outputClassifications
         )
     }
   }

@@ -727,6 +727,19 @@ object Mappings {
                   "index": "false"
                 }
               }
+           },
+           "classifications": {
+              "properties": {
+               "classificationCode": {
+                 "type": "text",
+                 "index": "true",
+                 "analyzer": "keyword"
+               },
+               "classScheme": {
+                 "type": "text",
+                 "index": "false"
+               }
+              }
            }
          }
        }

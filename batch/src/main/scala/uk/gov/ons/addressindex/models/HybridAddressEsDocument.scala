@@ -13,7 +13,8 @@ case class HybridAddressEsDocument(
   relatives: Seq[Map[String, Any]],
   lpi: Seq[Map[String, Any]],
   paf: Seq[Map[String, Any]],
-  crossRefs: Seq[Map[String, String]]
+  crossRefs: Seq[Map[String, String]],
+  classifications: Seq[Map[String, String]]
 )
 
 object HybridAddressEsDocument {
@@ -166,6 +167,11 @@ object HybridAddressEsDocument {
   def rowToCrossRef(row: Row): Map[String, String] = Map(
     "crossReference" -> row.getAs[String]("crossReference"),
     "source" -> row.getAs[String]("source")
+  )
+
+  def rowToClassification(row: Row): Map[String, String] = Map(
+    "classScheme" -> row.getAs[String]("classScheme"),
+    "classificationCode" -> row.getAs[String]("classificationCode")
   )
 
   // check to see if the token is a listed acronym, if so skip capitilization
