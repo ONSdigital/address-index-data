@@ -42,32 +42,30 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getByte(10) shouldBe 1 // RPC
       firstLine.getString(11) shouldBe "SOME COUNCIL" // ORGANISATION
       firstLine.getString(12) shouldBe "THE LEGAL NAME" // LEGAL_NAME
-      firstLine.getString(13) shouldBe "AddressBase Premium Classification Scheme" // CLASS_SCHEME
-      firstLine.getString(14) shouldBe "RD" // CLASSIFICATION_CODE
-      firstLine.getInt(15) shouldBe 9401385 // USRN
-      firstLine.getString(16) shouldBe "1610L000015314" // LPI_KEY
-      firstLine.getString(17) shouldBe "ANOTHER BUILDING NAME OR DESCRIPTION" // PAO_TEXT
-      firstLine.getShort(18) shouldBe 15 // PAO_START_NUMBER
-      firstLine.getString(19) shouldBe "CC" // PAO_START_SUFFIX
-      firstLine.getShort(20) shouldBe 9876 // PAO_END_NUMBER
-      firstLine.getString(21) shouldBe "AB" // PAO_END_SUFFIX
-      firstLine.getString(22) shouldBe "A BUILDING NAME OR DESCRIPTION" // SAO_TEXT
-      firstLine.getShort(23) shouldBe 1234 // SAO_START_NUMBER
-      firstLine.getString(24) shouldBe "AA" // SAO_START_SUFFIX
-      firstLine.getShort(25) shouldBe 5678 // SAO_END_NUMBER
-      firstLine.getString(26) shouldBe "BB" // SAO_END_SUFFIX
-      firstLine.getString(27) shouldBe "VERTICAL POSITION" // LEVEL
-      firstLine.getString(28) shouldBe "Y" // OFFICIAL_FLAG
-      firstLine.getByte(29) shouldBe 1 // LOGICAL_STATUS
-      firstLine.getByte(30) shouldBe 1 // USRN_MATCH_INDICATOR
-      firstLine.getString(31) shouldBe "ENG" // LANGUAGE
-      firstLine.getString(32) shouldBe "A STREET DESCRIPTOR" // STREET_DESCRIPTOR
-      firstLine.getString(33) shouldBe "TOWNY TOWN" // TOWN_NAME
-      firstLine.getString(34) shouldBe "A GREAT LOCALITY" // LOCALITY
-      firstLine.getByte(35) shouldBe 8 // STREET_CLASSIFICATION
-      firstLine.getDate(36) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
-      firstLine.getDate(37) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
-      firstLine.getDate(38) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getInt(13) shouldBe 9401385 // USRN
+      firstLine.getString(14) shouldBe "1610L000015314" // LPI_KEY
+      firstLine.getString(15) shouldBe "ANOTHER BUILDING NAME OR DESCRIPTION" // PAO_TEXT
+      firstLine.getShort(16) shouldBe 15 // PAO_START_NUMBER
+      firstLine.getString(17) shouldBe "CC" // PAO_START_SUFFIX
+      firstLine.getShort(18) shouldBe 9876 // PAO_END_NUMBER
+      firstLine.getString(19) shouldBe "AB" // PAO_END_SUFFIX
+      firstLine.getString(20) shouldBe "A BUILDING NAME OR DESCRIPTION" // SAO_TEXT
+      firstLine.getShort(21) shouldBe 1234 // SAO_START_NUMBER
+      firstLine.getString(22) shouldBe "AA" // SAO_START_SUFFIX
+      firstLine.getShort(23) shouldBe 5678 // SAO_END_NUMBER
+      firstLine.getString(24) shouldBe "BB" // SAO_END_SUFFIX
+      firstLine.getString(25) shouldBe "VERTICAL POSITION" // LEVEL
+      firstLine.getString(26) shouldBe "Y" // OFFICIAL_FLAG
+      firstLine.getByte(27) shouldBe 1 // LOGICAL_STATUS
+      firstLine.getByte(28) shouldBe 1 // USRN_MATCH_INDICATOR
+      firstLine.getString(29) shouldBe "ENG" // LANGUAGE
+      firstLine.getString(30) shouldBe "A STREET DESCRIPTOR" // STREET_DESCRIPTOR
+      firstLine.getString(31) shouldBe "TOWNY TOWN" // TOWN_NAME
+      firstLine.getString(32) shouldBe "A GREAT LOCALITY" // LOCALITY
+      firstLine.getByte(33) shouldBe 8 // STREET_CLASSIFICATION
+      firstLine.getDate(34) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
+      firstLine.getDate(35) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getDate(36) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
     }
 
     "join blpu, organisation, lpi, street, street_descriptor and cross_ref without historical data" in {
@@ -100,32 +98,30 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getByte(10) shouldBe 1 // RPC
       firstLine.getString(11) shouldBe "SOME COUNCIL" // ORGANISATION
       firstLine.getString(12) shouldBe "THE LEGAL NAME" // LEGAL_NAME
-      firstLine.getString(13) shouldBe "AddressBase Premium Classification Scheme" // CLASS_SCHEME
-      firstLine.getString(14) shouldBe "RD" // CLASSIFICATION_CODE
-      firstLine.getInt(15) shouldBe 9401385 // USRN
-      firstLine.getString(16) shouldBe "1610L000015314" // LPI_KEY
-      firstLine.getString(17) shouldBe "ANOTHER BUILDING NAME OR DESCRIPTION" // PAO_TEXT
-      firstLine.getShort(18) shouldBe 15 // PAO_START_NUMBER
-      firstLine.getString(19) shouldBe "CC" // PAO_START_SUFFIX
-      firstLine.getShort(20) shouldBe 9876 // PAO_END_NUMBER
-      firstLine.getString(21) shouldBe "AB" // PAO_END_SUFFIX
-      firstLine.getString(22) shouldBe "A BUILDING NAME OR DESCRIPTION" // SAO_TEXT
-      firstLine.getShort(23) shouldBe 1234 // SAO_START_NUMBER
-      firstLine.getString(24) shouldBe "AA" // SAO_START_SUFFIX
-      firstLine.getShort(25) shouldBe 5678 // SAO_END_NUMBER
-      firstLine.getString(26) shouldBe "BB" // SAO_END_SUFFIX
-      firstLine.getString(27) shouldBe "VERTICAL POSITION" // LEVEL
-      firstLine.getString(28) shouldBe "Y" // OFFICIAL_FLAG
-      firstLine.getByte(29) shouldBe 1 // LOGICAL_STATUS
-      firstLine.getByte(30) shouldBe 1 // USRN_MATCH_INDICATOR
-      firstLine.getString(31) shouldBe "ENG" // LANGUAGE
-      firstLine.getString(32) shouldBe "A STREET DESCRIPTOR" // STREET_DESCRIPTOR
-      firstLine.getString(33) shouldBe "TOWNY TOWN" // TOWN_NAME
-      firstLine.getString(34) shouldBe "A GREAT LOCALITY" // LOCALITY
-      firstLine.getByte(35) shouldBe 8 // STREET_CLASSIFICATION
-      firstLine.getDate(36) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
-      firstLine.getDate(37) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
-      firstLine.getDate(38) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getInt(13) shouldBe 9401385 // USRN
+      firstLine.getString(14) shouldBe "1610L000015314" // LPI_KEY
+      firstLine.getString(15) shouldBe "ANOTHER BUILDING NAME OR DESCRIPTION" // PAO_TEXT
+      firstLine.getShort(16) shouldBe 15 // PAO_START_NUMBER
+      firstLine.getString(17) shouldBe "CC" // PAO_START_SUFFIX
+      firstLine.getShort(18) shouldBe 9876 // PAO_END_NUMBER
+      firstLine.getString(19) shouldBe "AB" // PAO_END_SUFFIX
+      firstLine.getString(20) shouldBe "A BUILDING NAME OR DESCRIPTION" // SAO_TEXT
+      firstLine.getShort(21) shouldBe 1234 // SAO_START_NUMBER
+      firstLine.getString(22) shouldBe "AA" // SAO_START_SUFFIX
+      firstLine.getShort(23) shouldBe 5678 // SAO_END_NUMBER
+      firstLine.getString(24) shouldBe "BB" // SAO_END_SUFFIX
+      firstLine.getString(25) shouldBe "VERTICAL POSITION" // LEVEL
+      firstLine.getString(26) shouldBe "Y" // OFFICIAL_FLAG
+      firstLine.getByte(27) shouldBe 1 // LOGICAL_STATUS
+      firstLine.getByte(28) shouldBe 1 // USRN_MATCH_INDICATOR
+      firstLine.getString(29) shouldBe "ENG" // LANGUAGE
+      firstLine.getString(30) shouldBe "A STREET DESCRIPTOR" // STREET_DESCRIPTOR
+      firstLine.getString(31) shouldBe "TOWNY TOWN" // TOWN_NAME
+      firstLine.getString(32) shouldBe "A GREAT LOCALITY" // LOCALITY
+      firstLine.getByte(33) shouldBe 8 // STREET_CLASSIFICATION
+      firstLine.getDate(34) shouldBe new java.sql.Date(format.parse("2007-10-10").getTime) // LPI START DATE
+      firstLine.getDate(35) shouldBe new java.sql.Date(format.parse("2016-03-11").getTime) // LPI LAST UPDATE DATE
+      firstLine.getDate(36) shouldBe new java.sql.Date(format.parse("2018-01-11").getTime) // LPI LAST UPDATE DATE
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address" in {
@@ -146,14 +142,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstLine = result(4)
 
       firstLine.getLong(0) shouldBe 2L // UPRN
-      firstLine.getInt(15) shouldBe 9401385 // USRN
-      firstLine.getString(34) shouldBe "A GREAT LOCALITY" // LOCALITY
+      firstLine.getInt(13) shouldBe 9401385 // USRN
+      firstLine.getString(32) shouldBe "A GREAT LOCALITY" // LOCALITY
 
       val secondLine = result(8)
 
       secondLine.getLong(0) shouldBe 99L // UPRN
-      secondLine.getInt(15) shouldBe 9402538 // USRN
-      secondLine.getString(34) shouldBe "LOCALITY XYZ" // LOCALITY
+      secondLine.getInt(13) shouldBe 9402538 // USRN
+      secondLine.getString(32) shouldBe "LOCALITY XYZ" // LOCALITY
     }
 
     "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address without historical data" in {
@@ -174,14 +170,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstLine = result(4)
 
       firstLine.getLong(0) shouldBe 100010971565L // UPRN
-      firstLine.getInt(15) shouldBe 9402538 // USRN
-      firstLine.getString(34) shouldBe "FSDF DSFSDF DSF" // LOCALITY
+      firstLine.getInt(13) shouldBe 9402538 // USRN
+      firstLine.getString(32) shouldBe "FSDF DSFSDF DSF" // LOCALITY
 
       val secondLine = result(5)
 
       secondLine.getLong(0) shouldBe 100010971565L // UPRN
-      secondLine.getInt(15) shouldBe 9402538 // USRN
-      secondLine.getString(34) shouldBe "LOCALITY XYZ" // LOCALITY
+      secondLine.getInt(13) shouldBe 9402538 // USRN
+      secondLine.getString(32) shouldBe "LOCALITY XYZ" // LOCALITY
     }
 
     "aggregate relatives from hierarchy table" in {
