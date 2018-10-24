@@ -42,7 +42,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
   val nagOrganisation = "SOMETHING ELSE"
   val nagOfficialFlag = "Y"
-  val nagClassificationCode = "RD"
   val nagPaoStartNumber = 56.toShort
   val nagPostcodeLocator = "KL8 7HQ"
   val nagSaoEndSuffix = "JJ"
@@ -71,7 +70,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val nagBlpuLogicalStatus = 1.toByte
   val nagLocalCustodianCode = 4218.toShort
   val nagRpc = 1.toByte
-  val nagClassScheme = "AddressBase Premium Classification Scheme"
   val nagUsrnMatchIndicator = 1.toByte
   val nagLanguage = "ENG"
   val nagStreetClassification = 8.toByte
@@ -131,8 +129,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "rpc" -> nagRpc,
     "organisation" -> nagOrganisation,
     "legalName" -> nagLegalName,
-    "classScheme" -> nagClassScheme,
-    "classificationCode" -> nagClassificationCode,
     "usrn" -> nagUsrn,
     "lpiKey" -> nagLpiKey,
     "paoText" -> nagPaoText,
@@ -179,8 +175,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagRpc,
         nagOrganisation,
         nagLegalName,
-        nagClassScheme,
-        nagClassificationCode,
         nagUsrn,
         nagLpiKey,
         nagPaoText,

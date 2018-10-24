@@ -18,12 +18,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).sort("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor).sort("uprn").collect()
 
       // Then
       result.length shouldBe 9
@@ -77,12 +76,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical = false).sort("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false).sort("uprn").collect()
 
       // Then
       result.length shouldBe 6
@@ -136,12 +134,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor).orderBy("locality").orderBy("postcodeLocator").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor).orderBy("locality").orderBy("postcodeLocator").collect()
 
       // Then
       result.length shouldBe 9
@@ -165,12 +162,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical = false).orderBy("uprn", "locality").collect()
+      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false).orderBy("uprn", "locality").collect()
 
       // Then
       result.length shouldBe 6
@@ -270,11 +266,10 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor)
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor)
 
       val expectedFirstRelations = Array(
         Map(
@@ -371,11 +366,10 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val blpu = AddressIndexFileReader.readBlpuCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
-      val classification = AddressIndexFileReader.readClassificationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical = false)
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false)
 
       val expectedFirstRelations = Array(
         Map(

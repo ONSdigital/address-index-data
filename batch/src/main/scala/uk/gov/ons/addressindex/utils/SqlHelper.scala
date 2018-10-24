@@ -10,7 +10,7 @@ import uk.gov.ons.addressindex.readers.AddressIndexFileReader
   */
 object SqlHelper {
 
-  def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, classification: DataFrame, street: DataFrame,
+  def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
                streetDescriptor: DataFrame, historical: Boolean = true): DataFrame = {
 
     val blpuTable =
@@ -22,7 +22,6 @@ object SqlHelper {
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
-    val classificationTable = SparkProvider.registerTempTable(classification, "classification")
     val lpiTable =
       if (historical) {
         SparkProvider.registerTempTable(lpi, "lpi")
@@ -49,8 +48,6 @@ object SqlHelper {
         $blpuTable.rpc,
         $organisationTable.organisation,
         $organisationTable.legalName,
-        $classificationTable.classScheme,
-        $classificationTable.classificationCode,
         $lpiTable.usrn,
         $lpiTable.lpiKey,
         $lpiTable.paoText,
@@ -77,7 +74,6 @@ object SqlHelper {
         $lpiTable.endDate as lpiEndDate
       FROM $blpuTable
       LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
-      LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn
       LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
       LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
       LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
