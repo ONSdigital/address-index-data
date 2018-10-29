@@ -68,10 +68,9 @@ For usage see below:
     val blpu = AddressIndexFileReader.readBlpuCSV()
     val lpi = AddressIndexFileReader.readLpiCSV()
     val organisation = AddressIndexFileReader.readOrganisationCSV()
-    val classification = AddressIndexFileReader.readClassificationCSV()
     val street = AddressIndexFileReader.readStreetCSV()
     val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-    SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical)
+    SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical)
   }
 
   private def saveHybridAddresses(historical : Boolean = true) = {
