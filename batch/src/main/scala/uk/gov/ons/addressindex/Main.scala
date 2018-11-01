@@ -29,6 +29,7 @@ For usage see below:
     val hybridNoHist = opt[Boolean]("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
     val mapping = opt[Boolean]("mapping", noshort = true, descr = "Creates mapping for the index")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
+    val skinny = opt[Boolean]("skinny", noshort = true, descr = "Create a skinny index")
     verify()
   }
 
@@ -37,10 +38,18 @@ For usage see below:
 
   // each run of this application has a unique index name
   val indexName =
-    if (opts.hybridNoHist()) {
-      generateIndexName(false)
+    if (opts.skinny()) {
+      if (opts.hybridNoHist()) {
+        generateIndexName(false, true)
+      } else {
+        generateIndexName(true, true)
+      }
     } else {
-      generateIndexName()
+      if (opts.hybridNoHist()) {
+        generateIndexName(false)
+      } else {
+        generateIndexName()
+      }
     }
 
   val url = s"http://$nodes:$port/$indexName"
@@ -48,21 +57,32 @@ For usage see below:
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
 
-    if (opts.mapping()) postMapping(indexName)
-    if (opts.hybrid()) {
+    if (opts.skinny()) {
+      postMapping(indexName, true)
       preLoad(indexName)
-      saveHybridAddresses()
-      postLoad(indexName)
-    }
-    if (opts.hybridNoHist()) {
-      preLoad(indexName)
-      saveHybridAddresses(false)
-      postLoad(indexName)
-    }
 
+      if (opts.hybridNoHist()) {
+        saveHybridAddresses(false, true)
+      } else {
+        saveHybridAddresses(true, true)
+      }
+
+      postLoad(indexName)
+    } else {
+      postMapping(indexName)
+      preLoad(indexName)
+
+      if (opts.hybridNoHist()) {
+        saveHybridAddresses(false)
+      } else {
+        saveHybridAddresses()
+      }
+
+      postLoad(indexName)
+    }
   } else opts.printHelp()
 
-  private def generateIndexName(historical : Boolean = true): String = AddressIndexFileReader.generateIndexNameFromFileName(historical)
+  private def generateIndexName(historical: Boolean = true, skinny: Boolean = false): String = AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny)
 
   private def generateNagAddresses(historical : Boolean = true): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -74,18 +94,26 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, classification, street, streetDescriptor, historical)
   }
 
-  private def saveHybridAddresses(historical : Boolean = true) = {
+  private def saveHybridAddresses(historical : Boolean = true, skinny: Boolean = false) = {
 
     val nag = generateNagAddresses(historical)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-    val hybrid = SqlHelper.aggregateHybridIndex(paf, nag, historical)
-
-    ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", hybrid)
+    val hybrid =
+      if (skinny) {
+        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+      } else {
+        ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridIndex(paf, nag, historical))
+      }
   }
 
-  private def postMapping(indexName: String) = {
+  private def postMapping(indexName: String, skinny: Boolean = false) = {
     val response: HttpResponse[String] = Http(url)
-      .put(Mappings.hybrid)
+      .put(
+        if (skinny) {
+          Mappings.hybridSkinny
+        } else {
+          Mappings.hybrid
+        })
       .header("Content-type", "application/json")
       .asString
     if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")

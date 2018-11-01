@@ -153,7 +153,7 @@ object AddressIndexFileReader {
     date.group(1)
   }
 
-  def generateIndexNameFromFileName(historical : Boolean = true): String = {
+  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
@@ -164,6 +164,11 @@ object AddressIndexFileReader {
         config.getString("addressindex.elasticsearch.indices.hybridHistorical")
       }
 
-    s"${baseIndexName}_${epoch}_${date}_${System.currentTimeMillis()}"
+    val subIndex =
+      if (skinny) {
+        config.getString("addressindex.elasticsearch.indices.skinny")
+      }
+
+    s"${baseIndexName}${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }

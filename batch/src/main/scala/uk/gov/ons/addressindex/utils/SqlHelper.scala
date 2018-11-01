@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import uk.gov.ons.addressindex.models.HybridAddressEsDocument
+import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
@@ -119,6 +119,67 @@ object SqlHelper {
           GROUP BY uprn, crossReference, source
        """
     )
+  }
+
+  /**
+    * Constructs a hybrid index from nag and paf dataframes
+    */
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+
+    // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
+    // out at the joinCsvs stage. These need to be removed.
+    val pafGrouped =
+    if (historical) {
+      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    } else {
+      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    }
+
+    // DataFrame of lpis by uprn
+    val nagGrouped = nag
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+
+    // DataFrame of paf and lpis by uprn
+    val pafNagGrouped = nagGrouped.join(pafGrouped, Seq("uprn"), "left_outer")
+
+    // Construct Hierarchy DataFrame
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn")
+
+    val pafNagHierGrouped = pafNagGrouped
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+
+    pafNagHierGrouped.rdd.map {
+      row =>
+        val uprn = row.getAs[Long]("uprn")
+        val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
+        val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val parentUprn = Option(row.getAs[Long]("parentUprn"))
+
+        val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
+
+        HybridAddressSkinnyEsDocument(
+          uprn,
+          parentUprn.getOrElse(0L),
+          outputLpis,
+          outputPaf
+        )
+    }
   }
 
   /**
