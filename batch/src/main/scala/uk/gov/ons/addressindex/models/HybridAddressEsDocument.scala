@@ -54,7 +54,6 @@ object HybridAddressEsDocument extends EsDocument {
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
     "lpiEndDate" -> row.getDate(36),
-    "classificationCode" -> row.getString(37),
     "nagAll" ->  concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,

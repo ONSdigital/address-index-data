@@ -325,11 +325,6 @@ object Mappings {
                  "index": "true",
                  "analyzer": "keyword"
                },
-               "classificationCode": {
-                 "type": "text",
-                 "index": "true",
-                 "analyzer": "keyword"
-               },
                "easting": {
                  "type": "float",
                  "index": "false"
@@ -1033,11 +1028,6 @@ object Mappings {
       				"lpi": {
       					"properties": {
       						"addressBasePostal": {
-      							"type": "text",
-      							"index": "true",
-      							"analyzer": "keyword"
-      						},
-      						"classificationCode": {
       							"type": "text",
       							"index": "true",
       							"analyzer": "keyword"

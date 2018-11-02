@@ -42,7 +42,6 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
 
   val nagOrganisation = "SOMETHING ELSE"
   val nagOfficialFlag = "Y"
-  val nagClassificationCode = "RD"
   val nagPaoStartNumber = 56.toShort
   val nagPostcodeLocator = "KL8 7HQ"
   val nagSaoEndSuffix = "JJ"
@@ -98,10 +97,8 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "easting" -> nagEasting,
     "northing" -> nagNorthing,
     "parentUprn" -> nagParentUprn,
-    "classificationCode" -> nagClassificationCode,
     "paoStartNumber" -> nagPaoStartNumber,
     "lpiLogicalStatus" -> nagLpiLogicalStatus,
-    "classificationCode" -> nagClassificationCode,
     "nagAll" -> nagAll,
     "lpiStartDate" -> nagLpiStartDate,
     "lpiEndDate" -> nagLpiEndDate,
@@ -149,8 +146,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         nagStreetClassification,
         nagLpiStartDate,
         nagLpiLastUpdateDate,
-        nagLpiEndDate,
-        nagClassificationCode
+        nagLpiEndDate
       )
 
       // When

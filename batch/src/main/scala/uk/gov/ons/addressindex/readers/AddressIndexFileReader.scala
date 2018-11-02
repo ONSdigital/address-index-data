@@ -165,9 +165,7 @@ object AddressIndexFileReader {
       }
 
     val subIndex =
-      if (skinny) {
-        config.getString("addressindex.elasticsearch.indices.skinny")
-      }
+      if (skinny) config.getString("addressindex.elasticsearch.indices.skinny") else ""
 
     s"${baseIndexName}${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
