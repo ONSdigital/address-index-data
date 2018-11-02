@@ -42,6 +42,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
   val nagOrganisation = "SOMETHING ELSE"
   val nagOfficialFlag = "Y"
+  val nagClassificationCode = "RD"
   val nagPaoStartNumber = 56.toShort
   val nagPostcodeLocator = "KL8 7HQ"
   val nagSaoEndSuffix = "JJ"
@@ -154,7 +155,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "lpiStartDate" -> nagLpiStartDate,
     "lpiLastUpdateDate" -> nagLpiLastUpdateDate,
     "lpiEndDate" -> nagLpiEndDate,
-    "mixedNag" -> nagMixed
+    "mixedNag" -> nagMixed,
+    "classificationCode" -> nagClassificationCode
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -198,7 +200,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagStreetClassification,
         nagLpiStartDate,
         nagLpiLastUpdateDate,
-        nagLpiEndDate
+        nagLpiEndDate,
+        nagClassificationCode
       )
 
       // When

@@ -1,12 +1,14 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
+import uk.gov.ons.addressindex.models.HybridAddressEsDocument.{concatNag, generateFormattedNagAddress}
 
 case class HybridAddressSkinnyEsDocument(
                                     uprn: Long,
                                     parentUprn: Long,
                                     lpi: Seq[Map[String, Any]],
-                                    paf: Seq[Map[String, Any]]
+                                    paf: Seq[Map[String, Any]],
+                                    classificationCode: Option[String]
                                   )
 
 object HybridAddressSkinnyEsDocument extends EsDocument {
@@ -18,30 +20,30 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "easting" -> row.getFloat(4),
     "northing" -> row.getFloat(5),
     "parentUprn" -> (if (row.isNullAt(6)) null else row.getLong(6)),
-    "classificationCode" -> row.getString(14),
-    "paoStartNumber" -> (if (row.isNullAt(18)) null else row.getShort(18)),
-    "lpiLogicalStatus" -> row.getByte(29),
-    "lpiStartDate" -> row.getDate(36),
-    "lpiEndDate" -> row.getDate(38),
+    "paoStartNumber" -> (if (row.isNullAt(16)) null else row.getShort(16)),
+    "lpiLogicalStatus" -> row.getByte(27),
+    "lpiStartDate" -> row.getDate(34),
+    "lpiEndDate" -> row.getDate(36),
+    "classificationCode" -> row.getString(37),
     "nagAll" ->  concatNag(
+      if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
-      if (row.isNullAt(25)) "" else row.getShort(25).toString,
-      row.getString(26), row.getString(24), row.getString(22), row.getString(11),
+      row.getString(24), row.getString(22), row.getString(20), row.getString(11),
+      if (row.isNullAt(16)) "" else row.getShort(16).toString,
+      row.getString(17),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,
-      row.getString(19),
-      if (row.isNullAt(20)) "" else row.getShort(20).toString,
-      row.getString(21), row.getString(17), row.getString(32),
-      row.getString(33), row.getString(34), row.getString(1)
+      row.getString(19), row.getString(15), row.getString(30),
+      row.getString(31), row.getString(32), row.getString(1)
     ),
     "mixedNag" -> generateFormattedNagAddress(
+      if (row.isNullAt(21)) "" else row.getShort(21).toString,
+      row.getString(22),
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
-      row.getString(24),
-      if (row.isNullAt(25)) "" else row.getShort(25).toString,
-      row.getString(26), row.getString(22), row.getString(11),
+      row.getString(24), row.getString(20), row.getString(11),
+      if (row.isNullAt(16)) "" else row.getShort(16).toString,
+      row.getString(17),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,
-      row.getString(19),
-      if (row.isNullAt(20)) "" else row.getShort(20).toString,
-      row.getString(21), row.getString(17), row.getString(32), row.getString(34), row.getString(33), row.getString(1)
+      row.getString(19), row.getString(15), row.getString(30), row.getString(32), row.getString(31), row.getString(1)
     )
   )
 

@@ -1148,7 +1148,12 @@ object Mappings {
       				"parentUprn": {
       					"type": "text",
       					"index": "false"
-      				}
+      				},
+              "classificationCode": {
+                "type": "text",
+                "index": "true",
+                "analyzer": "keyword"
+              }
       			}
       		}
       	}

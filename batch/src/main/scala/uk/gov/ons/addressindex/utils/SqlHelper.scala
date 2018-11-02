@@ -10,7 +10,7 @@ import uk.gov.ons.addressindex.readers.AddressIndexFileReader
   */
 object SqlHelper {
 
-  def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
+  def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, classification: DataFrame, street: DataFrame,
                streetDescriptor: DataFrame, historical: Boolean = true): DataFrame = {
 
     val blpuTable =
@@ -22,6 +22,7 @@ object SqlHelper {
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
+    val classificationTable = SparkProvider.registerTempTable(classification, "classification")
     val lpiTable =
       if (historical) {
         SparkProvider.registerTempTable(lpi, "lpi")
@@ -71,13 +72,16 @@ object SqlHelper {
         $streetTable.streetClassification,
         $lpiTable.startDate as lpiStartDate,
         $lpiTable.lastUpdateDate as lpiLastUpdateDate,
-        $lpiTable.endDate as lpiEndDate
+        $lpiTable.endDate as lpiEndDate,
+        $classificationTable.classificationCode
       FROM $blpuTable
       LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
+      LEFT JOIN $classificationTable ON $blpuTable.uprn = $classificationTable.uprn
       LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
       LEFT JOIN $streetTable ON $lpiTable.usrn = $streetTable.usrn
       LEFT JOIN $streetDescriptorTable ON $streetTable.usrn = $streetDescriptorTable.usrn
-      AND $lpiTable.language = $streetDescriptorTable.language""").na.fill("")
+      AND $lpiTable.language = $streetDescriptorTable.language
+      AND $classificationTable.classScheme = 'AddressBase Premium Classification Scheme'""").na.fill("")
   }
 
   /**
@@ -113,23 +117,6 @@ object SqlHelper {
           FROM
             $crossRefTable
           GROUP BY uprn, crossReference, source
-       """
-    )
-  }
-
-  def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
-    val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
-
-    SparkProvider.sqlContext.sql(
-      s"""SELECT
-            uprn,
-            classificationCode,
-            classScheme
-          FROM
-            $classificationsTable
-          WHERE
-            classScheme = 'AddressBase Premium Classification Scheme'
-          GROUP BY uprn, classificationCode, classScheme
        """
     )
   }
@@ -185,12 +172,14 @@ object SqlHelper {
 
         val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
+        val classificationCode : Option[String] =  outputLpis.headOption.flatMap(_.get("classificationCode").map(_.toString))
 
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
           outputLpis,
-          outputPaf
+          outputPaf,
+          classificationCode
         )
     }
   }
@@ -228,11 +217,6 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
 
-    // DataFrame of Classifications by uprn
-    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode", "classScheme")).as("classifications"))
-
     // Construct Hierarchy DataFrame
     val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
@@ -247,7 +231,6 @@ object SqlHelper {
     val pafNagCrossHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
-      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -256,16 +239,13 @@ object SqlHelper {
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
         val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
         val relatives = Option(row.getAs[Seq[Row]]("relatives")).getOrElse(Seq())
-        val classifications = Option(row.getAs[Seq[Row]]("classifications")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
 
         val outputLpis = lpis.map(row => HybridAddressEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
-        val outputClassifications = classifications.map(row => HybridAddressEsDocument.rowToClassification(row))
-
-        val classificationCode: Option[String] = outputClassifications.headOption.flatMap(_.get("classificationCode").map(_.toString))
+        val classificationCode : Option[String] =  outputLpis.headOption.flatMap(_.get("classificationCode").map(_.toString))
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))

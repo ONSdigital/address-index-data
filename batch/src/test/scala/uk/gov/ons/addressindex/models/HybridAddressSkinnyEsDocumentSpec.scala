@@ -101,6 +101,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "classificationCode" -> nagClassificationCode,
     "paoStartNumber" -> nagPaoStartNumber,
     "lpiLogicalStatus" -> nagLpiLogicalStatus,
+    "classificationCode" -> nagClassificationCode,
     "nagAll" -> nagAll,
     "lpiStartDate" -> nagLpiStartDate,
     "lpiEndDate" -> nagLpiEndDate,
@@ -125,8 +126,6 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         nagRpc,
         nagOrganisation,
         nagLegalName,
-        nagClassScheme,
-        nagClassificationCode,
         nagUsrn,
         nagLpiKey,
         nagPaoText,
@@ -150,7 +149,8 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         nagStreetClassification,
         nagLpiStartDate,
         nagLpiLastUpdateDate,
-        nagLpiEndDate
+        nagLpiEndDate,
+        nagClassificationCode
       )
 
       // When
