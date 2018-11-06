@@ -98,6 +98,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "northing" -> nagNorthing,
     "parentUprn" -> nagParentUprn,
     "paoStartNumber" -> nagPaoStartNumber,
+    "saoStartNumber" -> nagSaoStartNumber,
     "lpiLogicalStatus" -> nagLpiLogicalStatus,
     "nagAll" -> nagAll,
     "lpiStartDate" -> nagLpiStartDate,

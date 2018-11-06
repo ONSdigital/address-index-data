@@ -21,6 +21,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "northing" -> row.getFloat(5),
     "parentUprn" -> (if (row.isNullAt(6)) null else row.getLong(6)),
     "paoStartNumber" -> (if (row.isNullAt(16)) null else row.getShort(16)),
+    "saoStartNumber" -> (if (row.isNullAt(21)) null else row.getShort(21)),
     "lpiLogicalStatus" -> row.getByte(27),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),

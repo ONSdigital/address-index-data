@@ -1052,6 +1052,10 @@ object Mappings {
       							"type": "short",
       							"index": "true"
       						},
+                  "saoStartNumber": {
+                    "type": "short",
+                    "index": "true"
+                  },
       						"uprn": {
       							"type": "long",
       							"index": "false"
