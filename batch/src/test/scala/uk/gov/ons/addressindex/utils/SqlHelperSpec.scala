@@ -445,5 +445,99 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf.head("recordIdentifier") shouldBe 27
     }
+
+    "aggregate information from skinny paf and nag to construct a single table containing grouped documents" in {
+
+      // Given
+      val paf = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor)
+
+      // When
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 4
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.parentUprn shouldBe 1l
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+
+      val secondResult = result(3)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.parentUprn shouldBe 0L
+      secondResult.lpi.size shouldBe 3
+      secondResult.paf.size shouldBe 1
+
+      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+
+      secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+    }
+
+    "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" in {
+
+      // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
+      // Given
+      val paf1 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val paf2 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test_hist.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false)
+
+      // When
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 3
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.parentUprn shouldBe 1l
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+
+      val secondResult = result(2)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.parentUprn shouldBe 0L
+      secondResult.lpi.size shouldBe 2
+      secondResult.paf.size shouldBe 1
+
+      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
+
+      secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+    }
   }
 }

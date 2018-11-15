@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import uk.gov.ons.addressindex.models.HybridAddressEsDocument
+import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
@@ -123,15 +123,84 @@ object SqlHelper {
     SparkProvider.sqlContext.sql(
       s"""SELECT
             uprn,
-            classificationCode,
-            classScheme
+            classificationCode
           FROM
             $classificationsTable
           WHERE
             classScheme = 'AddressBase Premium Classification Scheme'
-          GROUP BY uprn, classificationCode, classScheme
+          GROUP BY uprn, classificationCode
        """
     )
+  }
+
+  /**
+    * Constructs a hybrid index from nag and paf dataframes
+    */
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+
+    // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
+    // out at the joinCsvs stage. These need to be removed.
+    val pafGrouped =
+    if (historical) {
+      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    } else {
+      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    }
+
+    // DataFrame of lpis by uprn
+    val nagGrouped = nag
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+
+    // DataFrame of paf and lpis by uprn
+    val pafNagGrouped = nagGrouped.join(pafGrouped, Seq("uprn"), "left_outer")
+
+    // DataFrame of Classifications by uprn
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    // Construct Hierarchy DataFrame
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn")
+
+    val pafNagHierGrouped = pafNagGrouped
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+
+    pafNagHierGrouped.rdd.map {
+      row =>
+        val uprn = row.getAs[Long]("uprn")
+        val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
+        val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val parentUprn = Option(row.getAs[Long]("parentUprn"))
+        val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
+
+        val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
+        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+
+        HybridAddressSkinnyEsDocument(
+          uprn,
+          parentUprn.getOrElse(0L),
+          outputLpis,
+          outputPaf,
+          classificationCode
+        )
+    }
   }
 
   /**
@@ -170,7 +239,7 @@ object SqlHelper {
     // DataFrame of Classifications by uprn
     val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
       .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode", "classScheme")).as("classifications"))
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
 
     // Construct Hierarchy DataFrame
     val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
@@ -195,16 +264,14 @@ object SqlHelper {
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
         val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
         val relatives = Option(row.getAs[Seq[Row]]("relatives")).getOrElse(Seq())
-        val classifications = Option(row.getAs[Seq[Row]]("classifications")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
+        val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
 
         val outputLpis = lpis.map(row => HybridAddressEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
-        val outputClassifications = classifications.map(row => HybridAddressEsDocument.rowToClassification(row))
-
-        val classificationCode: Option[String] = outputClassifications.headOption.flatMap(_.get("classificationCode").map(_.toString))
+        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
