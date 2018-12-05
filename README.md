@@ -1,29 +1,37 @@
-# address-index-data [![Build Status](https://travis-ci.com/ONSdigital/address-index-data.svg?token=wrHpQMWmwL6kpsdmycnz&branch=develop)](https://travis-ci.com/ONSdigital/address-index-data)
+# address-index-data 
 
-### Prerequisites
+[![Build Status](https://travis-ci.com/ONSdigital/address-index-data.svg?token=wrHpQMWmwL6kpsdmycnz&branch=develop)](https://travis-ci.com/ONSdigital/address-index-data)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/83c0fb7ca2e64567b0998848ca781a36)](https://www.codacy.com/app/Valtech-ONS/address-index-data?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ONSdigital/address-index-data&amp;utm_campaign=Badge_Grade)
 
-* Java 6 or higher
-* SBT (http://www.scala-sbt.org/)
+### Purpose
 
-### Development Setup (MacOS)
+This repository contains the Scala code for an Apache Spark job to create an Elasticsearch index from the AddressBase premium product.
 
-Launch elasticsearch:2 either with docker or through dedicated `dev` vagrant machine
+AddressBase premium is available to members of the Public Sector Mapping Aggreement.
 
-- `brew cask install docker`
-- `docker run -d -p 9200:9200 -p 9300:9300 elasticsearch:2`
+### Software and Versions
 
-or
+* Java 8 
+* SBT 0.13.16 (http://www.scala-sbt.org/)
+* Scala 2.12.4
+* Apache Spark 2.2
+* Elasticsearch 5.6.7
 
-- `vagrant run dev`
+### Development Setup (IntelliJ)
+
+* File, New, Project From Version Control, GitHub
+* Git Repository URL - select https://github.com/ONSdigital/address-index-data
+* Parent Directory: any local drive, typically your IdeaProjects directory
+* Directory Name: address-index-data
+* Clone
 
 ### Running
 
-TBD
-
 To package the project in a runnable fat-jar:
+From the root of the project
 
 ```shell
-sbt assembly
+sbt clean assembly
 ```
 
 The resulting jar will be located in `batch/target/scala-2.10/ons-ai-batch-assembly-version.jar`
@@ -33,7 +41,7 @@ To run the jar:
 ```shell
 java -Dconfig.file=application.conf -jar batch/target/scala-2.10/ons-ai-batch-assembly-version.jar
 ```
-
+You can use a local Elasticsearch or a cluster on a server (configurable)
 The `application.conf` file may contain:
 
 ```
@@ -41,7 +49,32 @@ addressindex.elasticsearch.nodes="just-the-hostname.com"
 addressindex.elasticsearch.pass="password"
 ```
 
-These will override the default configuration pointing to the localhost.
+These will override the default configuration. The location and names of the input files can also be overridden.
+Note that these input files are extracted from AddressBase and subject to some pre-processing.
+
+The job can also be run from inside IntelliJ. 
+In this case you can run the Main class directly but need to remove lines 40-83 and replace them with:
+```
+val indexName = generateIndexName(false, true)
+val url = s"http://$nodes:$port/$indexName"
+postMapping(indexName, true)
+saveHybridAddresses(false, true)
+```
+where the first boolean is for a historic index and second for a skinny index
+
+## Running Tests
+
+Before you can run tests on this project if using Windows you must
+  
+  * Install the 64-bit version of winutils.exe https://github.com/steveloughran/winutils/raw/master/hadoop-2.6.0/bin/winutils.exe
+  * save it on your local system in a bin directory e.g. c:\hadoop\bin
+  * create environment variables HADOOP_HOME = c:\hadoop and hadoop.home.dir = c:\hadoop\bin
+  * Now in IntelliJ you can mark the test directory (right-click, Mark Directory as, Test Resources Root).
+
+Then next time you right-click the green arrow "Run ScalaTests" should be shown.
+
+Note that you can't run the tests using sbt on the command line.
+
 
 ### Dependencies
 
