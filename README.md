@@ -7,7 +7,9 @@
 
 This repository contains the Scala code for an Apache Spark job to create an Elasticsearch index from the AddressBase premium product.
 
-AddressBase premium is available to members of the Public Sector Mapping Aggreement.
+AddressBase premium is available to members of the Public Sector Mapping Agreement. 
+
+For testing purposes there is a free sample https://www.ordnancesurvey.co.uk/forms/builder/addressbase-premium-sample-data/20171011154036/frame available from Ordnance Survey.
 
 ### Software and Versions
 
@@ -41,7 +43,7 @@ To run the jar:
 ```shell
 java -Dconfig.file=application.conf -jar batch/target/scala-2.10/ons-ai-batch-assembly-version.jar
 ```
-You can use a local Elasticsearch or a cluster on a server (configurable)
+The target Elasticsearch index can be on a local ES deployment or an external server (configurable)
 The `application.conf` file may contain:
 
 ```
