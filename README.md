@@ -7,9 +7,7 @@
 
 This repository contains the Scala code for an Apache Spark job to create an Elasticsearch index from the AddressBase premium product.
 
-AddressBase premium is available to members of the Public Sector Mapping Agreement. 
-
-For testing purposes there is a free sample https://www.ordnancesurvey.co.uk/forms/builder/addressbase-premium-sample-data/20171011154036/frame available from Ordnance Survey.
+For testing purposes there is a free AddressBase sample https://www.ordnancesurvey.co.uk/forms/builder/addressbase-premium-sample-data/20171011154036/frame available from Ordnance Survey.
 
 ### Software and Versions
 
