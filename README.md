@@ -7,7 +7,7 @@
 
 This repository contains the Scala code for an Apache Spark job to create an Elasticsearch index from the AddressBase premium product.
 
-For testing purposes there is a free AddressBase sample https://www.ordnancesurvey.co.uk/forms/builder/addressbase-premium-sample-data/20171011154036/frame available from Ordnance Survey.
+For testing purposes there is a free [AddressBase sample](https://www.ordnancesurvey.co.uk/forms/builder/addressbase-premium-sample-data/20171011154036/frame) available from Ordnance Survey.
 
 ### Software and Versions
 
@@ -74,7 +74,6 @@ Before you can run tests on this project if using Windows you must
 Then next time you right-click the green arrow "Run ScalaTests" should be shown.
 
 Note that you can't run the tests using sbt on the command line.
-
 
 ### Dependencies
 
