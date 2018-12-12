@@ -25,7 +25,7 @@ object SparkProvider {
   conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName)
 
   conf.set("spark.sql.shuffle.partitions", config.getString("addressindex.spark.sql.shuffle.partitions"))
-  conf.set("spark.yarn.executor.memoryOverhead", config.getString("addressindex.spark.yarn.executor.memoryOverhead"))
+  conf.set("spark.executor.memoryOverhead", config.getString("addressindex.spark.executor.memoryOverhead"))
 
   conf.set("es.nodes", config.getString("addressindex.elasticsearch.nodes"))
   conf.set("es.port", config.getString("addressindex.elasticsearch.port"))

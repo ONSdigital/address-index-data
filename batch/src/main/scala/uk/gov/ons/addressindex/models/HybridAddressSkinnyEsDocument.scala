@@ -1,13 +1,13 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import uk.gov.ons.addressindex.models.HybridAddressEsDocument.{concatNag, generateFormattedNagAddress}
 
 case class HybridAddressSkinnyEsDocument(
                                     uprn: Long,
                                     parentUprn: Long,
                                     lpi: Seq[Map[String, Any]],
                                     paf: Seq[Map[String, Any]],
+                                    nisra: Seq[Map[String, Any]],
                                     classificationCode: Option[String]
                                   )
 
@@ -97,4 +97,49 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       Option(row.getString(15)).getOrElse("")
     )
   )
+
+  def rowToNisra(row: Row): Map[String, Any] = {
+
+    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(row.getString(1), row.getString(2),row.getString(3), row.getString(4),
+      row.getString(5), row.getString(6), row.getString(7), row.getString(8), row.getString(9), row.getString(10), row.getString(11))
+
+    Map(
+      "uprn" -> row.getLong(0),
+      "buildingNumber" -> row.getString(4),
+      "easting" -> row.getFloat(12),
+      "northing" -> row.getFloat(13),
+      "location" -> row.get(14),
+      "creationDate" -> row.getDate(15),
+      "commencementDate" -> row.getDate(16),
+      "archivedDate" -> row.getDate(17),
+      "mixedNisra" -> nisraFormatted(0),
+      "mixedAltNisra" -> nisraFormatted(1),
+      "nisraAll" -> nisraFormatted(2)
+    )
+  }
+
+  def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,
+                                      altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
+                                      postcode: String) : Array[String] = {
+
+    val trimmedSubBuildingName = splitAndCapitalise(subBuildingName)
+    val trimmedBuildingName = splitAndCapitalise(buildingName)
+    val trimmedThoroughfare = splitAndCapitalise(thoroughfare)
+    val trimmedAltThoroughfare = splitAndCapitalise(altThoroughfare)
+    val trimmedDependentThoroughfare = splitAndCapitalise(dependentThoroughfare)
+
+    val buildingNumberWithStreetDescription = s"${buildingNumber.toUpperCase} $trimmedDependentThoroughfare"
+
+    Array(
+      Seq(splitAndCapitalise(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
+        trimmedThoroughfare, splitAndCapitaliseTowns(locality), splitAndCapitaliseTowns(townland), splitAndCapitaliseTowns(townName),
+        postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", "),
+      if (!altThoroughfare.isEmpty)
+      Seq(splitAndCapitalise(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
+        trimmedAltThoroughfare, splitAndCapitaliseTowns(locality), splitAndCapitaliseTowns(townland), splitAndCapitaliseTowns(townName),
+        postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", ") else "",
+      Seq(organisationName, subBuildingName, buildingName, buildingNumber, dependentThoroughfare, thoroughfare,
+        altThoroughfare, locality, townland, townName, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
+    )
+  }
 }
