@@ -1072,6 +1072,11 @@ object Mappings {
                       }
                     }
                   },
+                  "postcodeLocator": {
+                    "type": "text",
+                    "index": "true",
+                    "analyzer": "keyword"
+                  },
                   "saoStartNumber": {
                     "type": "short",
                     "index": "true"

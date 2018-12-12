@@ -15,6 +15,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
 
   def rowToLpi(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(0),
+    "postcodeLocator" -> row.getString(1),
     "addressBasePostal" -> row.getString(2),
     "location" -> row.get(3),
     "easting" -> row.getFloat(4),

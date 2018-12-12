@@ -92,6 +92,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
 
   val expectedNag = Map(
     "uprn" -> nagUprn,
+    "postcodeLocator" -> nagPostcodeLocator,
     "addressBasePostal" -> nagAddressBasePostal,
     "location" -> nagLocation,
     "easting" -> nagEasting,
