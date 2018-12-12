@@ -9,8 +9,8 @@ import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
 /**
- * Main executed file
- */
+  * Main executed file
+  */
 object Main extends App {
 
   val config = ConfigFactory.load()
@@ -37,55 +37,50 @@ For usage see below:
   val port = config.getString("addressindex.elasticsearch.port")
 
   // each run of this application has a unique index name
-//  val indexName =
-//    if (opts.skinny()) {
-//      if (opts.hybridNoHist()) {
-//        generateIndexName(false, true)
-//      } else {
-//        generateIndexName(true, true)
-//      }
-//    } else {
-//      if (opts.hybridNoHist()) {
-//        generateIndexName(false)
-//      } else {
-//        generateIndexName()
-//      }
-//    }
-//
-//  val url = s"http://$nodes:$port/$indexName"
-//
-//  if (!opts.help()) {
-//    AddressIndexFileReader.validateFileNames()
-//
-//    if (opts.skinny()) {
-//      postMapping(indexName, true)
-//      preLoad(indexName)
-//
-//      if (opts.hybridNoHist()) {
-//        saveHybridAddresses(false, true)
-//      } else {
-//        saveHybridAddresses(true, true)
-//      }
-//
-//      postLoad(indexName)
-//    } else {
-//      postMapping(indexName)
-//      preLoad(indexName)
-//
-//      if (opts.hybridNoHist()) {
-//        saveHybridAddresses(false)
-//      } else {
-//        saveHybridAddresses()
-//      }
-//
-//      postLoad(indexName)
-//    }
-//  } else opts.printHelp()
+  val indexName =
+    if (opts.skinny()) {
+      if (opts.hybridNoHist()) {
+        generateIndexName(false, true)
+      } else {
+        generateIndexName(true, true)
+      }
+    } else {
+      if (opts.hybridNoHist()) {
+        generateIndexName(false)
+      } else {
+        generateIndexName()
+      }
+    }
 
-  val indexName = generateIndexName(false,true)
   val url = s"http://$nodes:$port/$indexName"
-  postMapping(indexName, true)
-  saveHybridAddresses(false,true)
+
+  if (!opts.help()) {
+    AddressIndexFileReader.validateFileNames()
+
+    if (opts.skinny()) {
+      postMapping(indexName, true)
+      preLoad(indexName)
+
+      if (opts.hybridNoHist()) {
+        saveHybridAddresses(false, true)
+      } else {
+        saveHybridAddresses(true, true)
+      }
+
+      postLoad(indexName)
+    } else {
+      postMapping(indexName)
+      preLoad(indexName)
+
+      if (opts.hybridNoHist()) {
+        saveHybridAddresses(false)
+      } else {
+        saveHybridAddresses()
+      }
+
+      postLoad(indexName)
+    }
+  } else opts.printHelp()
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false): String = AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny)
 
