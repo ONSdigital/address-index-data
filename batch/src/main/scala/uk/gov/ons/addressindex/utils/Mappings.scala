@@ -998,6 +998,10 @@ object Mappings {
       				}
       			},
       			"analyzer": {
+              "welsh_no_split_analyzer": {
+                "tokenizer": "custom_keyword",
+                "filter": ["asciifolding"]
+              },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
       					"filter": ["asciifolding"]
@@ -1019,7 +1023,13 @@ object Mappings {
       					"english_poss_stemmer"],
       					"tokenizer": "standard"
       				}
-      			}
+      			},
+            "tokenizer": {
+              "custom_keyword": {
+                "type": "keyword",
+                "buffer_size": 256
+              }
+            }
       		}
       	},
       	"mappings": {
@@ -1052,9 +1062,28 @@ object Mappings {
       							"type": "short",
       							"index": "true"
       						},
+                  "paoStartSuffix": {
+                    "type": "text",
+                    "index": "true",
+                    "analyzer": "keyword",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword"
+                      }
+                    }
+                  },
                   "saoStartNumber": {
                     "type": "short",
                     "index": "true"
+                  },
+                  "streetDescriptor": {
+                    "type": "text",
+                    "analyzer": "welsh_no_split_analyzer",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword"
+                      }
+                    }
                   },
       						"uprn": {
       							"type": "long",
