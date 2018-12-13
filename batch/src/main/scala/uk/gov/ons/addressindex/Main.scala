@@ -9,8 +9,8 @@ import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
 /**
- * Main executed file
- */
+  * Main executed file
+  */
 object Main extends App {
 
   val config = ConfigFactory.load()
