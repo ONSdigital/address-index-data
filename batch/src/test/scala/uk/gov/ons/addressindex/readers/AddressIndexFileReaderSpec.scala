@@ -291,6 +291,23 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
 
+    "read NISRA xlsx file" in {
+
+      // When
+      val result = AddressIndexFileReader.readNisraXlsx().collect()
+
+      //Then
+      result.length shouldBe 5
+
+      val line = result(3)
+      line.getString(0) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
+      line.getString(12) shouldBe  "185113434" // UPRN
+      line.getString(16) shouldBe "DO_TERRACE" // CLASSIFICATION
+      line.getString(42) shouldBe "01/17/2014" // CREATION_DATE
+      line.getString(46) shouldBe "54.5268891" // LAT
+
+    }
+
     "extract epoch from the file path" in {
       // Given
       val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506"

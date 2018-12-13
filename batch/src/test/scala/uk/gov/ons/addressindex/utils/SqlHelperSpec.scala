@@ -462,12 +462,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor)
+      val nisra = AddressIndexFileReader.readNisraXlsx()
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 4
+      result.length shouldBe 9
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -475,8 +476,9 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.parentUprn shouldBe 1l
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
+      firstResult.nisra shouldBe empty
 
-      val secondResult = result(3)
+      val secondResult = result(8)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
@@ -488,6 +490,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
       List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
 
       secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+
+      val thirdResult = result(5)
+      thirdResult.uprn shouldBe 185446775L
+      thirdResult.parentUprn shouldBe 0L
+      thirdResult.lpi shouldBe empty
+      thirdResult.paf shouldBe empty
+      thirdResult.nisra.size shouldBe 1
+      thirdResult.nisra.head("archivedDate") shouldBe(format.parse("2014-01-19"))
     }
 
     "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" in {
@@ -513,12 +523,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false)
+      val nisra = AddressIndexFileReader.readNisraXlsx()
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 3
+      result.length shouldBe 7
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -526,18 +537,72 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.parentUprn shouldBe 1l
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
+      firstResult.nisra shouldBe empty
 
-      val secondResult = result(2)
+      val secondResult = result(6)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
+      secondResult.nisra shouldBe empty
 
       List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
       List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
 
       secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+
+      val thirdResult = result(4)
+      thirdResult.uprn shouldBe 185556998L
+      thirdResult.parentUprn shouldBe 0L
+      thirdResult.lpi shouldBe empty
+      thirdResult.paf shouldBe empty
+      thirdResult.nisra.size shouldBe 1
+      thirdResult.nisra.head("commencementDate") shouldBe(format.parse("2014-01-16"))
+    }
+
+    "create NISRA DataFrame" in {
+
+      // Given
+      val nisra = AddressIndexFileReader.readNisraXlsx()
+
+      // When
+      val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
+
+      // Then
+      nisraDF.length shouldBe 5
+
+      val firstLine = nisraDF(0)
+      firstLine.getLong(0) shouldBe 185113434L // UPRN
+      firstLine.getString(1) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
+      firstLine.getString(5) shouldBe "PEMBROKE LODGE" // THOROUGHFARE
+
+      val secondLine = nisraDF(3)
+      secondLine.getLong(0) shouldBe 185556998L // UPRN
+      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(5) shouldBe "MULLAGH PARK" // THOROUGHFARE
+    }
+
+    "create NISRA non-historical DataFrame" in {
+
+      // Given
+      val nisra = AddressIndexFileReader.readNisraXlsx()
+
+      // When
+      val nisraDF = SqlHelper.nisraData(nisra, false).sort("uprn").collect()
+
+      // Then
+      nisraDF.length shouldBe 4
+
+      val firstLine = nisraDF(0)
+      firstLine.getLong(0) shouldBe 185113434L // UPRN
+      firstLine.getString(1) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
+      firstLine.getString(5) shouldBe "PEMBROKE LODGE" // THOROUGHFARE
+
+      val secondLine = nisraDF(3)
+      secondLine.getLong(0) shouldBe 185675432L // UPRN
+      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(5) shouldBe "DOWLAND ROAD" // THOROUGHFARE
     }
   }
 }

@@ -97,9 +97,11 @@ For usage see below:
 
     val nag = generateNagAddresses(historical)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
+
     val hybrid =
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+        val nisra = AddressIndexFileReader.readNisraXlsx()
+        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, nisra, historical))
       } else {
         ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridIndex(paf, nag, historical))
       }

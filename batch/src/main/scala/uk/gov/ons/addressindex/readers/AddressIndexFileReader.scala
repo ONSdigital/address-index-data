@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.readers
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import uk.gov.ons.addressindex.models.CSVSchemas
+import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
 import uk.gov.ons.addressindex.utils.SparkProvider
 
 /**
@@ -22,6 +22,7 @@ object AddressIndexFileReader {
   lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
   lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
   lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
+  lazy val pathToNisraXLSX = config.getString("addressindex.files.xlsx.nisra")
 
   /**
     * Reads csv into a `DataFrame`
@@ -93,12 +94,30 @@ object AddressIndexFileReader {
     */
   def readHierarchyCSV(): DataFrame = readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
 
+  /**
+    * Reads XLSX into a 'DataFrame'
+    * @param path
+    * @param schema
+    * @return 'DataFrame' containing the NISRA data from XLSX
+    */
+  def readNisraXlsx(): DataFrame = readXlsx(pathToNisraXLSX, NisraSchema.nisraFileSchema)
+
   private def readCsv(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
       .load(resolveAbsolutePath(path))
+
+  private def readXlsx(path: String, schema: StructType): DataFrame =
+    SparkProvider.sqlContext.read
+    .format("com.crealytics.spark.excel")
+    .schema(schema)
+    .option("inferSchema", "false")
+    .option("useHeader", "true")
+    .load(resolveAbsolutePath(path))
+
+
 
   private def resolveAbsolutePath(path: String) = {
     val currentDirectory = new java.io.File(".").getCanonicalPath
@@ -115,6 +134,8 @@ object AddressIndexFileReader {
   }
 
   def validateFileNames(): Boolean = {
+
+    // Not currently validating the NISRA data file name as format is unknown
 
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)

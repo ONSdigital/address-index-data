@@ -2,6 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
+import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -133,10 +134,38 @@ object SqlHelper {
     )
   }
 
+  def nisraData(nisra: DataFrame, historical: Boolean = true): DataFrame = {
+
+    val historicalDF =
+      nisra.select(nisra("uprn").cast(LongType),
+        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
+        functions.regexp_replace(nisra("subBuildingName"), "NULL", "").as("subBuildingName"),
+        functions.regexp_replace(nisra("buildingName"), "NULL", "").as("buildingName"),
+        functions.regexp_replace(functions.regexp_replace(nisra("buildingNumber"), "NULL", ""), "0", "").as("buildingNumber"),
+        functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
+        functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
+        functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
+        functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
+        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(nisra("townName"), "NULL", "").as("townName"),
+        functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
+        nisra("xCoordinate").as("easting").cast(FloatType),
+        nisra("yCoordinate").as("northing").cast(FloatType),
+        functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
+        functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
+        functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
+        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
+
+    val nonHistoricalDF =
+      historicalDF.filter("addressStatus != 'HISTORICAL'")
+
+    if (historical) historicalDF else nonHistoricalDF
+  }
+
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -153,13 +182,20 @@ object SqlHelper {
         .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
     }
 
+    // DataFrame of nisra by uprn
+    val nisraGrouped = nisraData(nisra, historical)
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("nisra"))
+
     // DataFrame of lpis by uprn
     val nagGrouped = nag
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("*")).as("lpis"))
 
     // DataFrame of paf and lpis by uprn
-    val pafNagGrouped = nagGrouped.join(pafGrouped, Seq("uprn"), "left_outer")
+    val pafNagGrouped = nagGrouped
+      .join(pafGrouped, Seq("uprn"), "left_outer")
+      .join(nisraGrouped, Seq("uprn"), "full_outer")
 
     // DataFrame of Classifications by uprn
     val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
@@ -186,11 +222,13 @@ object SqlHelper {
         val uprn = row.getAs[Long]("uprn")
         val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val nisra = Option(row.getAs[Seq[Row]]("nisra")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
         val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
 
         val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
+        val outputNisra = nisra.map(row => HybridAddressSkinnyEsDocument.rowToNisra(row))
         val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         HybridAddressSkinnyEsDocument(
@@ -198,6 +236,7 @@ object SqlHelper {
           parentUprn.getOrElse(0L),
           outputLpis,
           outputPaf,
+          outputNisra,
           classificationCode
         )
     }

@@ -81,6 +81,29 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val nagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val nagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
 
+  // NISRA example
+  val nisraOrganisation = "AN ORGANISATION"
+  val nisraSubBuildingName = "THE SUB BUILDING NAME"
+  val nisraBuildingName = "THE BUILDING NAME"
+  val nisraBuildingNumber = "1A"
+  val nisraThoroughfare = "THOROUGHFARE ROAD"
+  val nisraDependentThoroughfare = "OFF HERE"
+  val nisraAltThoroughfare = "AN ALTERNATIVE NAME"
+  val nisraLocality = "A LOCALITY XYZ"
+  val nisraTownland = "BIG TOWNLAND"
+  val nisraTown = "LITTLE TOWN"
+  val nisraPostCode = "AB1 7GH"
+  val nisraEasting = 379171.00F
+  val nisraNorthing = 412816.00F
+  val nisraLocation = Array(-2.3162985F, 4.00F)
+  val nisraUprn = 100010977866L
+  val nisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
+  val nisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
+  val nisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+  val nisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val nisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val nisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+
   val expectedPaf = Map(
     "endDate" -> pafEndDate,
     "uprn" -> pafUprn,
@@ -107,6 +130,20 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "lpiStartDate" -> nagLpiStartDate,
     "lpiEndDate" -> nagLpiEndDate,
     "mixedNag" -> nagMixed
+  )
+
+  val expectedNisra = Map(
+    "uprn" -> nisraUprn,
+    "location" -> nisraLocation,
+    "easting" -> nisraEasting,
+    "northing" -> nisraNorthing,
+    "mixedNisra" -> nisraMixed,
+    "creationDate" -> nisraCreationDate,
+    "commencementDate" -> nisraCommencementDate,
+    "archivedDate" -> nisraArchivedDate,
+    "buildingNumber" -> nisraBuildingNumber,
+    "mixedAltNisra" -> nisraAltMixed,
+    "nisraAll" -> nisraAll
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -199,6 +236,74 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
 
       // Then
       actual shouldBe expectedPaf
+    }
+
+    "Hybrid Address Skinny Elastic Search Document" should {
+
+      "cast DataFrame's rows to a NISRA key-value Map" in {
+        // Given
+        val row = Row(
+          nisraUprn,
+          nisraOrganisation,
+          nisraSubBuildingName,
+          nisraBuildingName,
+          nisraBuildingNumber,
+          nisraThoroughfare,
+          nisraAltThoroughfare,
+          nisraDependentThoroughfare,
+          nisraLocality,
+          nisraTownland,
+          nisraTown,
+          nisraPostCode,
+          nisraEasting,
+          nisraNorthing,
+          nisraLocation,
+          nisraCreationDate,
+          nisraCommencementDate,
+          nisraArchivedDate,
+          nisraMixed,
+          nisraAltMixed,
+          nisraAll
+        )
+
+        // When
+        val actual = HybridAddressSkinnyEsDocument.rowToNisra(row)
+
+        // Then
+        actual shouldBe expectedNisra
+      }
+    }
+
+    "create NISRA with expected formatted address" in {
+
+      // Also tests nisraAll
+      // When
+      val result = HybridAddressSkinnyEsDocument.generateFormattedNisraAddresses(nisraOrganisation, nisraSubBuildingName,
+        nisraBuildingName, nisraBuildingNumber, nisraThoroughfare, "", nisraDependentThoroughfare, nisraLocality,
+        nisraTownland, nisraTown, nisraPostCode)
+
+      val expected = nisraMixed
+      val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+
+      // Then
+      result(0) shouldBe expected
+      result(2) shouldBe expectedNisraAll
+    }
+
+    "create NISRA with expected formatted address (Alt Thoroughfare)" in {
+
+      // Also tests nisraAll
+      // When
+      val result = HybridAddressSkinnyEsDocument.generateFormattedNisraAddresses(nisraOrganisation, nisraSubBuildingName,
+        nisraBuildingName, nisraBuildingNumber, nisraThoroughfare, nisraAltThoroughfare, nisraDependentThoroughfare, nisraLocality,
+        nisraTownland, nisraTown, nisraPostCode)
+
+      val expected = nisraAltMixed
+      val expectedNisraAll = nisraAll
+
+      // Then
+      result(1) shouldBe expected
+      result(2) shouldBe expectedNisraAll
     }
   }
 }
