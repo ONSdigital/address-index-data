@@ -15,14 +15,17 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
 
   def rowToLpi(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(0),
+    "postcodeLocator" -> row.getString(1),
     "addressBasePostal" -> row.getString(2),
     "location" -> row.get(3),
     "easting" -> row.getFloat(4),
     "northing" -> row.getFloat(5),
     "parentUprn" -> (if (row.isNullAt(6)) null else row.getLong(6)),
     "paoStartNumber" -> (if (row.isNullAt(16)) null else row.getShort(16)),
+    "paoStartSuffix" -> row.getString(17),
     "saoStartNumber" -> (if (row.isNullAt(21)) null else row.getShort(21)),
     "lpiLogicalStatus" -> row.getByte(27),
+    "streetDescriptor" -> row.getString(30),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),
     "nagAll" ->  concatNag(
