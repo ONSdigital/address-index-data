@@ -11,12 +11,12 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % "2.3.2",
   "org.apache.spark" %% "spark-hive" % "2.3.2",
   "com.databricks" %% "spark-csv" % "1.5.0",
-  "com.typesafe" % "config" % "1.3.1",
+  "com.typesafe" % "config" % "1.3.3",
   "org.elasticsearch" %% "elasticsearch-spark-20" % "5.6.14"  excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-  "org.rogach" %% "scallop" % "3.0.3",
-  "org.scalaj" %% "scalaj-http" % "2.3.0",
-  "com.crealytics" %% "spark-excel" % "0.10.2"
+  "org.rogach" %% "scallop" % "3.1.5",
+  "org.scalaj" %% "scalaj-http" % "2.4.1",
+  "com.crealytics" %% "spark-excel" % "0.11.0"
 
 )
 
