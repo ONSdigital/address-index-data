@@ -149,8 +149,8 @@ object AddressIndexFileReader {
       pathToOrganisationCSV,
       pathToStreetCSV,
       pathToStreetDescriptorCSV,
-      pathToSuccessorCSV //,
-//      pathToHierarchyCSV
+      pathToSuccessorCSV,
+      pathToHierarchyCSV
     ).forall(fileName => validateFileName(fileName, epoch, date))
 
   }
