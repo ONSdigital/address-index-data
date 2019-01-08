@@ -5,6 +5,7 @@ import org.scalatest.{Matchers, WordSpec}
 class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+  System.setSecurityManager(null)
 
   "AddressIndexFileReader" should {
     "read delivery point csv file" in {
