@@ -5,6 +5,12 @@ import org.scalatest.{Matchers, WordSpec}
 class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+  /*
+    The following line stops the error that is reported by travis when running the tests.
+    This is a Derby DB issue which we don't use explicitly but Spark does for local test runs.
+    https://issues.apache.org/jira/browse/SPARK-22918
+   */
+  System.setSecurityManager(null)
 
   "AddressIndexFileReader" should {
     "read delivery point csv file" in {
