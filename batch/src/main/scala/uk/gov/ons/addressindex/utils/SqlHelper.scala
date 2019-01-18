@@ -19,7 +19,7 @@ object SqlHelper {
         SparkProvider.registerTempTable(blpu, "blpu")
       } else {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
-        val blpuNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+        val blpuNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8 AND b.addressBasePostal !='N'""")
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
@@ -28,7 +28,7 @@ object SqlHelper {
         SparkProvider.registerTempTable(lpi, "lpi")
       } else {
         val lpiNoHistory = SparkProvider.registerTempTable(lpi, "lpiNoHistory")
-        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8""")
+        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
         SparkProvider.registerTempTable(lpiNoHistoryDF, "lpi")
       }
     val streetTable = SparkProvider.registerTempTable(street, "street")
