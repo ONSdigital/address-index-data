@@ -159,7 +159,7 @@ object AddressIndexFileReader {
     val nameRegex = s"ABP_E$epoch.+_v$date\\.csv$$".r
 
     if (nameRegex.findFirstIn(filePath).isDefined) true
-    else 
+    else
       true
       //throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
   }
