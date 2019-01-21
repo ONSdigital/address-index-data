@@ -84,18 +84,18 @@ For usage see below:
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false): String = AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny)
 
-  private def generateNagAddresses(historical : Boolean = true): DataFrame = {
+  private def generateNagAddresses(historical : Boolean = true, skinny: Boolean = false): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
     val lpi = AddressIndexFileReader.readLpiCSV()
     val organisation = AddressIndexFileReader.readOrganisationCSV()
     val street = AddressIndexFileReader.readStreetCSV()
     val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
-    SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical)
+    SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical, skinny)
   }
 
   private def saveHybridAddresses(historical : Boolean = true, skinny: Boolean = false) = {
 
-    val nag = generateNagAddresses(historical)
+    val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
 
     val hybrid =

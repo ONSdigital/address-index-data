@@ -12,14 +12,24 @@ import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 object SqlHelper {
 
   def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
-               streetDescriptor: DataFrame, historical: Boolean = true): DataFrame = {
+               streetDescriptor: DataFrame, historical: Boolean = true, skinny: Boolean = false): DataFrame = {
 
     val blpuTable =
       if (historical) {
-        SparkProvider.registerTempTable(blpu, "blpu")
+        val blpuWithHistory = SparkProvider.registerTempTable(blpu, "blpuWithHistory")
+        val blpuWithHistoryDF =
+          if (skinny)
+            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b WHERE b.addressBasePostal !='N'""")
+          else
+            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
+        SparkProvider.registerTempTable(blpuWithHistoryDF, "blpu")
       } else {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
-        val blpuNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+        val blpuNoHistoryDF =
+          if (skinny)
+            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8 AND b.addressBasePostal !='N'""")
+          else
+            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
@@ -28,7 +38,7 @@ object SqlHelper {
         SparkProvider.registerTempTable(lpi, "lpi")
       } else {
         val lpiNoHistory = SparkProvider.registerTempTable(lpi, "lpiNoHistory")
-        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8""")
+        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
         SparkProvider.registerTempTable(lpiNoHistoryDF, "lpi")
       }
     val streetTable = SparkProvider.registerTempTable(street, "street")
