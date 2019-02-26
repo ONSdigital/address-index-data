@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.readers
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import uk.gov.ons.addressindex.models.CSVSchemas
+import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
 import uk.gov.ons.addressindex.utils.SparkProvider
 
 /**
@@ -22,6 +22,7 @@ object AddressIndexFileReader {
   lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
   lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
   lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
+  lazy val pathToNisraXLSX = config.getString("addressindex.files.xlsx.nisra")
 
   /**
     * Reads csv into a `DataFrame`
@@ -93,12 +94,30 @@ object AddressIndexFileReader {
     */
   def readHierarchyCSV(): DataFrame = readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
 
+  /**
+    * Reads XLSX into a 'DataFrame'
+    * @param path
+    * @param schema
+    * @return 'DataFrame' containing the NISRA data from XLSX
+    */
+  def readNisraXlsx(): DataFrame = readXlsx(pathToNisraXLSX, NisraSchema.nisraFileSchema)
+
   private def readCsv(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
       .load(resolveAbsolutePath(path))
+
+  private def readXlsx(path: String, schema: StructType): DataFrame =
+    SparkProvider.sqlContext.read
+    .format("com.crealytics.spark.excel")
+    .schema(schema)
+    .option("inferSchema", "false")
+    .option("useHeader", "true")
+    .load(resolveAbsolutePath(path))
+
+
 
   private def resolveAbsolutePath(path: String) = {
     val currentDirectory = new java.io.File(".").getCanonicalPath
@@ -115,6 +134,8 @@ object AddressIndexFileReader {
   }
 
   def validateFileNames(): Boolean = {
+
+    // Not currently validating the NISRA data file name as format is unknown
 
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
@@ -138,7 +159,8 @@ object AddressIndexFileReader {
     val nameRegex = s"ABP_E$epoch.+_v$date\\.csv$$".r
 
     if (nameRegex.findFirstIn(filePath).isDefined) true
-    else throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
+    else
+      throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
   }
 
   def extractEpoch(filePath: String): Int = {
@@ -153,11 +175,20 @@ object AddressIndexFileReader {
     date.group(1)
   }
 
-  def generateIndexNameFromFileName(): String = {
+  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
-    val baseIndexName = config.getString("addressindex.elasticsearch.indices.hybrid")
-    s"${baseIndexName}_${epoch}_${date}_${System.currentTimeMillis()}"
+    val baseIndexName =
+      if (historical) {
+        config.getString("addressindex.elasticsearch.indices.hybrid")
+      } else {
+        config.getString("addressindex.elasticsearch.indices.hybridHistorical")
+      }
+
+    val subIndex =
+      if (skinny) config.getString("addressindex.elasticsearch.indices.skinny") else ""
+
+    s"${baseIndexName}${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }

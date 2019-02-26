@@ -1,7 +1,6 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.types._
-import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
 
 /**
   * Contains schemas that should be applied to CSV documents

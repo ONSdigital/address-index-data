@@ -4,7 +4,7 @@ language: scala
 script:
   - if [[ "$TRAVIS_PULL_REQUEST" != false ]]; then sbt ++$TRAVIS_SCALA_VERSION test; else travis_retry sbt ++$TRAVIS_SCALA_VERSION test; fi
 scala:
-  - 2.10.6
+  - 2.11.8
 jdk:
   - oraclejdk8
 branches:
@@ -27,4 +27,4 @@ addons:
   hostname: ons-ai
 notifications:
   email: false
-  slack: valtech-ons:nLeAGETA8HsuIi5fMQCaLe2G
+  # slack: valtech-ons:nLeAGETA8HsuIi5fMQCaLe2G

@@ -7,15 +7,19 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-compiler" % scalaVersion.value,
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.apache.spark" %% "spark-core" % "1.6.3",
-  "org.apache.spark" %% "spark-sql" % "1.6.3",
-  "org.apache.spark" %% "spark-hive" % "1.6.3",
+  "org.apache.spark" %% "spark-core" % "2.3.2",
+  "org.apache.spark" %% "spark-sql" % "2.3.2",
+  "org.apache.spark" %% "spark-hive" % "2.3.2",
   "com.databricks" %% "spark-csv" % "1.5.0",
-  "com.typesafe" % "config" % "1.3.1",
-  "org.elasticsearch" %% "elasticsearch-spark" % "2.4.0"  excludeAll ExclusionRule(organization = "javax.servlet"),
-  "org.scalatest" %% "scalatest" % "3.0.0" % Test,
-  "org.rogach" %% "scallop" % "2.0.5",
-  "org.scalaj" %% "scalaj-http" % "2.3.0"
+  "com.typesafe" % "config" % "1.3.3",
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "5.6.14"  excludeAll ExclusionRule(organization = "javax.servlet"),
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+  "org.rogach" %% "scallop" % "3.1.5",
+  "org.scalaj" %% "scalaj-http" % "2.4.1",
+  "com.crealytics" %% "spark-excel" % "0.10.2"
+
 )
+
+dependencyOverrides += "commons-codec" % "commons-codec" % "1.11"
 
 scalacOptions ++= List("-unchecked", "-Xlint")

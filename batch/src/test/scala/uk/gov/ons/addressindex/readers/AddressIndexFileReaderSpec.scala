@@ -5,6 +5,12 @@ import org.scalatest.{Matchers, WordSpec}
 class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+  /*
+    The following line stops the error that is reported by travis when running the tests.
+    This is a Derby DB issue which we don't use explicitly but Spark does for local test runs.
+    https://issues.apache.org/jira/browse/SPARK-22918
+   */
+  System.setSecurityManager(null)
 
   "AddressIndexFileReader" should {
     "read delivery point csv file" in {
@@ -54,7 +60,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readBlpuCSV().collect()
 
       // Then
-      result.length shouldBe 2 // 4 with the header
+      result.length shouldBe 4 // 5 with the header
 
       val firstLine = result(0)
 
@@ -88,7 +94,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readClassificationCSV().collect()
 
       // Then
-      result.length shouldBe 3 // 4 with the header
+      result.length shouldBe 4 // 5 with the header
 
       val firstLine = result(0)
 
@@ -112,7 +118,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readCrossrefCSV().collect()
 
       // Then
-      result.length shouldBe 3 // 4 with the header
+      result.length shouldBe 8 // 9 with the header
 
       val firstLine = result(0)
 
@@ -136,7 +142,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readLpiCSV().collect()
 
       // Then
-      result.length shouldBe 3 // 4 with the header
+      result.length shouldBe 9 // 10 with the header
 
       val firstLine = result(0)
 
@@ -289,6 +295,23 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getInt(3) shouldBe 3 // LAYERS
       line.getInt(4) shouldBe 3 // CURRENT_LAYER
       line.getLong(2) shouldBe 2 // PARENT_UPRN
+    }
+
+    "read NISRA xlsx file" in {
+
+      // When
+      val result = AddressIndexFileReader.readNisraXlsx().collect()
+
+      //Then
+      result.length shouldBe 5
+
+      val line = result(3)
+      line.getString(0) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
+      line.getString(12) shouldBe  "185113434" // UPRN
+      line.getString(16) shouldBe "DO_TERRACE" // CLASSIFICATION
+      line.getString(42) shouldBe "01/17/2014" // CREATION_DATE
+      line.getString(46) shouldBe "54.5268891" // LAT
+
     }
 
     "extract epoch from the file path" in {
