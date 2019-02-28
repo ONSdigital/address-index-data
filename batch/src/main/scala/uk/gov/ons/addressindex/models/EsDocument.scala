@@ -199,11 +199,12 @@ abstract class EsDocument {
   // next check for parts in non-hyphenated names that are always lower case
   // if noneof the above capitalize in the standard way
   def splitAndCapitaliseTowns(input: String) : String = {
-    input.trim.split(" ").map(
-      {case y => if (acronyms.contains(y)) y
+    input.trim.split(" ").map(  {
+      case y => if (acronyms.contains(y)) y
       else if (!hyphenplaces.getOrElse(y,"").equals("")) hyphenplaces.getOrElse(y,"")
       else if (!lowercaseparts.getOrElse(y,"").equals("")) lowercaseparts.getOrElse(y,"")
-      else y.toLowerCase.capitalize}
+      else y.toLowerCase.capitalize
+      }
     ).mkString(" ")
   }
 
