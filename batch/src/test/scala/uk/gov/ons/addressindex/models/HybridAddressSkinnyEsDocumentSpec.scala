@@ -50,7 +50,6 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagUprn = 100010971565L
   val expectedNagPostcodeLocator = "KL8 7HQ"
   val expectedNagAddressBasePostal = "D"
-  val expectedNagLocation = Array(-2.3162985F, 4.00F)
   val expectedNagEasting = 379171.00F
   val expectedNagNorthing = 412816.00F
   val expectedNagParentUprn = 999910971564L
@@ -99,10 +98,13 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val actualNagUsrnMatchIndicator = 1.toByte
   val actualNagLanguage = "ENG"
   val actualNagStreetClassification = 8.toByte
-  val actualNagLocation = Array(-2.3162985F, 4.00F)
   val actualNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val actualNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+
+  // used by both expected and actual to avoid assertion error
+  val nagLocation = Array(-2.3162985F, 4.00F)
+
 
   // NISRA example
   val nisraOrganisation = "AN ORGANISATION"
@@ -140,7 +142,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
-    "location" -> expectedNagLocation,
+    "location" -> nagLocation,
     "easting" -> expectedNagEasting,
     "northing" -> expectedNagNorthing,
     "parentUprn" -> expectedNagParentUprn,
@@ -177,7 +179,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         actualNagUprn,
         actualNagPostcodeLocator,
         actualNagAddressBasePostal,
-        actualNagLocation,
+        nagLocation,
         actualNagEasting,
         actualNagNorthing,
         actualNagParentUprn,

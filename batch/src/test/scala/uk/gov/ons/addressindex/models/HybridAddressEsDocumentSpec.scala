@@ -6,7 +6,7 @@ import org.scalatest.{Matchers, WordSpec}
 class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
-  
+
   // Expected Paf values
   val expectedPafBuildingNumber = 1.toShort
   val expectedPafUdprn = 19
@@ -106,7 +106,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagUsrnMatchIndicator = 1.toByte
   val expectedNagLanguage = "ENG"
   val expectedNagStreetClassification = 8.toByte
-  val expectedNagLocation = Array(-2.3162985F, 4.00F)
   val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
@@ -147,10 +146,13 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val actualNagUsrnMatchIndicator = 1.toByte
   val actualNagLanguage = "ENG"
   val actualNagStreetClassification = 8.toByte
-  val actualNagLocation = Array(-2.3162985F, 4.00F)
   val actualNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val actualNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+
+  // used by both expected and actual to avoid assertion error
+  val nagLocation = Array(-2.3162985F, 4.00F)
+
 
   val expectedPaf = Map(
     "buildingNumber" -> expectedPafBuildingNumber,
@@ -191,7 +193,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
-    "location" -> expectedNagLocation,
+    "location" -> nagLocation,
     "easting" -> expectedNagEasting,
     "northing" -> expectedNagNorthing,
     "parentUprn" -> expectedNagParentUprn,
@@ -237,7 +239,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         actualNagUprn,
         actualNagPostcodeLocator,
         actualNagAddressBasePostal,
-        actualNagLocation,
+        nagLocation,
         actualNagEasting,
         actualNagNorthing,
         actualNagParentUprn,
@@ -277,7 +279,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val actual = HybridAddressEsDocument.rowToLpi(row)
 
       // Then
-      actual.toSeq shouldEqual expectedNag.toSeq
+      actual.toString() shouldEqual expectedNag.toString()
     }
 
     "cast DataFrame's rows to an PAF key-value Map" in {
