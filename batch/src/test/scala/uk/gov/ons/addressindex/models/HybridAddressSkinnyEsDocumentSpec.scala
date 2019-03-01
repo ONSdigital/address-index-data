@@ -104,8 +104,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
 
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
-
-
+  
   // NISRA example
   val nisraOrganisation = "AN ORGANISATION"
   val nisraSubBuildingName = "THE SUB BUILDING NAME"

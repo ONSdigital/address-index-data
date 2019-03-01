@@ -153,7 +153,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-
   val expectedPaf = Map(
     "buildingNumber" -> expectedPafBuildingNumber,
     "udprn" -> expectedPafUdprn,
@@ -729,7 +728,6 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       // Then
       result shouldBe "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
     }
-
 
     "concatenate the required nag fields and handle empty start numbers" in {
 
