@@ -77,12 +77,12 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagOfficialFlag = "Y"
   val expectedNagPaoStartNumber = 56.toShort
   val expectedNagPostcodeLocator = "KL8 7HQ"
-  val expectedNagSaoEndSuffix = "Jj"
+  val expectedNagSaoEndSuffix = "JJ"
   val expectedNagSaoStartNumber = 6473.toShort
   val expectedNagUsrn = 9402538
   val expectedNagLpiLogicalStatus = 1.toByte
   val expectedNagEasting = 379171.00F
-  val expectedNagPaoEndSuffix = "Op"
+  val expectedNagPaoEndSuffix = "OP"
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
   val expectedNagUprn = 100010971565L
   val expectedNagNorthing = 412816.00F
@@ -91,10 +91,10 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagPaoEndNumber = 7755.toShort
   val expectedNagTownName = "Town B"
   val expectedNagLegalName = "ANOTHER LEGAL NAME"
-  val expectedNagSaoStartSuffix = "Ff"
+  val expectedNagSaoStartSuffix = "FF"
   val expectedNagPaoText = "A Training Centre"
   val expectedNagSaoText = "Building Name"
-  val expectedNagPaoStartSuffix = "Hh"
+  val expectedNagPaoStartSuffix = "HH"
   val expectedNagAddressBasePostal = "D"
   val expectedNagLocality = "Locality Xyz"
   val expectedNagLevel = "UP THERE SOME WHERE"
@@ -110,7 +110,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val expectedNagMixed = "Something Else, 6473Ff-6623Jj, Building Name, A Training Centre, 56HH-7755Op And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagMixed = "Something Else, 6473FF-6623JJ, Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
 
   // Actual Nag Values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -436,7 +436,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
 
       // Then
-      result shouldBe "Acme Stats PLC, 6473Ff-6623Jj, Building Name, A Training Centre, 56Hh-7755Op And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
     "change uppercase nag address containing 'PO BOX' to mixed case" in {
@@ -455,7 +455,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
 
       // Then
-      result shouldBe "Acme Stats PLC, 6473Ff-6623Jj, PO BOX 5678, A Training Centre, 56Hh-7755Op And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
     "change uppercase nag address containing a hyphenated town name to mixed case" in {
@@ -475,7 +475,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         nagTown, expectedNag("postcodeLocator").toString)
 
       // Then
-      result shouldBe "Acme Stats PLC, 6473Ff-6623Jj, Building Name, A Training Centre, 56Hh-7755Op And Another Street Descriptor, Lee-on-the-Solent, Barrow-in-Furness, KL8 7HQ"
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Barrow-in-Furness, KL8 7HQ"
     }
 
     "create NAG with expected formatted address (sao empty)" in {
@@ -495,7 +495,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         expectedNag("locality").toString, expectedNag("townName").toString,
         expectedNag("postcodeLocator").toString)
 
-      val expected = "Something Else, A Training Centre, 56Hh-7755Op And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+      val expected = "Something Else, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
 
       // Then
       result shouldBe expected
@@ -518,7 +518,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
         expectedNag("streetDescriptor").toString, expectedNag("locality").toString,
         expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
 
-      val expected = "Something Else, 6473Ff-6623Jj, PO BOX 5678, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+      val expected = "Something Else, 6473FF-6623JJ, PO BOX 5678, And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
 
       // Then
       result shouldBe expected

@@ -271,6 +271,10 @@ object Mappings {
            }
          },
          "analyzer": {
+           "upper_keyword": {
+             "tokenizer": "keyword",
+             "filter": ["uppercase"]
+           },
            "welsh_no_split_analyzer": {
              "tokenizer": "custom_keyword",
              "filter": [
@@ -344,7 +348,7 @@ object Mappings {
                "locality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "lpiLogicalStatus": {
                  "type": "byte",
@@ -368,7 +372,7 @@ object Mappings {
                },
                "organisation": {
                  "type": "text",
-                 "analyzer": "welsh_split_analyzer"
+                 "analyzer": "upper_keyword"
                },
                "paoEndNumber": {
                  "type": "short",
@@ -426,7 +430,7 @@ object Mappings {
                },
                "streetDescriptor": {
                  "type": "text",
-                 "analyzer": "welsh_no_split_analyzer",
+                 "analyzer": "upper_keyword",
                  "fields": {
                    "keyword": {
                      "type": "keyword"
@@ -436,7 +440,7 @@ object Mappings {
                "townName": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "uprn": {
                  "type": "long",
@@ -998,9 +1002,13 @@ object Mappings {
       				}
       			},
       			"analyzer": {
+      			  "upper_keyword": {
+                "tokenizer": "keyword",
+                "filter": ["uppercase"]
+              },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding"]
+                "filter": ["asciifolding","uppercase"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
