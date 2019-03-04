@@ -372,7 +372,7 @@ object Mappings {
                },
                "organisation": {
                  "type": "text",
-                 "analyzer": "upper_keyword"
+                 "analyzer": "welsh_split_analyzer"
                },
                "paoEndNumber": {
                  "type": "short",
@@ -430,7 +430,7 @@ object Mappings {
                },
                "streetDescriptor": {
                  "type": "text",
-                 "analyzer": "upper_keyword",
+                 "analyzer": "welsh_split_analyzer",
                  "fields": {
                    "keyword": {
                      "type": "keyword"
