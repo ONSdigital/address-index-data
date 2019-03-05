@@ -278,7 +278,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       val actual = HybridAddressEsDocument.rowToLpi(row)
 
       // Then
-      actual.toString() shouldEqual expectedNag.toString()
+      actual shouldBe expectedNag
     }
 
     "cast DataFrame's rows to an PAF key-value Map" in {
