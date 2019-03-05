@@ -59,10 +59,10 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagSaoStartNumber = 6473.toShort
   val expectedNagLpiLogicalStatus = 1.toByte
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
-  val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
+  val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val expectedNagMixed = "Something Else, 6473FF-6623JJ, Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
 
   // Actual Nag values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -85,7 +85,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val actualNagLegalName = "ANOTHER LEGAL NAME"
   val actualNagSaoStartSuffix = "FF"
   val actualNagPaoText = "A TRAINING CENTRE"
-  val actualNagSaoText = "BUILDING NAME"
+  val actualNagSaoText = "THE BUILDING NAME"
   val actualNagPaoStartSuffix = "HH"
   val actualNagAddressBasePostal = "D"
   val actualNagLocality = "LOCALITY XYZ"
