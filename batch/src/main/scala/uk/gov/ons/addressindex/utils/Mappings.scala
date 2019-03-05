@@ -278,13 +278,13 @@ object Mappings {
            "welsh_no_split_analyzer": {
              "tokenizer": "custom_keyword",
              "filter": [
-               "asciifolding"
+               "asciifolding",upper_keyword
              ]
            },
            "welsh_split_analyzer": {
              "tokenizer": "standard",
              "filter": [
-               "asciifolding"
+               "asciifolding",upper_keyword
              ]
            },
            "welsh_split_synonyms_analyzer": {
@@ -1002,13 +1002,17 @@ object Mappings {
       				}
       			},
       			"analyzer": {
+              "upper_keyword": {
+                "tokenizer": "keyword",
+                "filter": ["uppercase"]
+              },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding"]
+                "filter": ["asciifolding","upper_keyword"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
-      					"filter": ["asciifolding"]
+      					"filter": ["asciifolding", "upper_keyword"]
       				},
       				"welsh_bigram_analyzer": {
       					"type": "custom",
