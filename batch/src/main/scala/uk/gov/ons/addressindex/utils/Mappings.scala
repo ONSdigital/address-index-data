@@ -430,7 +430,7 @@ object Mappings {
                },
                "streetDescriptor": {
                  "type": "text",
-                 "analyzer": "welsh_split_analyzer",
+                 "analyzer": "welsh_no_split_analyzer",
                  "fields": {
                    "keyword": {
                      "type": "keyword"
@@ -1002,13 +1002,9 @@ object Mappings {
       				}
       			},
       			"analyzer": {
-      			  "upper_keyword": {
-                "tokenizer": "keyword",
-                "filter": ["uppercase"]
-              },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding","uppercase"]
+                "filter": ["asciifolding"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
