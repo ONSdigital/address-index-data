@@ -271,20 +271,18 @@ object Mappings {
            }
          },
          "analyzer": {
-           "upper_keyword": {
-             "tokenizer": "keyword",
-             "filter": ["uppercase"]
-           },
-           "welsh_no_split_analyzer": {
-             "tokenizer": "custom_keyword",
-             "filter": [
-               "asciifolding",upper_keyword
-             ]
-           },
+            "upper_keyword": {
+              "tokenizer": "keyword",
+              "filter": ["uppercase"]
+            },
+            "welsh_no_split_analyzer": {
+              "tokenizer": "custom_keyword",
+              "filter": ["asciifolding","uppercase"]
+            },
            "welsh_split_analyzer": {
              "tokenizer": "standard",
              "filter": [
-               "asciifolding",upper_keyword
+               "asciifolding","uppercase"
              ]
            },
            "welsh_split_synonyms_analyzer": {
@@ -1008,11 +1006,11 @@ object Mappings {
               },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding","upper_keyword"]
+                "filter": ["asciifolding","uppercase"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
-      					"filter": ["asciifolding", "upper_keyword"]
+      					"filter": ["asciifolding", "uppercase"]
       				},
       				"welsh_bigram_analyzer": {
       					"type": "custom",
