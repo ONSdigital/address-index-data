@@ -1222,6 +1222,11 @@ object Mappings {
        							"index": "true",
                     "null_value": "2021-03-31T00:00:00Z"
        						},
+                  "postcode": {
+                    "type": "text",
+                     "index": "true",
+                     "analyzer": "keyword"
+                  },
                   "mixedNisra": {
                     "type": "text",
                     "index": "false"
@@ -1241,6 +1246,11 @@ object Mappings {
       					"index": "false"
       				},
               "classificationCode": {
+                "type": "text",
+                "index": "true",
+                "analyzer": "keyword"
+              },
+              "postcode": {
                 "type": "text",
                 "index": "true",
                 "analyzer": "keyword"

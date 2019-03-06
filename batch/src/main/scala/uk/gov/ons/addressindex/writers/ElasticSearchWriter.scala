@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.writers
 
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.spark._
-import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument}
+import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument, HybridAddressNisraEsDocument}
 
 /**
   * Contains methods that store supplied structures into ElasticSearch
@@ -21,5 +21,17 @@ object ElasticSearchWriter {
     * Stores addresses (Hybrid PAF & NAG) into ElasticSearch
     * @param data `RDD` containing addresses
     */
+  def saveHybridNisraAddresses(index: String, data: RDD[HybridAddressNisraEsDocument]): Unit = data.saveToEs(index)
+
+  /**
+    * Stores addresses (Hybrid PAF & NAG) into ElasticSearch
+    * @param data `RDD` containing addresses
+    */
   def saveSkinnyHybridAddresses(index: String, data: RDD[HybridAddressSkinnyEsDocument]): Unit = data.saveToEs(index)
+
+  /**
+    * Stores addresses (Hybrid PAF & NAG) into ElasticSearch
+    * @param data `RDD` containing addresses
+    */
+  def saveSkinnyHybridNisraAddresses(index: String, data: RDD[HybridAddressSkinnyNisraEsDocument]): Unit = data.saveToEs(index)
 }

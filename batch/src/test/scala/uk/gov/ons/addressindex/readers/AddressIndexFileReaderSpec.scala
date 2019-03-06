@@ -297,10 +297,10 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
 
-    "read NISRA xlsx file" in {
+    "read NISRA txt file" in {
 
       // When
-      val result = AddressIndexFileReader.readNisraXlsx().collect()
+      val result = AddressIndexFileReader.readNisraTXT().collect()
 
       //Then
       result.length shouldBe 5
