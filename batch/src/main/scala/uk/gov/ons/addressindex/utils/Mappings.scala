@@ -271,16 +271,20 @@ object Mappings {
            }
          },
          "analyzer": {
+           "upper_keyword": {
+             "tokenizer": "keyword",
+             "filter": ["uppercase"]
+           },
            "welsh_no_split_analyzer": {
              "tokenizer": "custom_keyword",
              "filter": [
-               "asciifolding"
+               "asciifolding",upper_keyword
              ]
            },
            "welsh_split_analyzer": {
              "tokenizer": "standard",
              "filter": [
-               "asciifolding"
+               "asciifolding",upper_keyword
              ]
            },
            "welsh_split_synonyms_analyzer": {
@@ -344,7 +348,7 @@ object Mappings {
                "locality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "lpiLogicalStatus": {
                  "type": "byte",
@@ -436,7 +440,7 @@ object Mappings {
                "townName": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "uprn": {
                  "type": "long",
@@ -998,13 +1002,17 @@ object Mappings {
       				}
       			},
       			"analyzer": {
+              "upper_keyword": {
+                "tokenizer": "keyword",
+                "filter": ["uppercase"]
+              },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding"]
+                "filter": ["asciifolding","upper_keyword"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
-      					"filter": ["asciifolding"]
+      					"filter": ["asciifolding", "upper_keyword"]
       				},
       				"welsh_bigram_analyzer": {
       					"type": "custom",
