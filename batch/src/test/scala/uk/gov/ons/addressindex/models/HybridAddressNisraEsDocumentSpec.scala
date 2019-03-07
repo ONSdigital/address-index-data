@@ -164,7 +164,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraPostCode = "AB1 7GH"
   val expectedNisraEasting = 379171.00F
   val expectedNisraNorthing = 412816.00F
-  val expectedNisraLocation = Array(-2.3162985F, 4.00F)
   val expectedNisraUprn = 100010977866L
   val expectedNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
@@ -187,7 +186,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraPostCode = "AB1 7GH"
   val actualNisraEasting = 379171.00F
   val actualNisraNorthing = 412816.00F
-  val actualNisraLocation = Array(-2.3162985F, 4.00F)
   val actualNisraUprn = 100010977866L
   val actualNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
@@ -279,7 +277,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
 
   val expectedNisra = Map(
     "uprn" -> expectedNisraUprn,
-    "organisation" -> expectedNisraOrganisation,
+    "organisationName" -> expectedNisraOrganisation,
     "subBuildingName" -> expectedNisraSubBuildingName,
     "buildingName" -> expectedNisraBuildingName,
     "buildingNumber" -> expectedNisraBuildingNumber,
@@ -288,11 +286,11 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "dependentThoroughfare" -> expectedNisraDependentThoroughfare,
     "locality" -> expectedNisraLocality,
     "townland" -> expectedNisraTownland,
-    "town" -> expectedNisraTown,
+    "townName" -> expectedNisraTown,
     "postcode" -> expectedNisraPostCode,
     "easting" -> expectedNisraEasting,
     "northing" -> expectedNisraNorthing,
-    "location" -> expectedNisraLocation,
+    "location" -> nagLocation,
     "mixedNisra" -> expectedNisraMixed,
     "creationDate" -> expectedNisraCreationDate,
     "commencementDate" -> expectedNisraCommencementDate,
@@ -988,7 +986,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraPostCode,
           actualNisraEasting,
           actualNisraNorthing,
-          actualNisraLocation,
+          nagLocation,
           actualNisraCreationDate,
           actualNisraCommencementDate,
           actualNisraArchivedDate,
