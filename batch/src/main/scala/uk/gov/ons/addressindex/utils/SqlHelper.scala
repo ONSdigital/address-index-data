@@ -249,6 +249,8 @@ object SqlHelper {
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
 
+        val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -256,7 +258,8 @@ object SqlHelper {
           outputPaf,
           outputNisra,
           classificationCode,
-          postCode
+          postCode,
+          fromSource
         )
     }
   }
@@ -328,13 +331,16 @@ object SqlHelper {
         val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
 
+        val fromSource = "EW"
+
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
           outputLpis,
           outputPaf,
           classificationCode,
-          postCode
+          postCode,
+          fromSource
         )
     }
   }
@@ -431,6 +437,8 @@ object SqlHelper {
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
           else ("", "")
 
+        val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
+
         HybridAddressNisraEsDocument(
           uprn,
           postCodeIn,
@@ -442,7 +450,8 @@ object SqlHelper {
           outputCrossRefs,
           outputNisra,
           classificationCode,
-          postCode
+          postCode,
+          fromSource
         )
     }
   }
@@ -528,6 +537,8 @@ object SqlHelper {
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
           else ("", "")
 
+        val fromSource = "EW"
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -538,7 +549,8 @@ object SqlHelper {
           outputPaf,
           outputCrossRefs,
           classificationCode,
-          postCode
+          postCode,
+          fromSource
         )
     }
   }

@@ -8,7 +8,8 @@ case class HybridAddressSkinnyEsDocument(
                                     lpi: Seq[Map[String, Any]],
                                     paf: Seq[Map[String, Any]],
                                     classificationCode: Option[String],
-                                    postcode: String
+                                    postcode: String,
+                                    fromSource: String
                                   )
 
 object HybridAddressSkinnyEsDocument extends EsDocument {
