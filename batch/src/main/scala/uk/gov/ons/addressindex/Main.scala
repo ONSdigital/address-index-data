@@ -30,27 +30,46 @@ For usage see below:
     val mapping = opt[Boolean]("mapping", noshort = true, descr = "Creates mapping for the index")
     val help = opt[Boolean]("help", noshort = true, descr = "Show this message")
     val skinny = opt[Boolean]("skinny", noshort = true, descr = "Create a skinny index")
+    val nisra = opt[Boolean]("nisra", noshort = true, descr = "Include NISRA data")
     verify()
   }
 
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
-  // each run of this application has a unique index name
+// each run of this application has a unique index name
   val indexName =
-    if (opts.skinny()) {
-      if (opts.hybridNoHist()) {
-        generateIndexName(false, true)
+    if (opts.nisra()) {
+      if (opts.skinny()) {
+        if (opts.hybridNoHist()) {
+          generateIndexName(historical=false, skinny=true, nisra=true)
+        } else {
+          generateIndexName(historical=true, skinny=true, nisra=true)
+        }
       } else {
-        generateIndexName(true, true)
+        if (opts.hybridNoHist()) {
+          generateIndexName(historical=false, skinny=false, nisra=true)
+        } else {
+          generateIndexName(historical=true, skinny=false, nisra=true)
+        }
       }
     } else {
-      if (opts.hybridNoHist()) {
-        generateIndexName(false)
+      if (opts.skinny()) {
+        if (opts.hybridNoHist()) {
+          generateIndexName(historical=false, skinny=true, nisra=false)
+        } else {
+          generateIndexName(historical=true, skinny=true, nisra=false)
+        }
       } else {
-        generateIndexName()
+        if (opts.hybridNoHist()) {
+          generateIndexName(historical=false, skinny=false, nisra=false)
+        } else {
+          generateIndexName(historical=true, skinny=false, nisra=false)
+        }
       }
     }
+
+
 
   val url = s"http://$nodes:$port/$indexName"
 
@@ -58,13 +77,21 @@ For usage see below:
     AddressIndexFileReader.validateFileNames()
 
     if (opts.skinny()) {
-      postMapping(indexName, true)
+      postMapping(indexName, skinny=true)
       preLoad(indexName)
 
-      if (opts.hybridNoHist()) {
-        saveHybridAddresses(false, true)
+      if (opts.nisra()) {
+        if (opts.hybridNoHist()) {
+          saveHybridAddresses(historical=false, skinny=true, nisra=true)
+        } else {
+          saveHybridAddresses(historical=true, skinny=true, nisra=true)
+        }
       } else {
-        saveHybridAddresses(true, true)
+        if (opts.hybridNoHist()) {
+          saveHybridAddresses(historical=false, skinny=true, nisra=false)
+        } else {
+          saveHybridAddresses(historical=true, skinny=true, nisra=false)
+        }
       }
 
       postLoad(indexName)
@@ -72,17 +99,30 @@ For usage see below:
       postMapping(indexName)
       preLoad(indexName)
 
-      if (opts.hybridNoHist()) {
-        saveHybridAddresses(false)
+      if (opts.nisra()) {
+        if (opts.hybridNoHist()) {
+          saveHybridAddresses(historical=false, nisra=true)
+        } else {
+          saveHybridAddresses(historical=true, nisra=true)
+        }
       } else {
-        saveHybridAddresses()
+        if (opts.hybridNoHist()) {
+          saveHybridAddresses(historical=false, nisra=false)
+        } else {
+          saveHybridAddresses(historical=true, nisra=false)
+        }
       }
 
       postLoad(indexName)
     }
   } else opts.printHelp()
 
-  private def generateIndexName(historical: Boolean = true, skinny: Boolean = false): String = AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny)
+//  val indexName = generateIndexName(historical=true, skinny=true, nisra=true)
+//  val url = s"http://$nodes:$port/$indexName"
+//  postMapping(indexName, skinny=true)
+//  saveHybridAddresses(historical=true, skinny=true, nisra=true)
+
+  private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String = AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
 
   private def generateNagAddresses(historical : Boolean = true, skinny: Boolean = false): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -93,18 +133,27 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical, skinny)
   }
 
-  private def saveHybridAddresses(historical : Boolean = true, skinny: Boolean = false) = {
+  private def saveHybridAddresses(historical : Boolean = true, skinny: Boolean = false, nisra: Boolean = false) = {
 
     val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
+    val nisratxt = AddressIndexFileReader.readNisraTXT()
 
     val hybrid =
-      if (skinny) {
-        val nisra = AddressIndexFileReader.readNisraXlsx()
-        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, nisra, historical))
+      if (nisra) {
+        if (skinny) {
+          ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical))
+        } else {
+          ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName/address", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical))
+        }
       } else {
-        ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridIndex(paf, nag, historical))
+        if (skinny) {
+          ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+        } else {
+          ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridIndex(paf, nag, historical))
+        }
       }
+
   }
 
   private def postMapping(indexName: String, skinny: Boolean = false) = {

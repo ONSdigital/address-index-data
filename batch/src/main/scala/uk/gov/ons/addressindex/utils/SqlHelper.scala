@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.utils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
-import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressSkinnyEsDocument}
+import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
@@ -175,7 +175,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyNisraEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -236,18 +236,30 @@ object SqlHelper {
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
         val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
 
-        val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
-        val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
-        val outputNisra = nisra.map(row => HybridAddressSkinnyEsDocument.rowToNisra(row))
+        val outputLpis = lpis.map(row => HybridAddressSkinnyNisraEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
+        val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
         val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
-        HybridAddressSkinnyEsDocument(
+        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
+        val nisraPostCode: Option[String] = outputNisra.headOption.flatMap(_.get("postcode").map(_.toString))
+
+        val postCode = if (nisraPostCode.isDefined) nisraPostCode.getOrElse("")
+        else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
+        else lpiPostCode.getOrElse("")
+
+        val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
+
+        HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
           outputLpis,
           outputPaf,
           outputNisra,
-          classificationCode
+          classificationCode,
+          postCode,
+          fromSource
         )
     }
   }
@@ -255,7 +267,88 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+
+    // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
+    // out at the joinCsvs stage. These need to be removed.
+    val pafGrouped =
+    if (historical) {
+      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    } else {
+      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    }
+
+    // DataFrame of lpis by uprn
+    val nagGrouped = nag
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+
+    // DataFrame of paf and lpis by uprn
+    val pafNagGrouped = nagGrouped
+      .join(pafGrouped, Seq("uprn"), "left_outer")
+
+    // DataFrame of Classifications by uprn
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    // Construct Hierarchy DataFrame
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn")
+
+    val pafNagHierGrouped = pafNagGrouped
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+
+    pafNagHierGrouped.rdd.map {
+      row =>
+        val uprn = row.getAs[Long]("uprn")
+        val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
+        val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val parentUprn = Option(row.getAs[Long]("parentUprn"))
+        val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
+
+        val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
+        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+
+        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
+
+        val postCode = if (pafPostCode.isDefined) pafPostCode.getOrElse("")
+        else lpiPostCode.getOrElse("")
+
+        val fromSource = "EW"
+
+        HybridAddressSkinnyEsDocument(
+          uprn,
+          parentUprn.getOrElse(0L),
+          outputLpis,
+          outputPaf,
+          classificationCode,
+          postCode,
+          fromSource
+        )
+    }
+  }
+
+  /**
+    * Constructs a hybrid index from nag and paf dataframes
+    */
+  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressNisraEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -271,6 +364,117 @@ object SqlHelper {
             "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
           .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
       }
+
+    // DataFrame of nisra by uprn
+    val nisraGrouped = nisraData(nisra, historical)
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("nisra"))
+
+    // DataFrame of lpis by uprn
+    val nagGrouped = nag
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+
+    // DataFrame of paf and lpis by uprn
+    val pafNagGrouped = nagGrouped
+      .join(pafGrouped, Seq("uprn"), "left_outer")
+      .join(nisraGrouped, Seq("uprn"), "full_outer")
+
+    // DataFrame of CrossRefs by uprn
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    // DataFrame of Classifications by uprn
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    // Construct Hierarchy DataFrame
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives")
+
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+
+    pafNagCrossHierGrouped.rdd.map {
+      row =>
+        val uprn = row.getAs[Long]("uprn")
+        val paf = Option(row.getAs[Seq[Row]]("paf")).getOrElse(Seq())
+        val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
+        val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
+        val relatives = Option(row.getAs[Seq[Row]]("relatives")).getOrElse(Seq())
+        val nisra = Option(row.getAs[Seq[Row]]("nisra")).getOrElse(Seq())
+        val parentUprn = Option(row.getAs[Long]("parentUprn"))
+        val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
+
+        val outputLpis = lpis.map(row => HybridAddressNisraEsDocument.rowToLpi(row))
+        val outputPaf = paf.map(row => HybridAddressNisraEsDocument.rowToPaf(row))
+        val outputCrossRefs = crossRefs.map(row => HybridAddressNisraEsDocument.rowToCrossRef(row))
+        val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
+        val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
+        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+
+        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
+        val nisraPostCode: Option[String] = outputNisra.headOption.flatMap(_.get("postcode").map(_.toString))
+
+        val postCode = if (nisraPostCode.isDefined) nisraPostCode.getOrElse("")
+        else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
+        else lpiPostCode.getOrElse("")
+
+        val splitPostCode = postCode.split(" ")
+        val (postCodeOut, postCodeIn) =
+          if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
+          else ("", "")
+
+        val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
+
+        HybridAddressNisraEsDocument(
+          uprn,
+          postCodeIn,
+          postCodeOut,
+          parentUprn.getOrElse(0L),
+          outputRelatives,
+          outputLpis,
+          outputPaf,
+          outputCrossRefs,
+          outputNisra,
+          classificationCode,
+          postCode,
+          fromSource
+        )
+    }
+  }
+
+  /**
+    * Constructs a hybrid index from nag and paf dataframes
+    */
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+
+    // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
+    // out at the joinCsvs stage. These need to be removed.
+    val pafGrouped =
+    if (historical) {
+      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    } else {
+      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    }
 
     // DataFrame of lpis by uprn
     val nagGrouped = nag
@@ -333,6 +537,8 @@ object SqlHelper {
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
           else ("", "")
 
+        val fromSource = "EW"
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -342,8 +548,11 @@ object SqlHelper {
           outputLpis,
           outputPaf,
           outputCrossRefs,
-          classificationCode
+          classificationCode,
+          postCode,
+          fromSource
         )
     }
   }
+
 }
