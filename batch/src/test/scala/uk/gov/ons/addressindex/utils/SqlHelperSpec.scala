@@ -907,7 +907,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondLine = nisraDF(3)
       secondLine.getLong(0) shouldBe 185556998L // UPRN
-      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(1) shouldBe null // ORGANISATION_NAME
       secondLine.getString(5) shouldBe "MULLAGH PARK" // THOROUGHFARE
     }
 
@@ -929,7 +929,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondLine = nisraDF(3)
       secondLine.getLong(0) shouldBe 185675432L // UPRN
-      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(1) shouldBe null // ORGANISATION_NAME
       secondLine.getString(5) shouldBe "DOWLAND ROAD" // THOROUGHFARE
     }
   }
