@@ -6,6 +6,8 @@ import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
+import scala.util.Try
+
 /**
   * Join the Csv files into single DataFrame
   */
@@ -243,9 +245,9 @@ object SqlHelper {
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
-        val nisraPostCode: Option[String] = outputNisra.headOption.flatMap(_.get("postcode").map(_.toString))
+        val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
 
-        val postCode = if (nisraPostCode.isDefined) nisraPostCode.getOrElse("")
+        val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
 
@@ -426,9 +428,9 @@ object SqlHelper {
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
-        val nisraPostCode: Option[String] = outputNisra.headOption.flatMap(_.get("postcode").map(_.toString))
+        val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
 
-        val postCode = if (nisraPostCode.isDefined) nisraPostCode.getOrElse("")
+        val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
 

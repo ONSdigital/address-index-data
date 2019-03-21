@@ -513,7 +513,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 9
+      result.length shouldBe 10
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -526,7 +526,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(8)
+      val secondResult = result(9)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
@@ -549,7 +549,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf.head("recordIdentifier") shouldBe 27
 
-      val thirdResult = result(6)
+      val thirdResult = result(7)
       thirdResult.uprn shouldBe 185556998L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
@@ -796,7 +796,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 9
+      result.length shouldBe 10
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -806,7 +806,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
 
-      val secondResult = result(8)
+      val secondResult = result(9)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
@@ -898,14 +898,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 5
+      nisraDF.length shouldBe 6
 
       val firstLine = nisraDF(0)
       firstLine.getLong(0) shouldBe 185113434L // UPRN
       firstLine.getString(1) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
       firstLine.getString(5) shouldBe "PEMBROKE LODGE" // THOROUGHFARE
 
-      val secondLine = nisraDF(3)
+      val secondLine = nisraDF(4)
       secondLine.getLong(0) shouldBe 185556998L // UPRN
       secondLine.getString(1) shouldBe null // ORGANISATION_NAME
       secondLine.getString(5) shouldBe "MULLAGH PARK" // THOROUGHFARE
