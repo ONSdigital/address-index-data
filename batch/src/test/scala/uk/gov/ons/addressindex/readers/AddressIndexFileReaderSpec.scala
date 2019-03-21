@@ -303,7 +303,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readNisraTXT().collect()
 
       //Then
-      result.length shouldBe 5
+      result.length shouldBe 6
 
       val line = result(3)
       line.getString(0) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
