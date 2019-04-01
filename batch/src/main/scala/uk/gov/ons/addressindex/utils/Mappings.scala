@@ -542,17 +542,17 @@ object Mappings {
                "dependentLocality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "dependentThoroughfare": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "doubleDependentLocality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "endDate": {
                  "type": "date",
@@ -581,7 +581,7 @@ object Mappings {
                "postTown": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "postcode": {
                  "type": "text",
@@ -617,7 +617,7 @@ object Mappings {
                "thoroughfare": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "udprn": {
                  "type": "integer",
