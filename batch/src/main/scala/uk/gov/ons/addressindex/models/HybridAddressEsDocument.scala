@@ -94,7 +94,7 @@ object HybridAddressEsDocument extends EsDocument {
     "organisationName" -> splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
     "departmentName" -> splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
     "subBuildingName" -> splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-    "buildingName" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
+    "buildingName" -> (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
     "buildingNumber" -> (if (row.isNullAt(9)) null else row.getShort(9)),
     "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(10)).getOrElse("")),
     "thoroughfare" -> splitAndCapitalise(Option(row.getString(11)).getOrElse("")),
