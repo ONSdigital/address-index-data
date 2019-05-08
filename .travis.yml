@@ -14,7 +14,6 @@ branches:
     # We're only building these branches and pull requests.
     - master
     - develop
-    - add_codecov
 before_cache:
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
@@ -23,11 +22,5 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
-#addons:
-#  # https://github.com/travis-ci/travis-ci/issues/5227#issuecomment-165131913
-#  hosts:
-#    - ons-ai
-#  hostname: ons-ai
 notifications:
   email: false
-  # slack: valtech-ons:nLeAGETA8HsuIi5fMQCaLe2G
