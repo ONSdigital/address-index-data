@@ -1,5 +1,8 @@
 package uk.gov.ons.addressindex.models
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.Row
 
 case class HybridAddressNisraEsDocument(
@@ -176,10 +179,16 @@ object HybridAddressNisraEsDocument extends EsDocument {
 
   def rowToNisra(row: Row): Map[String, Any] = {
 
+//    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
+//      Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
+//        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
+//          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+
     val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
       Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
-        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
-          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+      Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
+      Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+
 
     Map(
       "uprn" -> row.getLong(0),
@@ -187,9 +196,9 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "easting" -> "",
       "northing" -> "",
       "location" -> "",
-      "creationDate" -> "",
-      "commencementDate" -> "",
-      "archivedDate" -> "",
+      "creationDate" -> convertToDate("01/01/01"),
+      "commencementDate" -> convertToDate("01/01/01"),
+      "archivedDate" -> convertToDate("01/01/01"),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
@@ -202,19 +211,26 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "locality" -> "",
       "townland" -> "",
       "townName" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
-      "postcode" -> row.getString(11),
+      "postcode" -> row.getString(19),
       "complete" -> row.getString(14),
       "paoText" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      "paoStartNumber" -> (if (row.isNullAt(4)) null else row.getShort(4)),
+      "paoStartNumber" -> row.getString(4),
       "paoStartSuffix" -> row.getString(6),
-      "paoEndNumber" -> (if (row.isNullAt(5)) null else row.getShort(5)),
+      "paoEndNumber" -> row.getString(5),
       "paoEndSuffix" -> row.getString(7),
       "saoText" -> splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
-      "saoStartNumber" -> (if (row.isNullAt(9)) null else row.getShort(9)),
+      "saoStartNumber" -> row.getString(9),
       "saoStartSuffix" -> row.getString(11),
-      "saoEndNumber" -> (if (row.isNullAt(10)) null else row.getShort(10)),
+      "saoEndNumber" -> row.getString(10),
       "saoEndSuffix" -> row.getString(13)
     )
+  }
+
+  def convertToDate(dateTime: String): Timestamp = {
+  //  val formatter = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")
+    val formatter = new SimpleDateFormat("MM/dd/yy")
+    val utilDate = formatter.parse(dateTime)
+    new Timestamp(utilDate.getTime)
   }
 
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,

@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
+import org.apache.spark.sql.types.{ArrayType, FloatType, LongType, ShortType}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -171,13 +171,13 @@ object SqlHelper {
      //   functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
      //   functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
         functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
-        functions.regexp_replace(nisra("postCode"), "NULL", "").as("postcode"))
+        functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"))
      //   nisra("xCoordinate").as("easting").cast(FloatType),
       //  nisra("yCoordinate").as("northing").cast(FloatType),
       //  functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
       //  functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
-       // functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
-      //  functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
+      //  functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
+       // functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
 
   //  val nonHistoricalDF =
   //    historicalDF.filter("addressStatus != 'HISTORICAL'")
