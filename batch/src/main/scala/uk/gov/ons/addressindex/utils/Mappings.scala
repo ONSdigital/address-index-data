@@ -716,6 +716,55 @@ object Mappings {
         							"type": "long",
         							"index": "false"
         						},
+                  "paoEndNumber": {
+                  "type": "short",
+                  "index": "true"
+                },
+                "paoEndSuffix": {
+                  "type": "text",
+                  "index": "true",
+                  "analyzer": "keyword"
+                },
+                "paoStartNumber": {
+                 "type": "short",
+                  "index": "true"
+                },
+                "paoStartSuffix": {
+                  "type": "text",
+                  "index": "true",
+                  "analyzer": "keyword",
+                  "fields": {
+                    "keyword": {
+                     "type": "keyword"
+                   }
+                 }
+               },
+               "paoText": {
+                 "type": "text",
+                 "analyzer": "welsh_split_analyzer"
+               },
+               "saoEndNumber": {
+                 "type": "short",
+                 "index": "true"
+               },
+               "saoEndSuffix": {
+                 "type": "text",
+                 "index": "true",
+                 "analyzer": "keyword"
+               },
+               "saoStartNumber": {
+                 "type": "short",
+                 "index": "true"
+               },
+               "saoStartSuffix": {
+                 "type": "text",
+                 "index": "true",
+                 "analyzer": "keyword"
+               },
+               "saoText": {
+                 "type": "text",
+                 "analyzer": "welsh_split_analyzer"
+               },
         						"nisraAll": {
         							"type": "text",
         							"analyzer": "welsh_split_analyzer",
