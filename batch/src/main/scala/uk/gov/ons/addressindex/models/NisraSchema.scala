@@ -24,7 +24,7 @@ object NisraSchema {
     StructField("primaryThorfare", StringType, nullable = true),
     StructField("secondaryThorfare", StringType, nullable = true),
     StructField("postTown", StringType, nullable = true),
-    StructField("postCode", StringType, nullable = true)
+    StructField("postcode", StringType, nullable = true)
   ))
 
 //  val nisraFileSchema = StructType(Seq(

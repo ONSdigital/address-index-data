@@ -150,7 +150,6 @@ object SqlHelper {
 
     val historicalDF =
       nisra.select(nisra("uprn").cast(LongType),
-        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("subBuildingName"), "NULL", "").as("subBuildingName"),
         functions.regexp_replace(nisra("buildingName"), "NULL", "").as("buildingName"),
         functions.regexp_replace(functions.regexp_replace(nisra("buildingNumber"), "NULL", ""), "0", "").as("buildingNumber"),
@@ -165,8 +164,9 @@ object SqlHelper {
         functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
         functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
         functions.regexp_replace(nisra("complete"), "NULL", "").as("complete"),
+        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("primaryThorfare"), "NULL", "").as("thoroughfare"),
-        functions.regexp_replace(nisra("secondaryThorfare"), "NULL", "").as("altThoroughfare"),
+    //    functions.regexp_replace(nisra("secondaryThorfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(nisra("secondaryThorfare"), "NULL", "").as("dependentThoroughfare"),
      //   functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
      //   functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
