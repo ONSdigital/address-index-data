@@ -193,7 +193,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
 //          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
 
     val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(15)).getOrElse(""), Option(row.getString(1)).getOrElse(""),
-      Option(row.getString(2)).getOrElse(""), "", Option(row.getString(16)).getOrElse(""),
+      Option(row.getString(2)).getOrElse("") + Option(row.getString(3)).getOrElse(""), "", Option(row.getString(16)).getOrElse(""),
       "", Option(row.getString(17)).getOrElse(""), "",
       "", Option(row.getString(18)).getOrElse(""), Option(row.getString(19)).getOrElse(""))
 
@@ -215,7 +215,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "nisraAll" -> nisraFormatted(2),
       "organisationName" -> splitAndCapitalise(Option(row.getString(15)).getOrElse("")),
       "subBuildingName" -> splitAndCapitalise(Option(row.getString(1)).getOrElse("")),
-      "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + "" + row.getString(3)),
+      "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + "" + Option(row.getString(3)).getOrElse("")),
       "thoroughfare" -> splitAndCapitalise(Option(row.getString(16)).getOrElse("")),
       "altThoroughfare" -> "",
       "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
