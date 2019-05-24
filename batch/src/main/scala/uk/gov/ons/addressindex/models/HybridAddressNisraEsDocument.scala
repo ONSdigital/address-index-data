@@ -185,6 +185,15 @@ object HybridAddressNisraEsDocument extends EsDocument {
     }
   }
 
+  def buildingNameExtra(s: String): String = {
+    try {
+      val stest: Short = s.toShort
+      ""
+    } catch {
+      case e: Exception => " " + s
+    }
+  }
+
   def rowToNisra(row: Row): Map[String, Any] = {
 
 //    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
@@ -192,18 +201,35 @@ object HybridAddressNisraEsDocument extends EsDocument {
 //        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
 //          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
 
-    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(15)).getOrElse(""), Option(row.getString(1)).getOrElse(""),
-      Option(row.getString(2)).getOrElse("") + Option(row.getString(3)).getOrElse(""), "", Option(row.getString(16)).getOrElse(""),
-      "", Option(row.getString(17)).getOrElse(""), "",
-      "", Option(row.getString(18)).getOrElse(""), Option(row.getString(19)).getOrElse(""))
+    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
+      Option(row.getString(15)).getOrElse(""),
+      Option(row.getString(1)).getOrElse(""),
+      Option(row.getString(2)).getOrElse(""),
+      Option(row.getString(3)).getOrElse(""),
+      Option(row.getString(16)).getOrElse(""),
+      "",
+      Option(row.getString(17)).getOrElse(""),
+      "",
+      "",
+      Option(row.getString(18)).getOrElse(""),
+      Option(row.getString(19)).getOrElse(""))
 
-  //  def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,
-  //                                      altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
-  //                                      postcode: String) : Array[String] = {
+  //  def generateFormattedNisraAddresses(
+    //  organisationName: String,
+    //  subBuildingName: String,
+    //  buildingName: String,
+    //  buildingNumber: String,
+    //  thoroughfare: String,
+    //  altThoroughfare: String,
+    //  dependentThoroughfare: String,
+    //  locality: String,
+    //  townland: String,
+    //  townName: String,
+  //    postcode: String) : Array[String] = {
     Map(
       "uprn" -> row.getLong(0),
     //  "buildingNumber" -> row.getString(3),
-    //  "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
+      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
       "easting" -> "",
       "northing" -> "",
       "location" -> "",
@@ -215,7 +241,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "nisraAll" -> nisraFormatted(2),
       "organisationName" -> splitAndCapitalise(Option(row.getString(15)).getOrElse("")),
       "subBuildingName" -> splitAndCapitalise(Option(row.getString(1)).getOrElse("")),
-      "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + "" + Option(row.getString(3)).getOrElse("")),
+      "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + buildingNameExtra(Option(row.getString(3)).getOrElse("1"))),
       "thoroughfare" -> splitAndCapitalise(Option(row.getString(16)).getOrElse("")),
       "altThoroughfare" -> "",
       "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
