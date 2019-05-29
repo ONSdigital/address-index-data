@@ -2,19 +2,17 @@ package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
 
-case class HybridAddressEsDocument(
-  uprn: Long,
-  postcodeIn: String,
-  postcodeOut: String,
-  parentUprn: Long,
-  relatives: Seq[Map[String, Any]],
-  lpi: Seq[Map[String, Any]],
-  paf: Seq[Map[String, Any]],
-  crossRefs: Seq[Map[String, String]],
-  classificationCode: Option[String],
-  postcode: String,
-  fromSource: String
-)
+case class HybridAddressEsDocument(uprn: Long,
+                                   postcodeIn: String,
+                                   postcodeOut: String,
+                                   parentUprn: Long,
+                                   relatives: Seq[Map[String, Any]],
+                                   lpi: Seq[Map[String, Any]],
+                                   paf: Seq[Map[String, Any]],
+                                   crossRefs: Seq[Map[String, String]],
+                                   classificationCode: Option[String],
+                                   postcode: String,
+                                   fromSource: String)
 
 object HybridAddressEsDocument extends EsDocument {
 
@@ -56,7 +54,7 @@ object HybridAddressEsDocument extends EsDocument {
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
     "lpiEndDate" -> row.getDate(36),
-    "nagAll" ->  concatNag(
+    "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       row.getString(24), row.getString(22), row.getString(20), row.getString(11),
@@ -113,7 +111,7 @@ object HybridAddressEsDocument extends EsDocument {
     "processDate" -> row.getDate(24),
     "startDate" -> row.getDate(25),
     "endDate" -> row.getDate(26),
-    "lastUpdateDate" ->row.getDate(27),
+    "lastUpdateDate" -> row.getDate(27),
     "entryDate" -> row.getDate(28),
     "pafAll" -> concatPaf(Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
@@ -140,7 +138,7 @@ object HybridAddressEsDocument extends EsDocument {
       splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
+      if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse(""),
       splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
       splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),
@@ -154,7 +152,7 @@ object HybridAddressEsDocument extends EsDocument {
       splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
+      if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse(""),
       splitAndCapitalise(Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse(""))),
       splitAndCapitalise(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
       splitAndCapitaliseTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
