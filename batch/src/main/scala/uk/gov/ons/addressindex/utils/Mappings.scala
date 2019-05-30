@@ -1181,6 +1181,10 @@ object Mappings {
                     "type": "short",
                     "index": "true"
                   },
+                  "language": {
+                    "type": "text",
+                    "index": "false"
+                  },
                   "streetDescriptor": {
                     "type": "text",
                     "analyzer": "welsh_no_split_analyzer",

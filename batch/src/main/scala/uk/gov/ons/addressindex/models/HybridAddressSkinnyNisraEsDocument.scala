@@ -26,6 +26,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
     "saoStartNumber" -> (if (row.isNullAt(21)) null else row.getShort(21)),
     "lpiLogicalStatus" -> row.getByte(27),
     "streetDescriptor" -> splitAndCapitalise(row.getString(30)),
+    "language" -> row.getString(29),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),
     "nagAll" -> concatNag(
