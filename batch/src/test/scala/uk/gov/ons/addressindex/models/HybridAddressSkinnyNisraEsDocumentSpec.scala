@@ -59,6 +59,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagSaoStartNumber = 6473.toShort
   val expectedNagLpiLogicalStatus = 1.toByte
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
+  val expectedNagLanguage = "ENG"
   val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
@@ -151,6 +152,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "lpiLogicalStatus" -> expectedNagLpiLogicalStatus,
     "streetDescriptor" -> expectedNagStreetDescriptor,
     "nagAll" -> expectedNagAll,
+    "language" -> expectedNagLanguage,
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
     "mixedNag" -> expectedNagMixed
