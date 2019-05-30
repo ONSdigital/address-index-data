@@ -22,9 +22,9 @@ object SqlHelper {
         val blpuWithHistory = SparkProvider.registerTempTable(blpu, "blpuWithHistory")
         val blpuWithHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.*
-              FROM $blpuWithHistory b,
-                   LEFT JOIN $classificationTable c ON $blpuWithHistory.uprn = $classificationTable.uprn
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuWithHistory b
+                   LEFT JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
             SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
