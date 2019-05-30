@@ -13,15 +13,19 @@ import scala.util.Try
   */
 object SqlHelper {
 
-  def joinCsvs(blpu: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
+  def joinCsvs(blpu: DataFrame, classification: DataFrame, lpi: DataFrame, organisation: DataFrame, street: DataFrame,
                streetDescriptor: DataFrame, historical: Boolean = true, skinny: Boolean = false): DataFrame = {
 
+    val classificationTable = SparkProvider.registerTempTable(classification, "classification")
     val blpuTable =
       if (historical) {
         val blpuWithHistory = SparkProvider.registerTempTable(blpu, "blpuWithHistory")
         val blpuWithHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b WHERE b.addressBasePostal !='N'""")
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuWithHistory b
+                   LEFT JOIN $classificationTable c ON b.uprn = c.uprn
+              WHERE NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
             SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
         SparkProvider.registerTempTable(blpuWithHistoryDF, "blpu")
@@ -29,7 +33,10 @@ object SqlHelper {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
         val blpuNoHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8 AND b.addressBasePostal !='N'""")
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuNoHistory b
+                   LEFT JOIN $classificationTable c ON b.uprn = c.uprn
+              WHERE b.logicalStatus != 8 AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
             SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
@@ -96,10 +103,11 @@ object SqlHelper {
   /**
     * Aggregates data forming lists of siblings and their parents per level of the hierarchy
     * (grouped by root uprn)
+    *
     * @param hierarchy hierarchy data
     * @return dataframe containing layers/levels of hierarchy
     */
-  def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame ={
+  def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame = {
     val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
 
     SparkProvider.sqlContext.sql(
@@ -241,7 +249,7 @@ object SqlHelper {
         val outputLpis = lpis.map(row => HybridAddressSkinnyNisraEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
-        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -325,7 +333,7 @@ object SqlHelper {
 
         val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
-        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -355,17 +363,17 @@ object SqlHelper {
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped =
-      if (historical) {
-        paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-      } else {
-        paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-          .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
-            "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
-            "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
-            "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
-            "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
-          .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-      }
+    if (historical) {
+      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    } else {
+      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    }
 
     // DataFrame of nisra by uprn
     val nisraGrouped = nisraData(nisra, historical)
@@ -424,7 +432,7 @@ object SqlHelper {
         val outputCrossRefs = crossRefs.map(row => HybridAddressNisraEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
-        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -526,7 +534,7 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
-        val classificationCode : Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))

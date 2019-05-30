@@ -2,15 +2,13 @@ package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
 
-case class HybridAddressSkinnyEsDocument(
-                                    uprn: Long,
-                                    parentUprn: Long,
-                                    lpi: Seq[Map[String, Any]],
-                                    paf: Seq[Map[String, Any]],
-                                    classificationCode: Option[String],
-                                    postcode: String,
-                                    fromSource: String
-                                  )
+case class HybridAddressSkinnyEsDocument(uprn: Long,
+                                         parentUprn: Long,
+                                         lpi: Seq[Map[String, Any]],
+                                         paf: Seq[Map[String, Any]],
+                                         classificationCode: Option[String],
+                                         postcode: String,
+                                         fromSource: String)
 
 object HybridAddressSkinnyEsDocument extends EsDocument {
 
@@ -29,7 +27,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "streetDescriptor" -> splitAndCapitalise(row.getString(30)),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),
-    "nagAll" ->  concatNag(
+    "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       row.getString(24), row.getString(22), row.getString(20), row.getString(11),

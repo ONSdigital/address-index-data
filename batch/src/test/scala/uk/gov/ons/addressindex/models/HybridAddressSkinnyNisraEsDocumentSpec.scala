@@ -128,7 +128,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map(
+  val expectedPaf: Map[String, Any] = Map(
     "endDate" -> expectedPafEndDate,
     "uprn" -> expectedPafUprn,
     "startDate" -> expectedPafStartDate,
@@ -137,7 +137,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map(
+  val expectedNag: Map[String, Any] = Map(
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -156,7 +156,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedNag" -> expectedNagMixed
   )
 
-  val expectedNisra = Map(
+  val expectedNisra: Map[String, Any] = Map(
     "uprn" -> nisraUprn,
     "location" -> nisraLocation,
     "postcode" -> nisraPostCode,
