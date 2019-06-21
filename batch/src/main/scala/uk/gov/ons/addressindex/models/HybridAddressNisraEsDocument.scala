@@ -5,20 +5,18 @@ import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.Row
 
-case class HybridAddressNisraEsDocument(
-                                    uprn: Long,
-                                    postcodeIn: String,
-                                    postcodeOut: String,
-                                    parentUprn: Long,
-                                    relatives: Seq[Map[String, Any]],
-                                    lpi: Seq[Map[String, Any]],
-                                    paf: Seq[Map[String, Any]],
-                                    crossRefs: Seq[Map[String, String]],
-                                    nisra: Seq[Map[String, Any]],
-                                    classificationCode: Option[String],
-                                    postcode: String,
-                                    fromSource: String
-                                  )
+case class HybridAddressNisraEsDocument(uprn: Long,
+                                        postcodeIn: String,
+                                        postcodeOut: String,
+                                        parentUprn: Long,
+                                        relatives: Seq[Map[String, Any]],
+                                        lpi: Seq[Map[String, Any]],
+                                        paf: Seq[Map[String, Any]],
+                                        crossRefs: Seq[Map[String, String]],
+                                        nisra: Seq[Map[String, Any]],
+                                        classificationCode: Option[String],
+                                        postcode: String,
+                                        fromSource: String)
 
 object HybridAddressNisraEsDocument extends EsDocument {
 
@@ -60,7 +58,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
     "lpiEndDate" -> row.getDate(36),
-    "nagAll" ->  concatNag(
+    "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       row.getString(24), row.getString(22), row.getString(20), row.getString(11),
@@ -117,7 +115,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "processDate" -> row.getDate(24),
     "startDate" -> row.getDate(25),
     "endDate" -> row.getDate(26),
-    "lastUpdateDate" ->row.getDate(27),
+    "lastUpdateDate" -> row.getDate(27),
     "entryDate" -> row.getDate(28),
     "pafAll" -> concatPaf(Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
@@ -272,7 +270,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
 
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,
                                       altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
-                                      postcode: String) : Array[String] = {
+                                      postcode: String): Array[String] = {
 
     val trimmedSubBuildingName = splitAndCapitalise(subBuildingName)
     val trimmedBuildingName = splitAndCapitalise(buildingName)

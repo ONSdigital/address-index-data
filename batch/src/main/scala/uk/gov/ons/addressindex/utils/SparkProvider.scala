@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 /**
   * Provide global access to the spark context instance.
@@ -49,7 +49,7 @@ object SparkProvider {
     .enableHiveSupport()
     .getOrCreate()
 
-  lazy val sqlContext = sparkContext.sqlContext
+  lazy val sqlContext: SQLContext = sparkContext.sqlContext
 
   val incrementalId = new AtomicInteger()
 

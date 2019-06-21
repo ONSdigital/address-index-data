@@ -59,6 +59,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagSaoStartNumber = 6473.toShort
   val expectedNagLpiLogicalStatus = 1.toByte
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
+  val expectedNagLanguage = "ENG"
   val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
@@ -128,7 +129,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map(
+  val expectedPaf: Map[String, Any] = Map(
     "endDate" -> expectedPafEndDate,
     "uprn" -> expectedPafUprn,
     "startDate" -> expectedPafStartDate,
@@ -137,7 +138,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map(
+  val expectedNag: Map[String, Any] = Map(
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -151,12 +152,13 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "lpiLogicalStatus" -> expectedNagLpiLogicalStatus,
     "streetDescriptor" -> expectedNagStreetDescriptor,
     "nagAll" -> expectedNagAll,
+    "language" -> expectedNagLanguage,
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
     "mixedNag" -> expectedNagMixed
   )
 
-  val expectedNisra = Map(
+  val expectedNisra: Map[String, Any] = Map(
     "uprn" -> nisraUprn,
     "location" -> nisraLocation,
     "postcode" -> nisraPostCode,
