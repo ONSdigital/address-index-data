@@ -173,19 +173,19 @@ object SqlHelper {
         functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
         functions.regexp_replace(nisra("complete"), "NULL", "").as("complete"),
         functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
-        functions.regexp_replace(nisra("primaryThorfare"), "NULL", "").as("thoroughfare"),
-    //    functions.regexp_replace(nisra("secondaryThorfare"), "NULL", "").as("altThoroughfare"),
-        functions.regexp_replace(nisra("secondaryThorfare"), "NULL", "").as("dependentThoroughfare"),
-     //   functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
-     //   functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
+        functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
+        functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
+        functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
+        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
         functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
-        functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"))
-     //   nisra("xCoordinate").as("easting").cast(FloatType),
-      //  nisra("yCoordinate").as("northing").cast(FloatType),
-      //  functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
-      //  functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
-      //  functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
-       // functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
+        functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
+        nisra("xCoordinate").as("easting").cast(FloatType),
+        nisra("yCoordinate").as("northing").cast(FloatType),
+        functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
+        functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
+        functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
+        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
 
   //  val nonHistoricalDF =
   //    historicalDF.filter("addressStatus != 'HISTORICAL'")
