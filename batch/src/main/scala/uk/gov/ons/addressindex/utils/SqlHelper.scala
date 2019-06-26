@@ -182,7 +182,7 @@ object SqlHelper {
         functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
         nisra("xCoordinate").as("easting").cast(FloatType),
         nisra("yCoordinate").as("northing").cast(FloatType),
-        functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
+        functions.array(functions.regexp_replace(nisra("longitude"),"NULL","0"), functions.regexp_replace(nisra("latitude"),"NULL","0")).as("location").cast(ArrayType(FloatType)),
         functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
         functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
         functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))

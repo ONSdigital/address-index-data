@@ -52,7 +52,6 @@ object NisraSchema {
     StructField("usrn", StringType, nullable = true),
     StructField("xCoordinate", StringType, nullable = true),
     StructField("yCoordinate", StringType, nullable = true),
-    StructField("tempCoords", StringType, nullable = true),
     StructField("creationDate", StringType, nullable = true),
     StructField("commencementDate", StringType, nullable = true),
     StructField("archivedDate", StringType, nullable = true),
