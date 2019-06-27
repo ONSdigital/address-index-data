@@ -183,6 +183,8 @@ object SqlHelper {
         nisra("xCoordinate").as("easting").cast(FloatType),
         nisra("yCoordinate").as("northing").cast(FloatType),
         functions.array(nisra("longitude"),nisra("latitude"))
+//          functions.regexp_replace(nisra("longitude"),"","0"),
+//          functions.regexp_replace(nisra("longitude"),"","0"))
           .as("location").cast(ArrayType(FloatType)),
         functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
         functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
