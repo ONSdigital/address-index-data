@@ -270,8 +270,14 @@ object SqlHelper {
         val outputLpis = lpis.map(row => HybridAddressSkinnyNisraEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
-        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
+        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val classificationCode: Option[String] = {
+          if (nisraClassCode == "")
+            classifications.map(row => row.getAs[String]("classificationCode")).headOption
+          else
+            Some(nisraCodeToABP(nisraClassCode))
+        }
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
@@ -293,6 +299,34 @@ object SqlHelper {
           fromSource
         )
     }
+  }
+
+  def nisraCodeToABP(ncode: String): String = ncode match {
+
+    case "DO_DETACHED" => "RD02"
+    case "DO_SEMI" => "RD03"
+    case "ND_RETAIL" => "CR"
+    case "NON_POSTAL" => "O"
+    case "DO_TERRACE" => "RD04"
+    case "ND_ENTERTAINMENT" => "CL"
+    case "ND_HOSPITALITY" => "CH"
+    case "ND_SPORTING" => "CL06"
+    case "DO_APART" => "RD06"
+    case "ND_INDUSTRY" => "CI"
+    case "ND_EDUCATION" => "CE"
+    case "ND_RELIGIOUS" => "ZW"
+    case "ND_COMM_OTHER" => "C"
+    case "ND_OTHER" =>   "C"
+    case "ND_AGRICULTURE" => "CA"
+    case "DO_OTHER" => "RD"
+    case "ND_OFFICE" => "CO"
+    case "ND_HEALTH" => "CM"
+    case "ND_LEGAL" => "CC02"
+    case "ND_CULTURE" => "CL04"
+    case "ND_ENTS_OTHER" => "CL"
+    case "ND_CULTURE_OTHER" => "CL04"
+    case "ND_INDUST_OTHER" => "CI"
+    case _ => "O"
   }
 
   /**
@@ -453,12 +487,18 @@ object SqlHelper {
         val outputCrossRefs = crossRefs.map(row => HybridAddressNisraEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
-        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+     //   val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
-
+        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val classificationCode: Option[String] = {
+          if (nisraClassCode == "")
+            classifications.map(row => row.getAs[String]("classificationCode")).headOption
+          else
+            Some(nisraCodeToABP(nisraClassCode))
+        }
         val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")

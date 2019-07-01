@@ -52,7 +52,7 @@ For usage see below:
 //  } else opts.printHelp()
 
   // val indexName = generateIndexName(historical = true, skinny = true, nisra = true)
-  val indexName = "nisfulltest30"
+  val indexName = "nisfulltest33"
    val url = s"http://$nodes:$port/$indexName"
    postMapping(indexName, skinny = false)
    saveHybridAddresses(historical = false, skinny = false, nisra = true)
