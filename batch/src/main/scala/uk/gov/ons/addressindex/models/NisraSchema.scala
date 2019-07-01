@@ -4,29 +4,6 @@ import org.apache.spark.sql.types._
 
 object NisraSchema {
 
-//  val nisraFileSchema = StructType(Seq(
-//    StructField("uprn", StringType, nullable = true),
-//    StructField("subBuildingName", StringType, nullable = true),
-//    StructField("buildingName", StringType, nullable = true),
-//    StructField("buildingNumber", StringType, nullable = true),
-//    StructField("paoStartNumber", StringType, nullable = true),
-//    StructField("paoEndNumber", StringType, nullable = true),
-//    StructField("paoStartSuffix", StringType, nullable = true),
-//    StructField("paoEndSuffix", StringType, nullable = true),
-//    StructField("paoText", StringType, nullable = true),
-//    StructField("saoStartNumber", StringType, nullable = true),
-//    StructField("saoEndNumber", StringType, nullable = true),
-//    StructField("saoStartSuffix", StringType, nullable = true),
-//    StructField("saoText", StringType, nullable = true),
-//    StructField("saoEndSuffix", StringType, nullable = true),
-//    StructField("complete", StringType, nullable = true),
-//    StructField("organisationName", StringType, nullable = true),
-//    StructField("primaryThorfare", StringType, nullable = true),
-//    StructField("secondaryThorfare", StringType, nullable = true),
-//    StructField("postTown", StringType, nullable = true),
-//    StructField("postcode", StringType, nullable = true)
-//  ))
-
   val nisraFileSchema = StructType(Seq(
     StructField("organisationName", StringType, nullable = true),
     StructField("subBuildingName", StringType, nullable = true),

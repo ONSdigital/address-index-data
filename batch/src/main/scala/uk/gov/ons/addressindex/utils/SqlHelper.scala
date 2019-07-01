@@ -188,14 +188,19 @@ object SqlHelper {
           .as("location").cast(ArrayType(FloatType)),
         functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
         functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
-        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
+        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"),
+        functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
+        functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
+        functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode")
 
-  //  val nonHistoricalDF =
-  //    historicalDF.filter("addressStatus != 'HISTORICAL'")
+      ).filter("addressStatus != 'REJECTED'").filter("addressStatus != 'CANDIDATE'")
 
-  //  if (historical) historicalDF else nonHistoricalDF
+    val nonHistoricalDF =
+      historicalDF.filter("addressStatus != 'HISTORICAL'")
 
-    historicalDF
+    if (historical) historicalDF else nonHistoricalDF
+
+  //  historicalDF
   }
 
   /**

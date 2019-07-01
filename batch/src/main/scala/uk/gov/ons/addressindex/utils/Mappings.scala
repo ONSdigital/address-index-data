@@ -780,20 +780,35 @@ object Mappings {
         								}
         							}
         						},
+                              "buildingStatus": {
+                  "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                                 "addressStatus": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                                 "classificationCode": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
         						"creationDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true"
+        							"index": "false"
         						},
         						"commencementDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true"
+        							"index": "false"
         						},
                    "archivedDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true",
+        							"index": "false",
                      "null_value": "2021-03-31T00:00:00Z"
         						},
                    "postcode": {
