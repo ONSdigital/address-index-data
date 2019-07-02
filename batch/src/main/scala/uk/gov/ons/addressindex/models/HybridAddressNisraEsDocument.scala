@@ -238,11 +238,11 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "paoStartSuffix" -> row.getString(6),
       "paoEndNumber" -> (if (row.isNullAt(5) || row.getString(5).equals("")) null else toShort(row.getString(5)).getOrElse(null)),
       "paoEndSuffix" -> row.getString(7),
-      "saoText" -> splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
+      "saoText" -> splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
       "saoStartNumber" -> (if (row.isNullAt(9) || row.getString(9).equals("")) null else toShort(row.getString(9)).getOrElse(null)),
       "saoStartSuffix" -> row.getString(11),
       "saoEndNumber" -> (if (row.isNullAt(10) || row.getString(10).equals("")) null else toShort(row.getString(10)).getOrElse(null)),
-      "saoEndSuffix" -> row.getString(13)
+      "saoEndSuffix" -> row.getString(12)
     )
   }
 

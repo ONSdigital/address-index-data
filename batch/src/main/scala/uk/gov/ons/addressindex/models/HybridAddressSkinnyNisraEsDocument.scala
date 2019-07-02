@@ -1,7 +1,7 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.{buildingNameExtra, generateFormattedNisraAddresses, splitAndCapitalise, toShort}
+import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.toShort
 
 case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               parentUprn: Long,

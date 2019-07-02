@@ -169,8 +169,8 @@ object SqlHelper {
         functions.regexp_replace(functions.regexp_replace(nisra("saoStartNumber"), "NULL", ""), "0", "").as("saoStartNumber"),
         functions.regexp_replace(functions.regexp_replace(nisra("saoEndNumber"), "NULL", ""), "0", "").as("saoEndNumber"),
         functions.regexp_replace(nisra("saoStartSuffix"), "NULL", "").as("saoStartSuffix"),
-        functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
         functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
+        functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
         functions.regexp_replace(nisra("complete"), "NULL", "").as("complete"),
         functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
@@ -183,8 +183,6 @@ object SqlHelper {
         nisra("xCoordinate").as("easting").cast(FloatType),
         nisra("yCoordinate").as("northing").cast(FloatType),
         functions.array(nisra("longitude"),nisra("latitude"))
-//          functions.regexp_replace(nisra("longitude"),"","0"),
-//          functions.regexp_replace(nisra("longitude"),"","0"))
           .as("location").cast(ArrayType(FloatType)),
         functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
         functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
@@ -199,8 +197,6 @@ object SqlHelper {
       historicalDF.filter("addressStatus != 'HISTORICAL'")
 
     if (historical) historicalDF else nonHistoricalDF
-
-  //  historicalDF
   }
 
   /**
@@ -281,7 +277,6 @@ object SqlHelper {
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
-
         val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
@@ -487,11 +482,7 @@ object SqlHelper {
         val outputCrossRefs = crossRefs.map(row => HybridAddressNisraEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
-     //   val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
-        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
-        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
-        val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
         val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
         val classificationCode: Option[String] = {
           if (nisraClassCode == "")
@@ -499,10 +490,13 @@ object SqlHelper {
           else
             Some(nisraCodeToABP(nisraClassCode))
         }
+
+        val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
+        val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
+        val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
         val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
-
         val splitPostCode = postCode.split(" ")
         val (postCodeOut, postCodeIn) =
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))
