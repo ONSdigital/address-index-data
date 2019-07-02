@@ -194,11 +194,6 @@ object HybridAddressNisraEsDocument extends EsDocument {
 
   def rowToNisra(row: Row): Map[String, Any] = {
 
-//    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
-//      Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
-//        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
-//          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
-
     val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
       Option(row.getString(15)).getOrElse(""),
       Option(row.getString(1)).getOrElse(""),
@@ -206,28 +201,14 @@ object HybridAddressNisraEsDocument extends EsDocument {
       Option(row.getString(3)).getOrElse(""),
       Option(row.getString(16)).getOrElse(""),
       Option(row.getString(17)).getOrElse(""),
-    //  "",
       Option(row.getString(18)).getOrElse(""),
       Option(row.getString(19)).getOrElse(""),
       Option(row.getString(20)).getOrElse(""),
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""))
 
-  //  def generateFormattedNisraAddresses(
-    //  organisationName: String,
-    //  subBuildingName: String,
-    //  buildingName: String,
-    //  buildingNumber: String,
-    //  thoroughfare: String,
-    //  altThoroughfare: String,
-    //  dependentThoroughfare: String,
-    //  locality: String,
-    //  townland: String,
-    //  townName: String,
-  //    postcode: String) : Array[String] = {
     Map(
       "uprn" -> row.getLong(0),
-    //  "buildingNumber" -> row.getString(3),
       "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
       "easting" -> row.getFloat(23),
       "northing" -> row.getFloat(24),
@@ -246,7 +227,6 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + buildingNameExtra(Option(row.getString(3)).getOrElse("1"))),
       "thoroughfare" -> splitAndCapitalise(Option(row.getString(16)).getOrElse("")),
       "altThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
-     // "altThoroughfare" -> "",
       "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
       "locality" -> splitAndCapitalise(Option(row.getString(19)).getOrElse("")),
       "townland" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),

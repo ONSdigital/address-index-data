@@ -52,10 +52,10 @@ For usage see below:
 //  } else opts.printHelp()
 
   // val indexName = generateIndexName(historical = true, skinny = true, nisra = true)
-  val indexName = "nisfulltest33"
+  val indexName = "nisfulltest34"
    val url = s"http://$nodes:$port/$indexName"
-   postMapping(indexName, skinny = false)
-   saveHybridAddresses(historical = false, skinny = false, nisra = true)
+   postMapping(indexName, skinny = true)
+   saveHybridAddresses(historical = false, skinny = true, nisra = true)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)

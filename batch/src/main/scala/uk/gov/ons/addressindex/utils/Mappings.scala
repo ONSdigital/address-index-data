@@ -780,17 +780,17 @@ object Mappings {
         								}
         							}
         						},
-                              "buildingStatus": {
+                  "buildingStatus": {
                   "type": "text",
                    "index": "true",
                    "analyzer": "keyword"
                  },
-                                 "addressStatus": {
+                   "addressStatus": {
                    "type": "text",
                    "index": "true",
                    "analyzer": "keyword"
                  },
-                                 "classificationCode": {
+                   "classificationCode": {
                    "type": "text",
                    "index": "true",
                    "analyzer": "keyword"
@@ -1394,17 +1394,16 @@ object Mappings {
        							"format": "strict_date_optional_time||epoch_millis",
        							"index": "true"
        						},
-       						"commencementDate": {
-       							"type": "date",
-       							"format": "strict_date_optional_time||epoch_millis",
-       							"index": "true"
-       						},
-                  "archivedDate": {
-       							"type": "date",
-       							"format": "strict_date_optional_time||epoch_millis",
-       							"index": "true",
-                    "null_value": "2021-03-31T00:00:00Z"
-       						},
+                   "addressStatus": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                   "classificationCode": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
                   "postcode": {
                     "type": "text",
                      "index": "true",
