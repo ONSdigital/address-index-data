@@ -347,11 +347,11 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
         actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
       val expected = expectedNisraMixed
-      val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+      val expectedAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
 
       // Then
       result(0) shouldBe expected
-      result(2) shouldBe expectedNisraAll
+      result(2) shouldBe expectedAll
     }
 
     "create NISRA with expected formatted address (Alt Thoroughfare)" in {
@@ -363,11 +363,11 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
         actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
       val expected = expectedNisraAltMixed
-      val expectedNisraAll = expectedNisraAll
+      val expectedAll = expectedNisraAll
 
       // Then
       result(1) shouldBe expected
-      result(2) shouldBe expectedNisraAll
+      result(2) shouldBe expectedAll
     }
   }
 }
