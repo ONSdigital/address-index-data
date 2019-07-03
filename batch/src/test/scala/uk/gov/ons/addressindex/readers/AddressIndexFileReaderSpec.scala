@@ -311,7 +311,6 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getString(16) shouldBe "DO_TERRACE" // CLASSIFICATION
       line.getString(24) shouldBe "15/04/2009" // CREATION_DATE
       line.getString(28) shouldBe "54.6924356" // LAT
-// |||6|MILEWATER TERRACE||||BALLYHENRY|NEWTOWNABBEY|ANTRIM|BT36 5UY|185356870|ANTRIM AND NEWTOWNABBEY|BUILT|APPROVED|DO_TERRACE|3437961|NEWTOWNABBEY||186300442|11548|331683|384622|15/04/2009||||54.6924356|-5.95853209|6||||||||||1
     }
 
     "extract epoch from the file path" in {

@@ -106,16 +106,16 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   // NISRA location (shared field to avoid test failure)
   val nisraLocation = Array(-2.3162985F, 4.00F)
 
-  val ExpectedNisraBuildingNumber = null
-  val ExpectedNisraPostCode = "AB1 7GH"
-  val ExpectedNisraEasting = 379171.00F
-  val ExpectedNisraNorthing = 412816.00F
-  val ExpectedNisraUprn = 100010977866L
-  val ExpectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val ExpectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val ExpectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
-  val ExpectedNisraAddressStatus = "APPROVED"
-  val ExpectedNisraClassificationCode = "DO_APART"
+  val expectedNisraBuildingNumber = null
+  val expectedNisraPostCode = "AB1 7GH"
+  val expectedNisraEasting = 379171.00F
+  val expectedNisraNorthing = 412816.00F
+  val expectedNisraUprn = 100010977866L
+  val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+  val expectedNisraAddressStatus = "APPROVED"
+  val expectedNisraClassificationCode = "DO_APART"
 
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
@@ -186,17 +186,17 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraSaoEndSuffix = ""
 
   val expectedNisra: Map[String, Any] = Map(
-    "uprn" -> ExpectedNisraUprn,
+    "uprn" -> expectedNisraUprn,
     "location" -> nisraLocation,
-    "postcode" -> ExpectedNisraPostCode,
-    "easting" -> ExpectedNisraEasting,
-    "northing" -> ExpectedNisraNorthing,
-    "mixedNisra" -> ExpectedNisraMixed,
-    "addressStatus" -> ExpectedNisraAddressStatus,
-    "classificationCode" -> ExpectedNisraClassificationCode,
-    "buildingNumber" -> ExpectedNisraBuildingNumber,
-    "mixedAltNisra" -> ExpectedNisraAltMixed,
-    "nisraAll" -> ExpectedNisraAll
+    "postcode" -> expectedNisraPostCode,
+    "easting" -> expectedNisraEasting,
+    "northing" -> expectedNisraNorthing,
+    "mixedNisra" -> expectedNisraMixed,
+    "addressStatus" -> expectedNisraAddressStatus,
+    "classificationCode" -> expectedNisraClassificationCode,
+    "buildingNumber" -> expectedNisraBuildingNumber,
+    "mixedAltNisra" -> expectedNisraAltMixed,
+    "nisraAll" -> expectedNisraAll
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -346,7 +346,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
         actualNisraBuildingName, actualNisraBuildingNumber, actualNisraThoroughfare, "", actualNisraDependentThoroughfare, actualNisraLocality,
         actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
-      val expected = ExpectedNisraMixed
+      val expected = expectedNisraMixed
       val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
 
       // Then
@@ -362,8 +362,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
         actualNisraBuildingName, actualNisraBuildingNumber, actualNisraThoroughfare, actualNisraAltThoroughfare, actualNisraDependentThoroughfare, actualNisraLocality,
         actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
-      val expected = ExpectedNisraAltMixed
-      val expectedNisraAll = ExpectedNisraAll
+      val expected = expectedNisraAltMixed
+      val expectedNisraAll = expectedNisraAll
 
       // Then
       result(1) shouldBe expected

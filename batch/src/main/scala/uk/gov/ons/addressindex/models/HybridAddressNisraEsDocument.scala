@@ -246,13 +246,6 @@ object HybridAddressNisraEsDocument extends EsDocument {
     )
   }
 
-  def convertToDate(dateTime: String): Timestamp = {
-  //  val formatter = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss")
-    val formatter = new SimpleDateFormat("MM/dd/yy")
-    val utilDate = formatter.parse(dateTime)
-    new Timestamp(utilDate.getTime)
-  }
-
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,
                                       altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
                                       postcode: String): Array[String] = {
