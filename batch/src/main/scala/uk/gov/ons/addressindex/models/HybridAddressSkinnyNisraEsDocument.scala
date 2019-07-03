@@ -1,6 +1,7 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
+import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.toShort
 
 case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               parentUprn: Long,
@@ -87,7 +88,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
+      (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
       splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),
@@ -111,25 +112,33 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
 
   def rowToNisra(row: Row): Map[String, Any] = {
 
-    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
-      Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
-      Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
-      Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
+      Option(row.getString(15)).getOrElse(""),
+      Option(row.getString(1)).getOrElse(""),
+      Option(row.getString(2)).getOrElse(""),
+      Option(row.getString(3)).getOrElse(""),
+      Option(row.getString(16)).getOrElse(""),
+      Option(row.getString(17)).getOrElse(""),
+      Option(row.getString(18)).getOrElse(""),
+      Option(row.getString(19)).getOrElse(""),
+      Option(row.getString(20)).getOrElse(""),
+      Option(row.getString(21)).getOrElse(""),
+      Option(row.getString(22)).getOrElse(""))
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> row.getString(4),
-      "easting" -> row.getFloat(12),
-      "northing" -> row.getFloat(13),
-      "location" -> row.get(14),
-      "creationDate" -> row.getDate(15),
-      "commencementDate" -> row.getDate(16),
-      "archivedDate" -> row.getDate(17),
+      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
+      "easting" -> row.getFloat(23),
+      "northing" -> row.getFloat(24),
+      "location" -> row.get(25),
+      "addressStatus" -> row.getString(30),
+      "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
-      "postcode" -> row.getString(11)
+      "postcode" -> row.getString(22)
     )
+
   }
 
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,

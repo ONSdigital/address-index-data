@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
+import org.apache.spark.sql.types.{ArrayType, FloatType, LongType, ShortType}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -158,23 +158,40 @@ object SqlHelper {
 
     val historicalDF =
       nisra.select(nisra("uprn").cast(LongType),
-        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("subBuildingName"), "NULL", "").as("subBuildingName"),
         functions.regexp_replace(nisra("buildingName"), "NULL", "").as("buildingName"),
         functions.regexp_replace(functions.regexp_replace(nisra("buildingNumber"), "NULL", ""), "0", "").as("buildingNumber"),
+        functions.regexp_replace(functions.regexp_replace(nisra("paoStartNumber"), "NULL", ""), "0", "").as("paoStartNumber"),
+        functions.regexp_replace(functions.regexp_replace(nisra("paoEndNumber"), "NULL", ""), "0", "").as("paoEndNumber"),
+        functions.regexp_replace(nisra("paoStartSuffix"), "NULL", "").as("paoStartSuffix"),
+        functions.regexp_replace(nisra("paoEndSuffix"), "NULL", "").as("paoEndSuffix"),
+        functions.regexp_replace(nisra("paoText"), "NULL", "").as("paoText"),
+        functions.regexp_replace(functions.regexp_replace(nisra("saoStartNumber"), "NULL", ""), "0", "").as("saoStartNumber"),
+        functions.regexp_replace(functions.regexp_replace(nisra("saoEndNumber"), "NULL", ""), "0", "").as("saoEndNumber"),
+        functions.regexp_replace(nisra("saoStartSuffix"), "NULL", "").as("saoStartSuffix"),
+        functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
+        functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
+        functions.regexp_replace(nisra("complete"), "NULL", "").as("complete"),
+        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
         functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
         functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
         functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
-        functions.regexp_replace(nisra("townName"), "NULL", "").as("townName"),
+        functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
         functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
         nisra("xCoordinate").as("easting").cast(FloatType),
         nisra("yCoordinate").as("northing").cast(FloatType),
-        functions.array(nisra("longitude"), nisra("latitude")).as("location").cast(ArrayType(FloatType)),
+        functions.array(nisra("longitude"),nisra("latitude"))
+          .as("location").cast(ArrayType(FloatType)),
         functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
         functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
-        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"))
+        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"),
+        functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
+        functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
+        functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode")
+
+      ).filter("addressStatus != 'REJECTED'").filter("addressStatus != 'CANDIDATE'")
 
     val nonHistoricalDF =
       historicalDF.filter("addressStatus != 'HISTORICAL'")
@@ -249,12 +266,17 @@ object SqlHelper {
         val outputLpis = lpis.map(row => HybridAddressSkinnyNisraEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
-        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
+        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val classificationCode: Option[String] = {
+          if (nisraClassCode == "")
+            classifications.map(row => row.getAs[String]("classificationCode")).headOption
+          else
+            Some(nisraCodeToABP(nisraClassCode))
+        }
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
-
         val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
@@ -272,6 +294,34 @@ object SqlHelper {
           fromSource
         )
     }
+  }
+
+  def nisraCodeToABP(ncode: String): String = ncode match {
+
+    case "DO_DETACHED" => "RD02"
+    case "DO_SEMI" => "RD03"
+    case "ND_RETAIL" => "CR"
+    case "NON_POSTAL" => "O"
+    case "DO_TERRACE" => "RD04"
+    case "ND_ENTERTAINMENT" => "CL"
+    case "ND_HOSPITALITY" => "CH"
+    case "ND_SPORTING" => "CL06"
+    case "DO_APART" => "RD06"
+    case "ND_INDUSTRY" => "CI"
+    case "ND_EDUCATION" => "CE"
+    case "ND_RELIGIOUS" => "ZW"
+    case "ND_COMM_OTHER" => "C"
+    case "ND_OTHER" =>   "C"
+    case "ND_AGRICULTURE" => "CA"
+    case "DO_OTHER" => "RD"
+    case "ND_OFFICE" => "CO"
+    case "ND_HEALTH" => "CM"
+    case "ND_LEGAL" => "CC02"
+    case "ND_CULTURE" => "CL04"
+    case "ND_ENTS_OTHER" => "CL"
+    case "ND_CULTURE_OTHER" => "CL04"
+    case "ND_INDUST_OTHER" => "CI"
+    case _ => "O"
   }
 
   /**
@@ -432,16 +482,21 @@ object SqlHelper {
         val outputCrossRefs = crossRefs.map(row => HybridAddressNisraEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
-        val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+
+        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val classificationCode: Option[String] = {
+          if (nisraClassCode == "")
+            classifications.map(row => row.getAs[String]("classificationCode")).headOption
+          else
+            Some(nisraCodeToABP(nisraClassCode))
+        }
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
-
         val postCode = if (nisraPostCode != "") nisraPostCode
         else if (pafPostCode.isDefined) pafPostCode.getOrElse("")
         else lpiPostCode.getOrElse("")
-
         val splitPostCode = postCode.split(" ")
         val (postCodeOut, postCodeIn) =
           if (splitPostCode.size == 2 && splitPostCode(1).length == 3) (splitPostCode(0), splitPostCode(1))

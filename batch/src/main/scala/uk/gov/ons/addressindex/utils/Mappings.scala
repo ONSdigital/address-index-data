@@ -716,6 +716,55 @@ object Mappings {
         							"type": "long",
         							"index": "false"
         						},
+                  "paoEndNumber": {
+                  "type": "short",
+                  "index": "true"
+                },
+                "paoEndSuffix": {
+                  "type": "text",
+                  "index": "true",
+                  "analyzer": "keyword"
+                },
+                "paoStartNumber": {
+                 "type": "short",
+                  "index": "true"
+                },
+                "paoStartSuffix": {
+                  "type": "text",
+                  "index": "true",
+                  "analyzer": "keyword",
+                  "fields": {
+                    "keyword": {
+                     "type": "keyword"
+                   }
+                 }
+               },
+               "paoText": {
+                 "type": "text",
+                 "analyzer": "welsh_split_analyzer"
+               },
+               "saoEndNumber": {
+                 "type": "short",
+                 "index": "true"
+               },
+               "saoEndSuffix": {
+                 "type": "text",
+                 "index": "true",
+                 "analyzer": "keyword"
+               },
+               "saoStartNumber": {
+                 "type": "short",
+                 "index": "true"
+               },
+               "saoStartSuffix": {
+                 "type": "text",
+                 "index": "true",
+                 "analyzer": "keyword"
+               },
+               "saoText": {
+                 "type": "text",
+                 "analyzer": "welsh_split_analyzer"
+               },
         						"nisraAll": {
         							"type": "text",
         							"analyzer": "welsh_split_analyzer",
@@ -731,20 +780,35 @@ object Mappings {
         								}
         							}
         						},
+                  "buildingStatus": {
+                  "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                   "addressStatus": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                   "classificationCode": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
         						"creationDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true"
+        							"index": "false"
         						},
         						"commencementDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true"
+        							"index": "false"
         						},
                    "archivedDate": {
         							"type": "date",
         							"format": "strict_date_optional_time||epoch_millis",
-        							"index": "true",
+        							"index": "false",
                      "null_value": "2021-03-31T00:00:00Z"
         						},
                    "postcode": {
@@ -1330,17 +1394,16 @@ object Mappings {
        							"format": "strict_date_optional_time||epoch_millis",
        							"index": "true"
        						},
-       						"commencementDate": {
-       							"type": "date",
-       							"format": "strict_date_optional_time||epoch_millis",
-       							"index": "true"
-       						},
-                  "archivedDate": {
-       							"type": "date",
-       							"format": "strict_date_optional_time||epoch_millis",
-       							"index": "true",
-                    "null_value": "2021-03-31T00:00:00Z"
-       						},
+                   "addressStatus": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
+                   "classificationCode": {
+                   "type": "text",
+                   "index": "true",
+                   "analyzer": "keyword"
+                 },
                   "postcode": {
                     "type": "text",
                      "index": "true",

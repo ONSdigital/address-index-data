@@ -1,5 +1,8 @@
 package uk.gov.ons.addressindex.models
 
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.Row
 
 case class HybridAddressNisraEsDocument(uprn: Long,
@@ -93,7 +96,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "organisationName" -> splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
     "departmentName" -> splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
     "subBuildingName" -> splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-    "buildingName" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
+    "buildingName" -> (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
     "buildingNumber" -> (if (row.isNullAt(9)) null else row.getShort(9)),
     "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(10)).getOrElse("")),
     "thoroughfare" -> splitAndCapitalise(Option(row.getString(11)).getOrElse("")),
@@ -172,35 +175,74 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "source" -> row.getAs[String]("source")
   )
 
+  def toShort(s: String): Option[Short] = {
+    try {
+      Some(s.toShort)
+    } catch {
+      case e: Exception => None
+    }
+  }
+
+  def buildingNameExtra(s: String): String = {
+    try {
+      val stest: Short = s.toShort
+      ""
+    } catch {
+      case e: Exception => " " + s
+    }
+  }
+
   def rowToNisra(row: Row): Map[String, Any] = {
 
-    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
-      Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
-        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
-          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
+      Option(row.getString(15)).getOrElse(""),
+      Option(row.getString(1)).getOrElse(""),
+      Option(row.getString(2)).getOrElse(""),
+      Option(row.getString(3)).getOrElse(""),
+      Option(row.getString(16)).getOrElse(""),
+      Option(row.getString(17)).getOrElse(""),
+      Option(row.getString(18)).getOrElse(""),
+      Option(row.getString(19)).getOrElse(""),
+      Option(row.getString(20)).getOrElse(""),
+      Option(row.getString(21)).getOrElse(""),
+      Option(row.getString(22)).getOrElse(""))
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> row.getString(4),
-      "easting" -> row.getFloat(12),
-      "northing" -> row.getFloat(13),
-      "location" -> row.get(14),
-      "creationDate" -> row.getDate(15),
-      "commencementDate" -> row.getDate(16),
-      "archivedDate" -> row.getDate(17),
+      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
+      "easting" -> row.getFloat(23),
+      "northing" -> row.getFloat(24),
+      "location" -> row.get(25),
+      "creationDate" -> row.getDate(26),
+      "commencementDate" -> row.getDate(27),
+      "archivedDate" -> row.getDate(28),
+      "buildingStatus" -> row.getString(29),
+      "addressStatus" -> row.getString(30),
+      "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
-      "organisationName" -> splitAndCapitalise(Option(row.getString(1)).getOrElse("")),
-      "subBuildingName" -> splitAndCapitalise(Option(row.getString(2)).getOrElse("")),
-      "buildingName" -> splitAndCapitalise(Option(row.getString(3)).getOrElse("")),
-      "thoroughfare" -> splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
-      "altThoroughfare" -> splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
-      "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      "locality" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      "townland" -> splitAndCapitalise(Option(row.getString(9)).getOrElse("")),
-      "townName" -> splitAndCapitalise(Option(row.getString(10)).getOrElse("")),
-      "postcode" -> row.getString(11)
+      "organisationName" -> splitAndCapitalise(Option(row.getString(15)).getOrElse("")),
+      "subBuildingName" -> splitAndCapitalise(Option(row.getString(1)).getOrElse("")),
+      "buildingName" -> (splitAndCapitalise(Option(row.getString(2)).getOrElse("")) + buildingNameExtra(Option(row.getString(3)).getOrElse("1"))),
+      "thoroughfare" -> splitAndCapitalise(Option(row.getString(16)).getOrElse("")),
+      "altThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
+      "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
+      "locality" -> splitAndCapitalise(Option(row.getString(19)).getOrElse("")),
+      "townland" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),
+      "townName" -> splitAndCapitalise(Option(row.getString(21)).getOrElse("")),
+      "postcode" -> row.getString(22),
+      "complete" -> row.getString(14),
+      "paoText" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
+      "paoStartNumber" -> (if (row.isNullAt(4) || row.getString(4).equals("")) null else toShort(row.getString(4)).getOrElse(null)),
+      "paoStartSuffix" -> row.getString(6),
+      "paoEndNumber" -> (if (row.isNullAt(5) || row.getString(5).equals("")) null else toShort(row.getString(5)).getOrElse(null)),
+      "paoEndSuffix" -> row.getString(7),
+      "saoText" -> splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
+      "saoStartNumber" -> (if (row.isNullAt(9) || row.getString(9).equals("")) null else toShort(row.getString(9)).getOrElse(null)),
+      "saoStartSuffix" -> row.getString(11),
+      "saoEndNumber" -> (if (row.isNullAt(10) || row.getString(10).equals("")) null else toShort(row.getString(10)).getOrElse(null)),
+      "saoEndSuffix" -> row.getString(12)
     )
   }
 
