@@ -103,31 +103,20 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val actualNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
 
-  // NISRA example
-  val nisraOrganisation = "AN ORGANISATION"
-  val nisraSubBuildingName = "THE SUB BUILDING NAME"
-  val nisraBuildingName = "THE BUILDING NAME"
-  val nisraBuildingNumber = null
-  val nisraThoroughfare = "THOROUGHFARE ROAD"
-  val nisraDependentThoroughfare = "OFF HERE"
-  val nisraAltThoroughfare = "AN ALTERNATIVE NAME"
-  val nisraLocality = "A LOCALITY XYZ"
-  val nisraTownland = "BIG TOWNLAND"
-  val nisraTown = "LITTLE TOWN"
-  val nisraPostCode = "AB1 7GH"
-  val nisraEasting = 379171.00F
-  val nisraNorthing = 412816.00F
+  // NISRA location (shared field to avoid test failure)
   val nisraLocation = Array(-2.3162985F, 4.00F)
-  val nisraUprn = 100010977866L
-  val nisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
-  val nisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
-  val nisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val nisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val nisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val nisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
-  val nisraAddressStatus = "APPROVED"
-  val nisraBuildingStatus = "WONKY"
-  val nisraClassificationCode = "DO_APART"
+
+  val ExpectedNisraBuildingNumber = null
+  val ExpectedNisraPostCode = "AB1 7GH"
+  val ExpectedNisraEasting = 379171.00F
+  val ExpectedNisraNorthing = 412816.00F
+  val ExpectedNisraUprn = 100010977866L
+  val ExpectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val ExpectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val ExpectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+  val ExpectedNisraAddressStatus = "APPROVED"
+  val ExpectedNisraClassificationCode = "DO_APART"
+
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
@@ -160,7 +149,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedNag" -> expectedNagMixed
   )
 
-  // NISRA actual
+    // NISRA actual
   val actualNisraOrganisation = "AN ORGANISATION"
   val actualNisraSubBuildingName = "THE SUB BUILDING NAME"
   val actualNisraBuildingName = "THE BUILDING NAME"
@@ -197,17 +186,17 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraSaoEndSuffix = ""
 
   val expectedNisra: Map[String, Any] = Map(
-    "uprn" -> nisraUprn,
+    "uprn" -> ExpectedNisraUprn,
     "location" -> nisraLocation,
-    "postcode" -> nisraPostCode,
-    "easting" -> nisraEasting,
-    "northing" -> nisraNorthing,
-    "mixedNisra" -> nisraMixed,
-    "addressStatus" -> nisraAddressStatus,
-    "classificationCode" -> nisraClassificationCode,
-    "buildingNumber" -> nisraBuildingNumber,
-    "mixedAltNisra" -> nisraAltMixed,
-    "nisraAll" -> nisraAll
+    "postcode" -> ExpectedNisraPostCode,
+    "easting" -> ExpectedNisraEasting,
+    "northing" -> ExpectedNisraNorthing,
+    "mixedNisra" -> ExpectedNisraMixed,
+    "addressStatus" -> ExpectedNisraAddressStatus,
+    "classificationCode" -> ExpectedNisraClassificationCode,
+    "buildingNumber" -> ExpectedNisraBuildingNumber,
+    "mixedAltNisra" -> ExpectedNisraAltMixed,
+    "nisraAll" -> ExpectedNisraAll
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -332,7 +321,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraPostCode,
           actualNisraEasting,
           actualNisraNorthing,
-          nagLocation,
+          nisraLocation,
           actualNisraCreationDate,
           actualNisraCommencementDate,
           actualNisraArchivedDate,
@@ -353,11 +342,11 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
       // Also tests nisraAll
       // When
-      val result = HybridAddressSkinnyNisraEsDocument.generateFormattedNisraAddresses(nisraOrganisation, nisraSubBuildingName,
-        nisraBuildingName, nisraBuildingNumber, nisraThoroughfare, "", nisraDependentThoroughfare, nisraLocality,
-        nisraTownland, nisraTown, nisraPostCode)
+      val result = HybridAddressSkinnyNisraEsDocument.generateFormattedNisraAddresses(actualNisraOrganisation, actualNisraSubBuildingName,
+        actualNisraBuildingName, actualNisraBuildingNumber, actualNisraThoroughfare, "", actualNisraDependentThoroughfare, actualNisraLocality,
+        actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
-      val expected = nisraMixed
+      val expected = ExpectedNisraMixed
       val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
 
       // Then
@@ -369,12 +358,12 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
       // Also tests nisraAll
       // When
-      val result = HybridAddressSkinnyNisraEsDocument.generateFormattedNisraAddresses(nisraOrganisation, nisraSubBuildingName,
-        nisraBuildingName, nisraBuildingNumber, nisraThoroughfare, nisraAltThoroughfare, nisraDependentThoroughfare, nisraLocality,
-        nisraTownland, nisraTown, nisraPostCode)
+      val result = HybridAddressSkinnyNisraEsDocument.generateFormattedNisraAddresses(actualNisraOrganisation, actualNisraSubBuildingName,
+        actualNisraBuildingName, actualNisraBuildingNumber, actualNisraThoroughfare, actualNisraAltThoroughfare, actualNisraDependentThoroughfare, actualNisraLocality,
+        actualNisraTownland, actualNisraTown, actualNisraPostCode)
 
-      val expected = nisraAltMixed
-      val expectedNisraAll = nisraAll
+      val expected = ExpectedNisraAltMixed
+      val expectedNisraAll = ExpectedNisraAll
 
       // Then
       result(1) shouldBe expected
