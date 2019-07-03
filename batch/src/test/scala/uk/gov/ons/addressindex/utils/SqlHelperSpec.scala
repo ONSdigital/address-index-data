@@ -16,13 +16,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // Given
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor).sort("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor).sort("uprn").collect()
 
       // Then
       result.length shouldBe 9
@@ -72,13 +73,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // Given
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false).sort("uprn").collect()
+      val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false).sort("uprn").collect()
 
       // Then
       result.length shouldBe 6
@@ -128,13 +130,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // Given
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor).orderBy("locality").orderBy("postcodeLocator").collect()
+      val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor).orderBy("locality").orderBy("postcodeLocator").collect()
 
       // Then
       result.length shouldBe 9
@@ -156,13 +159,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // Given
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
       // When
-      val result = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false).orderBy("uprn", "locality").collect()
+      val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false).orderBy("uprn", "locality").collect()
 
       // Then
       result.length shouldBe 6
@@ -260,12 +264,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor)
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
+
+      val nisra = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .option("delimiter", "|")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/txt/nisra/NISRA_test_data.txt")
 
       val expectedFirstRelations = Array(
         Map(
@@ -362,12 +374,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test_hist.csv")
 
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false)
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
 
       val expectedFirstRelations = Array(
         Map(
@@ -446,6 +459,225 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.paf.head("recordIdentifier") shouldBe 27
     }
 
+    "aggregate information from paf, nag and nisra to construct a single table containing grouped documents" in {
+
+      // Given
+      val paf = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
+
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      val expectedFirstRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(1).deep,
+          "parents" -> Array().deep
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(2, 3, 4).deep,
+          "parents" -> Array(1, 1, 1).deep
+        ),
+        Map(
+          "level" -> 3,
+          "siblings" -> Array(5, 6, 7, 8, 9).deep,
+          "parents" -> Array(2, 2, 2, 3, 3).deep
+        )
+      )
+
+      val expectedSecondCrossRefs = Array(
+        Map(
+          "crossReference" -> "E05001602",
+          "source" -> "7666MI"
+        ),
+        Map(
+          "crossReference" -> "E03001901",
+          "source" -> "7666OP"
+        ),
+        Map(
+          "crossReference" -> "E01001700",
+          "source" -> "7666OL"
+        ),
+        Map(
+          "crossReference" -> "E03801409",
+          "source" -> "7666OU"
+        )
+      )
+
+      // When
+      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 10
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.postcodeOut shouldBe "KL8"
+      firstResult.postcodeIn shouldBe "1JQ"
+      firstResult.parentUprn shouldBe 1l
+      firstResult.relatives.length shouldBe 3
+      firstResult.crossRefs.length shouldBe 2
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+
+      val secondResult = result(9)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.postcodeOut shouldBe "PO15"
+      secondResult.postcodeIn shouldBe "5RZ"
+      secondResult.parentUprn shouldBe 0L
+      secondResult.relatives.length shouldBe 0
+      secondResult.crossRefs.length shouldBe 4
+      secondResult.lpi.size shouldBe 3
+      secondResult.paf.size shouldBe 1
+
+      // Hierarchy test
+      firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
+
+      // CrossRefs Test
+      secondResult.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
+
+      List(secondResult.lpi.head("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
+      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
+      List(secondResult.lpi(2)("lpiKey")) should contain oneOf("1610L000056911","1610L000056913","1610L000014429")
+
+      secondResult.paf.head("recordIdentifier") shouldBe 27
+
+      val thirdResult = result(7)
+      thirdResult.uprn shouldBe 185556998L
+      thirdResult.parentUprn shouldBe 0L
+      thirdResult.lpi shouldBe empty
+      thirdResult.paf shouldBe empty
+      thirdResult.nisra.size shouldBe 1
+      thirdResult.nisra.head("commencementDate") shouldBe format.parse("2014-01-16")
+    }
+
+    "aggregate information from paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
+
+      // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
+      // Given
+      val paf1 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val paf2 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test_hist.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
+
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      val expectedFirstRelations = Array(
+        Map(
+          "level" -> 1,
+          "siblings" -> Array(1).deep,
+          "parents" -> Array().deep
+        ),
+        Map(
+          "level" -> 2,
+          "siblings" -> Array(2, 3, 4).deep,
+          "parents" -> Array(1, 1, 1).deep
+        ),
+        Map(
+          "level" -> 3,
+          "siblings" -> Array(5, 6, 7, 8, 9).deep,
+          "parents" -> Array(2, 2, 2, 3, 3).deep
+        )
+      )
+
+      val expectedSecondCrossRefs = Array(
+        Map(
+          "crossReference" -> "E05001602",
+          "source" -> "7666MI"
+        ),
+        Map(
+          "crossReference" -> "E03001901",
+          "source" -> "7666OP"
+        ),
+        Map(
+          "crossReference" -> "E01001700",
+          "source" -> "7666OL"
+        ),
+        Map(
+          "crossReference" -> "E03801409",
+          "source" -> "7666OU"
+        )
+      )
+
+      // When
+      val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 7
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.postcodeOut shouldBe "KL8"
+      firstResult.postcodeIn shouldBe "1JQ"
+      firstResult.parentUprn shouldBe 1l
+      firstResult.relatives.length shouldBe 3
+      firstResult.crossRefs.length shouldBe 2
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+
+      val secondResult = result(6)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.postcodeOut shouldBe "PO15"
+      secondResult.postcodeIn shouldBe "5RZ"
+      secondResult.parentUprn shouldBe 0L
+      secondResult.relatives.length shouldBe 0
+      secondResult.crossRefs.length shouldBe 4
+      secondResult.lpi.size shouldBe 2
+      secondResult.paf.size shouldBe 1
+
+      // Hierarchy test
+      firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
+
+      // CrossRefs Test
+      secondResult.crossRefs.toList.sortBy(_("crossReference")) shouldBe expectedSecondCrossRefs.toList.sortBy(_("crossReference"))
+
+      List(secondResult.lpi.head("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
+      List(secondResult.lpi(1)("lpiKey")) should contain oneOf("1610L000056913","1610L000014429")
+
+      secondResult.paf.head("recordIdentifier") shouldBe 27
+
+      val thirdResult = result(4)
+      thirdResult.uprn shouldBe 185556998L
+      thirdResult.parentUprn shouldBe 0L
+      thirdResult.lpi shouldBe empty
+      thirdResult.paf shouldBe empty
+      thirdResult.nisra.size shouldBe 1
+      thirdResult.nisra.head("commencementDate") shouldBe format.parse("2014-01-16")
+    }
+
+
     "aggregate information from skinny paf and nag to construct a single table containing grouped documents" in {
 
       // Given
@@ -456,19 +688,19 @@ class SqlHelperSpec extends WordSpec with Matchers {
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor)
-      val nisra = AddressIndexFileReader.readNisraXlsx()
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag, nisra).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 9
+      result.length shouldBe 4
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -476,9 +708,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.parentUprn shouldBe 1l
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
-      firstResult.nisra shouldBe empty
 
-      val secondResult = result(8)
+      val secondResult = result(3)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
@@ -489,15 +720,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
       List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
 
-      secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
 
-      val thirdResult = result(5)
-      thirdResult.uprn shouldBe 185446775L
-      thirdResult.parentUprn shouldBe 0L
-      thirdResult.lpi shouldBe empty
-      thirdResult.paf shouldBe empty
-      thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("archivedDate") shouldBe(format.parse("2014-01-19"))
     }
 
     "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" in {
@@ -517,16 +741,132 @@ class SqlHelperSpec extends WordSpec with Matchers {
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test_hist.csv")
 
       val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
       val lpi = AddressIndexFileReader.readLpiCSV()
       val organisation = AddressIndexFileReader.readOrganisationCSV()
       val street = AddressIndexFileReader.readStreetCSV()
       val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
 
-      val nag = SqlHelper.joinCsvs(blpu, lpi, organisation, street, streetDescriptor, historical = false)
-      val nisra = AddressIndexFileReader.readNisraXlsx()
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 3
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.parentUprn shouldBe 1l
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+
+      val secondResult = result(2)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.parentUprn shouldBe 0L
+      secondResult.lpi.size shouldBe 2
+      secondResult.paf.size shouldBe 1
+
+      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
+
+      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
+
+    }
+
+    "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents" in {
+
+      // Given
+      val paf = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+//      val nisra = SparkProvider.sqlContext.read
+//        .format("com.databricks.spark.csv")
+//        .option("header", "true")
+//        .option("delimiter", "|")
+//        .schema(CSVSchemas.postcodeAddressFileSchema)
+//        .load("batch/src/test/resources/txt/nisra/NISRA_test_data.txt")
+
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
+
+      // When
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
+
+      // Then
+      result.length shouldBe 10
+
+      val firstResult = result(0)
+      firstResult.uprn shouldBe 2L
+      firstResult.classificationCode shouldBe Some("RD")
+      firstResult.parentUprn shouldBe 1l
+      firstResult.lpi.size shouldBe 1
+      firstResult.paf shouldBe empty
+      firstResult.nisra shouldBe empty
+
+      val secondResult = result(9)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.parentUprn shouldBe 0L
+      secondResult.lpi.size shouldBe 3
+      secondResult.paf.size shouldBe 1
+
+      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+      List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
+
+      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
+
+      val thirdResult = result(5)
+      thirdResult.uprn shouldBe 185446775L
+      thirdResult.parentUprn shouldBe 0L
+      thirdResult.lpi shouldBe empty
+      thirdResult.paf shouldBe empty
+      thirdResult.nisra.size shouldBe 1
+      thirdResult.nisra.head("archivedDate") shouldBe format.parse("2014-01-19")
+    }
+
+    "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
+
+      // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
+      // Given
+      val paf1 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
+
+      val paf2 = SparkProvider.sqlContext.read
+        .format("com.databricks.spark.csv")
+        .option("header", "true")
+        .schema(CSVSchemas.postcodeAddressFileSchema)
+        .load("batch/src/test/resources/csv/delivery_point/hybrid_test_hist.csv")
+
+      val blpu = AddressIndexFileReader.readBlpuCSV()
+      val classification = AddressIndexFileReader.readClassificationCSV()
+      val lpi = AddressIndexFileReader.readLpiCSV()
+      val organisation = AddressIndexFileReader.readOrganisationCSV()
+      val street = AddressIndexFileReader.readStreetCSV()
+      val streetDescriptor = AddressIndexFileReader.readStreetDescriptorCSV()
+
+      val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      // When
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 7
@@ -550,7 +890,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
       List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
 
-      secondResult.paf.head("endDate") shouldBe(format.parse("2012-04-25"))
+      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
 
       val thirdResult = result(4)
       thirdResult.uprn shouldBe 185556998L
@@ -558,38 +898,38 @@ class SqlHelperSpec extends WordSpec with Matchers {
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("commencementDate") shouldBe(format.parse("2014-01-16"))
+      thirdResult.nisra.head("commencementDate") shouldBe format.parse("2014-01-16")
     }
 
     "create NISRA DataFrame" in {
 
       // Given
-      val nisra = AddressIndexFileReader.readNisraXlsx()
+      val nisra = AddressIndexFileReader.readNisraTXT()
 
       // When
       val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 5
+      nisraDF.length shouldBe 6
 
       val firstLine = nisraDF(0)
       firstLine.getLong(0) shouldBe 185113434L // UPRN
       firstLine.getString(1) shouldBe "QUEENS ELMS VILLAGE" // ORGANISATION_NAME
       firstLine.getString(5) shouldBe "PEMBROKE LODGE" // THOROUGHFARE
 
-      val secondLine = nisraDF(3)
+      val secondLine = nisraDF(4)
       secondLine.getLong(0) shouldBe 185556998L // UPRN
-      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(1) shouldBe null // ORGANISATION_NAME
       secondLine.getString(5) shouldBe "MULLAGH PARK" // THOROUGHFARE
     }
 
     "create NISRA non-historical DataFrame" in {
 
       // Given
-      val nisra = AddressIndexFileReader.readNisraXlsx()
+      val nisra = AddressIndexFileReader.readNisraTXT()
 
       // When
-      val nisraDF = SqlHelper.nisraData(nisra, false).sort("uprn").collect()
+      val nisraDF = SqlHelper.nisraData(nisra, historical = false).sort("uprn").collect()
 
       // Then
       nisraDF.length shouldBe 4
@@ -601,7 +941,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondLine = nisraDF(3)
       secondLine.getLong(0) shouldBe 185675432L // UPRN
-      secondLine.getString(1) shouldBe "" // ORGANISATION_NAME
+      secondLine.getString(1) shouldBe null // ORGANISATION_NAME
       secondLine.getString(5) shouldBe "DOWLAND ROAD" // THOROUGHFARE
     }
   }

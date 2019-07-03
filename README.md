@@ -2,6 +2,9 @@
 
 [![Build Status](https://travis-ci.com/ONSdigital/address-index-data.svg?token=wrHpQMWmwL6kpsdmycnz&branch=develop)](https://travis-ci.com/ONSdigital/address-index-data)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/83c0fb7ca2e64567b0998848ca781a36)](https://www.codacy.com/app/Valtech-ONS/address-index-data?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ONSdigital/address-index-data&amp;utm_campaign=Badge_Grade)
+[![codecov](https://codecov.io/gh/ONSdigital/address-index-data/branch/develop/graph/badge.svg)](https://codecov.io/gh/ONSdigital/address-index-data)
+
+
 
 ### Purpose
 
@@ -53,14 +56,14 @@ These will override the default configuration. The location and names of the inp
 Note that these input files are extracted from AddressBase and subject to some pre-processing.
 
 The job can also be run from inside IntelliJ. 
-In this case you can run the Main class directly but need to remove lines 40-83 and replace them with:
+In this case you can run the Main class directly but need to remove lines 40-118 and replace them with:
 ```
-val indexName = generateIndexName(false, true)
+val indexName = generateIndexName(historical=true, skinny=true, nisra=true)
 val url = s"http://$nodes:$port/$indexName"
-postMapping(indexName, true)
-saveHybridAddresses(false, true)
+postMapping(indexName, skinny=true)
+saveHybridAddresses(historical=true, skinny=true, nisra=true)
 ```
-where the first boolean is for a historic index and second for a skinny index
+where the first boolean is for a historic index, second for a skinny index and third to include Northern Ireland extract 
 
 ## Running Tests
 
@@ -69,6 +72,8 @@ Before you can run tests on this project if using Windows you must
   * Install the 64-bit version of winutils.exe https://github.com/steveloughran/winutils/raw/master/hadoop-2.6.0/bin/winutils.exe
   * save it on your local system in a bin directory e.g. c:\hadoop\bin
   * create environment variables HADOOP_HOME = c:\hadoop and hadoop.home.dir = c:\hadoop\bin
+  * Update Path to add %HADOOP_HOME%\bin
+  * Make temp directory writeable, on command line: winutils chmod 777 C:\tmp\hive (or other location of hive directory)
   * Now in IntelliJ you can mark the test directory (right-click, Mark Directory as, Test Resources Root).
 
 Then next time you right-click the green arrow "Run ScalaTests" should be shown.

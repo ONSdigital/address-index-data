@@ -1,6 +1,6 @@
 package uk.gov.ons.addressindex.readers
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
 import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
@@ -11,18 +11,18 @@ import uk.gov.ons.addressindex.utils.SparkProvider
   */
 object AddressIndexFileReader {
 
-  lazy val config = ConfigFactory.load()
-  lazy val pathToDeliveryPointCsv = config.getString("addressindex.files.csv.delivery-point")
-  lazy val pathToBlpuCSV = config.getString("addressindex.files.csv.blpu")
-  lazy val pathToClassificationCSV = config.getString("addressindex.files.csv.classification")
-  lazy val pathToCrossrefCSV = config.getString("addressindex.files.csv.crossref")
-  lazy val pathToLpiCSV = config.getString("addressindex.files.csv.lpi")
-  lazy val pathToOrganisationCSV = config.getString("addressindex.files.csv.organisation")
-  lazy val pathToStreetCSV = config.getString("addressindex.files.csv.street")
-  lazy val pathToStreetDescriptorCSV = config.getString("addressindex.files.csv.street-descriptor")
-  lazy val pathToSuccessorCSV = config.getString("addressindex.files.csv.successor")
-  lazy val pathToHierarchyCSV = config.getString("addressindex.files.csv.hierarchy")
-  lazy val pathToNisraXLSX = config.getString("addressindex.files.xlsx.nisra")
+  lazy val config: Config = ConfigFactory.load()
+  lazy val pathToDeliveryPointCsv: String = config.getString("addressindex.files.csv.delivery-point")
+  lazy val pathToBlpuCSV: String = config.getString("addressindex.files.csv.blpu")
+  lazy val pathToClassificationCSV: String = config.getString("addressindex.files.csv.classification")
+  lazy val pathToCrossrefCSV: String = config.getString("addressindex.files.csv.crossref")
+  lazy val pathToLpiCSV: String = config.getString("addressindex.files.csv.lpi")
+  lazy val pathToOrganisationCSV: String = config.getString("addressindex.files.csv.organisation")
+  lazy val pathToStreetCSV: String = config.getString("addressindex.files.csv.street")
+  lazy val pathToStreetDescriptorCSV: String = config.getString("addressindex.files.csv.street-descriptor")
+  lazy val pathToSuccessorCSV: String = config.getString("addressindex.files.csv.successor")
+  lazy val pathToHierarchyCSV: String = config.getString("addressindex.files.csv.hierarchy")
+  lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
 
   /**
     * Reads csv into a `DataFrame`
@@ -95,12 +95,11 @@ object AddressIndexFileReader {
   def readHierarchyCSV(): DataFrame = readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
 
   /**
-    * Reads XLSX into a 'DataFrame'
-    * @param path
-    * @param schema
-    * @return 'DataFrame' containing the NISRA data from XLSX
+    * Reads txt into a 'DataFrame'
+    *
+    * @return 'DataFrame' containing the hierarchy data from TXT (pipe delimited CSV)
     */
-  def readNisraXlsx(): DataFrame = readXlsx(pathToNisraXLSX, NisraSchema.nisraFileSchema)
+  def readNisraTXT(): DataFrame = readTxt(pathToNisraTXT, NisraSchema.nisraFileSchema)
 
   private def readCsv(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read
@@ -109,15 +108,13 @@ object AddressIndexFileReader {
       .option("header", "true")
       .load(resolveAbsolutePath(path))
 
-  private def readXlsx(path: String, schema: StructType): DataFrame =
+  private def readTxt(path: String, schema: StructType): DataFrame =
     SparkProvider.sqlContext.read
-    .format("com.crealytics.spark.excel")
-    .schema(schema)
-    .option("inferSchema", "false")
-    .option("useHeader", "true")
-    .load(resolveAbsolutePath(path))
-
-
+      .format("com.databricks.spark.csv")
+      .schema(schema)
+      .option("header", "true")
+      .option("delimiter", "|")
+      .load(resolveAbsolutePath(path))
 
   private def resolveAbsolutePath(path: String) = {
     val currentDirectory = new java.io.File(".").getCanonicalPath
@@ -175,7 +172,7 @@ object AddressIndexFileReader {
     date.group(1)
   }
 
-  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
+  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false, nisra: Boolean = false): String = {
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
@@ -189,6 +186,9 @@ object AddressIndexFileReader {
     val subIndex =
       if (skinny) config.getString("addressindex.elasticsearch.indices.skinny") else ""
 
-    s"${baseIndexName}${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
+    val includeNisra =
+      if (nisra) config.getString("addressindex.elasticsearch.indices.nisra") else ""
+
+    s"$baseIndexName$subIndex${includeNisra}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }

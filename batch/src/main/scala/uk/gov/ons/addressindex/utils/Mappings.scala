@@ -271,16 +271,18 @@ object Mappings {
            }
          },
          "analyzer": {
-           "welsh_no_split_analyzer": {
-             "tokenizer": "custom_keyword",
-             "filter": [
-               "asciifolding"
-             ]
-           },
+            "upper_keyword": {
+              "tokenizer": "keyword",
+              "filter": ["uppercase"]
+            },
+            "welsh_no_split_analyzer": {
+              "tokenizer": "custom_keyword",
+              "filter": ["asciifolding","uppercase"]
+            },
            "welsh_split_analyzer": {
              "tokenizer": "standard",
              "filter": [
-               "asciifolding"
+               "asciifolding","uppercase"
              ]
            },
            "welsh_split_synonyms_analyzer": {
@@ -344,7 +346,7 @@ object Mappings {
                "locality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "lpiLogicalStatus": {
                  "type": "byte",
@@ -436,7 +438,7 @@ object Mappings {
                "townName": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "uprn": {
                  "type": "long",
@@ -540,17 +542,17 @@ object Mappings {
                "dependentLocality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "dependentThoroughfare": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "doubleDependentLocality": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "endDate": {
                  "type": "date",
@@ -579,7 +581,7 @@ object Mappings {
                "postTown": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "postcode": {
                  "type": "text",
@@ -615,7 +617,7 @@ object Mappings {
                "thoroughfare": {
                  "type": "text",
                  "index": "true",
-                 "analyzer": "keyword"
+                 "analyzer": "upper_keyword"
                },
                "udprn": {
                  "type": "integer",
@@ -677,6 +679,95 @@ object Mappings {
                }
              }
            },
+              "nisra": {
+        					"properties": {
+        						"buildingNumber": {
+        							"type": "text",
+        							"index": "true",
+                  "analyzer": "welsh_no_split_analyzer",
+                   "fields": {
+                     "keyword": {
+                       "type": "keyword"
+                     }
+                   }
+        						},
+               "thoroughfare": {
+                 "type": "text",
+                  "analyzer": "welsh_no_split_analyzer",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword"
+                    }
+                  }
+                },
+        						"easting": {
+        							"type": "float",
+        							"index": "false"
+        						},
+        						"location": {
+        							"type": "geo_point",
+        							"index": "true"
+        						},
+        						"northing": {
+        							"type": "float",
+        							"index": "false"
+        						},
+        						"uprn": {
+        							"type": "long",
+        							"index": "false"
+        						},
+        						"nisraAll": {
+        							"type": "text",
+        							"analyzer": "welsh_split_analyzer",
+        							"fields": {
+        								"bigram": {
+        									"type": "text",
+        									"analyzer": "welsh_bigram_analyzer"
+        								},
+        								"partial": {
+        									"search_analyzer": "keyword_analyzer",
+        									"type": "text",
+        									"analyzer": "edge_ngram_analyzer"
+        								}
+        							}
+        						},
+        						"creationDate": {
+        							"type": "date",
+        							"format": "strict_date_optional_time||epoch_millis",
+        							"index": "true"
+        						},
+        						"commencementDate": {
+        							"type": "date",
+        							"format": "strict_date_optional_time||epoch_millis",
+        							"index": "true"
+        						},
+                   "archivedDate": {
+        							"type": "date",
+        							"format": "strict_date_optional_time||epoch_millis",
+        							"index": "true",
+                     "null_value": "2021-03-31T00:00:00Z"
+        						},
+                   "postcode": {
+                     "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                   },
+                   "mixedNisra": {
+                      "type": "text",
+                      "fields": {
+                        "partial": {
+                          "search_analyzer": "keyword_analyzer",
+                          "type": "text",
+                          "analyzer": "edge_ngram_analyzer"
+                        }
+                      }
+                    },
+                   "mixedAltNisra": {
+                     "type": "text",
+                     "index": "false"
+                   }
+        					}
+        				},
            "uprn": {
              "type": "long",
              "index": "true"
@@ -727,7 +818,12 @@ object Mappings {
              "type": "text",
              "index": "true",
              "analyzer": "keyword"
-           }
+           },
+            "postcode": {
+              "type": "text",
+              "index": "true",
+              "analyzer": "keyword"
+            }
          }
        }
      }
@@ -998,13 +1094,17 @@ object Mappings {
       				}
       			},
       			"analyzer": {
+              "upper_keyword": {
+                "tokenizer": "keyword",
+                "filter": ["uppercase"]
+              },
               "welsh_no_split_analyzer": {
                 "tokenizer": "custom_keyword",
-                "filter": ["asciifolding"]
+                "filter": ["asciifolding","uppercase"]
               },
       				"welsh_split_analyzer": {
       					"tokenizer": "standard",
-      					"filter": ["asciifolding"]
+      					"filter": ["asciifolding", "uppercase"]
       				},
       				"welsh_bigram_analyzer": {
       					"type": "custom",
@@ -1080,6 +1180,10 @@ object Mappings {
                   "saoStartNumber": {
                     "type": "short",
                     "index": "true"
+                  },
+                  "language": {
+                    "type": "text",
+                    "index": "false"
                   },
                   "streetDescriptor": {
                     "type": "text",
@@ -1173,8 +1277,23 @@ object Mappings {
        					"properties": {
        						"buildingNumber": {
        							"type": "text",
-       							"index": "true"
+       							"index": "true",
+                  "analyzer": "welsh_no_split_analyzer",
+                   "fields": {
+                     "keyword": {
+                       "type": "keyword"
+                     }
+                   }
        						},
+               "thoroughfare": {
+                 "type": "text",
+                  "analyzer": "welsh_no_split_analyzer",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword"
+                    }
+                  }
+                },
        						"easting": {
        							"type": "float",
        							"index": "false"
@@ -1222,10 +1341,21 @@ object Mappings {
        							"index": "true",
                     "null_value": "2021-03-31T00:00:00Z"
        						},
-                  "mixedNisra": {
+                  "postcode": {
                     "type": "text",
-                    "index": "false"
+                     "index": "true",
+                     "analyzer": "keyword"
                   },
+                  "mixedNisra": {
+      							"type": "text",
+       							"fields": {
+       								"partial": {
+       									"search_analyzer": "keyword_analyzer",
+       									"type": "text",
+       									"analyzer": "edge_ngram_analyzer"
+       								}
+       							}
+       						},
                   "mixedAltNisra": {
                     "type": "text",
                     "index": "false"
@@ -1241,6 +1371,11 @@ object Mappings {
       					"index": "false"
       				},
               "classificationCode": {
+                "type": "text",
+                "index": "true",
+                "analyzer": "keyword"
+              },
+              "postcode": {
                 "type": "text",
                 "index": "true",
                 "analyzer": "keyword"
