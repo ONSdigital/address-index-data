@@ -86,7 +86,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
+      splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
       splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),

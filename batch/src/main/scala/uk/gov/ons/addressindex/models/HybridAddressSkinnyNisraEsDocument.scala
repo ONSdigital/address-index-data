@@ -26,19 +26,26 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
     "paoStartSuffix" -> row.getString(17),
     "saoStartNumber" -> (if (row.isNullAt(21)) null else row.getShort(21)),
     "lpiLogicalStatus" -> row.getByte(27),
-    "streetDescriptor" -> splitAndCapitalise(row.getString(30)),
     "language" -> row.getString(29),
+    "streetDescriptor" -> splitAndCapitalise(row.getString(30)),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
-      row.getString(24), row.getString(22), row.getString(20), row.getString(11),
+      row.getString(24),
+      row.getString(22),
+      row.getString(20),
+      row.getString(11),
       if (row.isNullAt(16)) "" else row.getShort(16).toString,
       row.getString(17),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,
-      row.getString(19), row.getString(15), row.getString(30),
-      row.getString(31), row.getString(32), row.getString(1)
+      row.getString(19),
+      row.getString(15),
+      row.getString(30),
+      row.getString(31),
+      row.getString(32),
+      row.getString(1)
     ),
     "mixedNag" -> generateFormattedNagAddress(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
@@ -88,7 +95,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      (if ("\\d+[A-Z]".r.findFirstIn(Option(row.getString(8)).getOrElse("")).isEmpty) splitAndCapitalise(Option(row.getString(8)).getOrElse("")) else Option(row.getString(8)).getOrElse("")),
+      splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
       splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
       splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),
@@ -111,7 +118,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
   )
 
   def rowToNisra(row: Row): Map[String, Any] = {
-
     val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
       Option(row.getString(15)).getOrElse(""),
       Option(row.getString(1)).getOrElse(""),
@@ -127,7 +133,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).getOrElse(null)),
+      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).orNull),
       "easting" -> row.getFloat(23),
       "northing" -> row.getFloat(24),
       "location" -> row.get(25),
@@ -138,7 +144,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(22)
     )
-
   }
 
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,

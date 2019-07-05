@@ -186,12 +186,16 @@ abstract class EsDocument {
     Seq(organisation, buildingNumberWithStreetDescription, locality,
       townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
+
   // check to see if the token is a listed acronym, if so skip capitilization
+  // if it starts with a number, uppercase it
   def splitAndCapitalise(input: String) : String = {
-    input.trim.split(" ").map(
-      {case y => if (acronyms.contains(y)) y
-      else y.toLowerCase.capitalize}
-    ).mkString(" ")
+    val pattern = "^[0-9]".r
+    input.trim.split(" ").map({
+      case y if acronyms.contains(y) => y
+      case pattern(y) => y.toUpperCase
+      case y => y.toLowerCase.capitalize
+    }).mkString(" ")
   }
 
   // check to see if the token is a listed acronym, if so skip capitilization
