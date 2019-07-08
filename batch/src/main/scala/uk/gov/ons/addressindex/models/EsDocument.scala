@@ -8,11 +8,13 @@ import scala.util.matching.Regex
 abstract class EsDocument {
 
   def rowToLpi(row: Row): Map[String, Any]
+
   def rowToPaf(row: Row): Map[String, Any]
 
   /**
     * Creates formatted address from PAF address
     * Adapted from API code
+    *
     * @return String of formatted address
     */
   def generateFormattedPafAddress(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String,
@@ -28,7 +30,7 @@ abstract class EsDocument {
     val trimmedThoroughfare = splitAndCapitalise(thoroughfare)
 
     val buildingNumberWithStreetName =
-      s"$trimmedBuildingNumber ${ if(trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else "" }$trimmedThoroughfare"
+      s"$trimmedBuildingNumber ${if (trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else ""}$trimmedThoroughfare"
 
     val departmentNameEdit = splitAndCapitalise(departmentName)
     val organisationNameEdit = splitAndCapitalise(organisationName)
@@ -46,6 +48,7 @@ abstract class EsDocument {
   /**
     * Creates Welsh formatted address from PAF address
     * Adapted from API code
+    *
     * @return String of Welsh formatted address
     */
   def generateWelshFormattedPafAddress(poBoxNumber: String, buildingNumber: String, welshDependentThoroughfare: String,
@@ -61,7 +64,7 @@ abstract class EsDocument {
     val trimmedThoroughfare = splitAndCapitalise(welshThoroughfare)
 
     val buildingNumberWithStreetName =
-      s"$trimmedBuildingNumber ${ if(trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else "" }$trimmedThoroughfare"
+      s"$trimmedBuildingNumber ${if (trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else ""}$trimmedThoroughfare"
 
     val departmentNameEdit = splitAndCapitalise(departmentName)
     val organisationNameEdit = splitAndCapitalise(organisationName)
@@ -81,6 +84,7 @@ abstract class EsDocument {
     * The actual logic is pretty complex and should be treated on example-to-example level
     * (with unit tests)
     * Adapted from API code
+    *
     * @return String of formatted address
     */
   def generateFormattedNagAddress(saoStartNumber: String, saoStartSuffix: String, saoEndNumber: String,
@@ -188,12 +192,12 @@ abstract class EsDocument {
       townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
 
-  // Used in splitAndCapitalise only
+  // Used in splitAndCapitalise and splitAndCapitaliseTowns only
   val numberStartPattern: Regex = "^[0-9]".r
 
   // check to see if the token is a listed acronym, if so skip capitilization
   // if it starts with a number, uppercase it
-  def splitAndCapitalise(input: String) : String = {
+  def splitAndCapitalise(input: String): String = {
     input.trim.split(" ").map({
       case y if acronyms.contains(y) => y
       case numberStartPattern(y) => y.toUpperCase
@@ -205,14 +209,18 @@ abstract class EsDocument {
   // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
   // next check for parts in non-hyphenated names that are always lower case
   // if noneof the above capitalize in the standard way
-  def splitAndCapitaliseTowns(input: String) : String = {
-    input.trim.split(" ").map(  {
-      case y => if (acronyms.contains(y)) y
-      else if (!hyphenplaces.getOrElse(y,"").equals("")) hyphenplaces.getOrElse(y,"")
-      else if (!lowercaseparts.getOrElse(y,"").equals("")) lowercaseparts.getOrElse(y,"")
-      else y.toLowerCase.capitalize
+  def splitAndCapitaliseTowns(input: String): String = {
+    input.trim.split(" ").map(it => {
+      val hyphenMatch = hyphenplaces.get(it)
+      val lowercaseMatch = lowercaseparts.get(it)
+      it match {
+        case y if acronyms.contains(y) => y
+        case _ if hyphenMatch.isDefined => hyphenMatch.get
+        case _ if lowercaseMatch.isDefined => lowercaseMatch.get
+        case numberStartPattern(y) => y.toUpperCase
+        case y => y.toLowerCase.capitalize
       }
-    ).mkString(" ")
+    }).mkString(" ")
   }
 
   /**
@@ -223,15 +231,16 @@ abstract class EsDocument {
   /**
     * List of placenames with hyphens
     */
-  lazy val hyphenplaces: Map[String,String] = fileToMap(s"hyphenplaces","=")
+  lazy val hyphenplaces: Map[String, String] = fileToMap(s"hyphenplaces", "=")
 
   /**
     * List of placenames with hyphens
     */
-  lazy val lowercaseparts: Map[String,String] = fileToMap(s"lowercaseparts","=")
+  lazy val lowercaseparts: Map[String, String] = fileToMap(s"lowercaseparts", "=")
 
   /**
     * Convert external file into list
+    *
     * @param fileName
     * @return
     */
@@ -243,20 +252,21 @@ abstract class EsDocument {
   /**
     * Make external file such as score matrix file into Map
     *
-    * @param fileName name of the file
+    * @param fileName  name of the file
     * @param delimiter optional, delimiter of values in the file, defaults to "="
     * @return Map containing key -> value from the file
     */
-  def fileToMap(fileName: String, delimiter: String ): Map[String,String] = {
+  def fileToMap(fileName: String, delimiter: String): Map[String, String] = {
     val resource = getResource(fileName)
     resource.getLines().map { l =>
-      val Array(k,v1,_*) = l.split(delimiter)
+      val Array(k, v1, _*) = l.split(delimiter)
       k -> v1
     }.toMap
   }
 
   /**
     * Fetch file stream as buffered source
+    *
     * @param fileName
     * @return
     */
