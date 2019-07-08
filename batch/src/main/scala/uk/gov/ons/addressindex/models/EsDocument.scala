@@ -3,6 +3,7 @@ package uk.gov.ons.addressindex.models
 import org.apache.spark.sql.Row
 
 import scala.io.{BufferedSource, Source}
+import scala.util.matching.Regex
 
 abstract class EsDocument {
 
@@ -187,13 +188,15 @@ abstract class EsDocument {
       townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
   }
 
+  // Used in splitAndCapitalise only
+  val numberStartPattern: Regex = "^[0-9]".r
+
   // check to see if the token is a listed acronym, if so skip capitilization
   // if it starts with a number, uppercase it
   def splitAndCapitalise(input: String) : String = {
-    val pattern = "^[0-9]".r
     input.trim.split(" ").map({
       case y if acronyms.contains(y) => y
-      case pattern(y) => y.toUpperCase
+      case numberStartPattern(y) => y.toUpperCase
       case y => y.toLowerCase.capitalize
     }).mkString(" ")
   }
