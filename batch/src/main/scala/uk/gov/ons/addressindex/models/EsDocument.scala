@@ -200,7 +200,7 @@ abstract class EsDocument {
   def splitAndCapitalise(input: String): String = {
     input.trim.split(" ").map(it => {
       if (acronyms.contains(it)) it
-      else if (numberStartPattern(it)) it.toUpperCase
+      else if (numberStartPattern.findFirstIn(it).isDefined) it.toUpperCase
       else it.toLowerCase.capitalize
     }).mkString(" ")
   }
@@ -216,7 +216,7 @@ abstract class EsDocument {
       if (acronyms.contains(it)) it
       else if (hyphenMatch.isDefined) hyphenMatch.get
       else if (lowercaseMatch.isDefined) lowercaseMatch.get
-      else if (numberStartPattern(it)) it.toUpperCase
+      else if (numberStartPattern.findFirstIn(it).isDefined) it.toUpperCase
       else it.toLowerCase.capitalize
     }).mkString(" ")
   }
