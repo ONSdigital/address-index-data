@@ -1358,6 +1358,10 @@ object Mappings {
                     }
                   }
                 },
+                 "paoStartNumber": {
+                   "type": "short",
+                    "index": "true"
+                  },
        						"easting": {
        							"type": "float",
        							"index": "false"

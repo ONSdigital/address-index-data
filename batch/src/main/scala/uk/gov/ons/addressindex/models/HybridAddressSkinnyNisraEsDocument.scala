@@ -138,6 +138,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "northing" -> row.getFloat(24),
       "location" -> row.get(25),
       "addressStatus" -> row.getString(30),
+      "paoStartNumber" -> (if (row.isNullAt(4) || row.getString(4).equals("")) null else toShort(row.getString(4)).getOrElse(null)),
       "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
