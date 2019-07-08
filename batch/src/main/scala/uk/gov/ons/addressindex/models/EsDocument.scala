@@ -198,28 +198,26 @@ abstract class EsDocument {
   // check to see if the token is a listed acronym, if so skip capitilization
   // if it starts with a number, uppercase it
   def splitAndCapitalise(input: String): String = {
-    input.trim.split(" ").map({
-      case y if acronyms.contains(y) => y
-      case numberStartPattern(y) => y.toUpperCase
-      case y => y.toLowerCase.capitalize
+    input.trim.split(" ").map(it => {
+      if (acronyms.contains(it)) it
+      else if (numberStartPattern(it)) it.toUpperCase
+      else it.toLowerCase.capitalize
     }).mkString(" ")
   }
 
   // check to see if the token is a listed acronym, if so skip capitilization
   // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
   // next check for parts in non-hyphenated names that are always lower case
-  // if noneof the above capitalize in the standard way
+  // if none of the above capitalize in the standard way
   def splitAndCapitaliseTowns(input: String): String = {
     input.trim.split(" ").map(it => {
       val hyphenMatch = hyphenplaces.get(it)
       val lowercaseMatch = lowercaseparts.get(it)
-      it match {
-        case y if acronyms.contains(y) => y
-        case _ if hyphenMatch.isDefined => hyphenMatch.get
-        case _ if lowercaseMatch.isDefined => lowercaseMatch.get
-        case numberStartPattern(y) => y.toUpperCase
-        case y => y.toLowerCase.capitalize
-      }
+      if (acronyms.contains(it)) it
+      else if (hyphenMatch.isDefined) hyphenMatch.get
+      else if (lowercaseMatch.isDefined) lowercaseMatch.get
+      else if (numberStartPattern(it)) it.toUpperCase
+      else it.toLowerCase.capitalize
     }).mkString(" ")
   }
 
