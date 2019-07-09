@@ -180,6 +180,14 @@ object HybridAddressNisraEsDocument extends EsDocument {
     }
   }
 
+  def toInt(s: String): Option[Int] = {
+    try {
+      Some(s.toInt)
+    } catch {
+      case e: Exception => None
+    }
+  }
+
   def buildingNameExtra(s: String): String = {
     try {
       val stest: Short = s.toShort
@@ -200,7 +208,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       Option(row.getString(17)).getOrElse(""),
       Option(row.getString(18)).getOrElse(""),
       Option(row.getString(19)).getOrElse(""),
-      Option(row.getString(20)).getOrElse(""),
+      // townland omitted for now
+      "",
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""))
 
@@ -226,7 +235,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "altThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
       "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
       "locality" -> splitAndCapitalise(Option(row.getString(19)).getOrElse("")),
-      "townland" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),
+   //   "townland" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),
+      "udprn" -> (if (row.isNullAt(20) || row.getString(20).equals("")) null else toInt(row.getString(20)).orNull),
       "townName" -> splitAndCapitalise(Option(row.getString(21)).getOrElse("")),
       "postcode" -> row.getString(22),
       "complete" -> row.getString(14),

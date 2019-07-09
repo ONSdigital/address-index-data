@@ -127,7 +127,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(17)).getOrElse(""),
       Option(row.getString(18)).getOrElse(""),
       Option(row.getString(19)).getOrElse(""),
-      Option(row.getString(20)).getOrElse(""),
+      // townland omitted for now
+      "",
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""))
 
