@@ -883,6 +883,11 @@ object Mappings {
              "index": "true",
              "analyzer": "keyword"
            },
+           "fromSource": {
+             "type": "text",
+             "index": "true",
+             "analyzer": "keyword"
+            },
             "postcode": {
               "type": "text",
               "index": "true",
@@ -1438,6 +1443,11 @@ object Mappings {
       					"index": "false"
       				},
               "classificationCode": {
+                "type": "text",
+                "index": "true",
+                "analyzer": "keyword"
+              },
+              "fromSource": {
                 "type": "text",
                 "index": "true",
                 "analyzer": "keyword"
