@@ -192,7 +192,7 @@ object SqlHelper {
         functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
         functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode")
 
-      ).filter("addressStatus != 'REJECTED'").filter("addressStatus != 'CANDIDATE'")
+      ).filter("addressStatus != 'REJECTED'")
 
     val nonHistoricalDF =
       historicalDF.filter("addressStatus != 'HISTORICAL'")
