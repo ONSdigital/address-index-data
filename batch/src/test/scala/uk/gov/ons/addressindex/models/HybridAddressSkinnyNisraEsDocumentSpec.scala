@@ -112,6 +112,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraNorthing = 412816.00F
   val expectedNisraUprn = 100010977866L
   val expectedNisraPaoStartNumber = 1
+  val expectedNisraSaoStartNumber = 1
   val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Little Town, AB1 7GH"
   val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Little Town, AB1 7GH"
   val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN AB1 7GH"
@@ -182,7 +183,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraPaoEndNumber = ""
   val actualNisraPaoEndSuffix = ""
   val actualNisraSaoText = "THE SUB BUILDING NAME"
-  val actualNisraSaoStartNumber  = ""
+  val actualNisraSaoStartNumber  = "1"
   val actualNisraSaoStartSuffix = ""
   val actualNisraSaoEndNumber = ""
   val actualNisraSaoEndSuffix = ""
@@ -195,6 +196,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "northing" -> expectedNisraNorthing,
     "mixedNisra" -> expectedNisraMixed,
     "paoStartNumber" -> expectedNisraPaoStartNumber,
+    "saoStartNumber" -> expectedNisraSaoStartNumber,
     "addressStatus" -> expectedNisraAddressStatus,
     "classificationCode" -> expectedNisraClassificationCode,
     "buildingNumber" -> expectedNisraBuildingNumber,
