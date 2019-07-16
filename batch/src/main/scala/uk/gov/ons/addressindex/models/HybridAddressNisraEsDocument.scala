@@ -2,6 +2,8 @@ package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
 
+import scala.util.Try
+
 case class HybridAddressNisraEsDocument(uprn: Long,
                                         postcodeIn: String,
                                         postcodeOut: String,
@@ -173,19 +175,11 @@ object HybridAddressNisraEsDocument extends EsDocument {
   )
 
   def toShort(s: String): Option[Short] = {
-    try {
-      Some(s.toShort)
-    } catch {
-      case e: Exception => None
-    }
+    Try(s.toShort).toOption
   }
 
   def toInt(s: String): Option[Int] = {
-    try {
-      Some(s.toInt)
-    } catch {
-      case e: Exception => None
-    }
+    Try(s.toInt).toOption
   }
 
   def buildingNameExtra(s: String): String = {
@@ -215,7 +209,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).orNull),
+      "buildingNumber" -> toShort(row.getString(3)).orNull,
       "easting" -> row.getFloat(23),
       "northing" -> row.getFloat(24),
       "location" -> row.get(25),
@@ -235,20 +229,19 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "altThoroughfare" -> splitAndCapitalise(Option(row.getString(17)).getOrElse("")),
       "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
       "locality" -> splitAndCapitalise(Option(row.getString(19)).getOrElse("")),
-   //   "townland" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),
-      "udprn" -> (if (row.isNullAt(20) || row.getString(20).equals("")) null else toInt(row.getString(20)).orNull),
+      "udprn" -> toInt(row.getString(20)).orNull,
       "townName" -> splitAndCapitalise(Option(row.getString(21)).getOrElse("")),
       "postcode" -> row.getString(22),
       "complete" -> row.getString(14),
       "paoText" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      "paoStartNumber" -> (if (row.isNullAt(4) || row.getString(4).equals("")) null else toShort(row.getString(4)).orNull),
+      "paoStartNumber" -> toShort(row.getString(4)).orNull,
       "paoStartSuffix" -> row.getString(6),
-      "paoEndNumber" -> (if (row.isNullAt(5) || row.getString(5).equals("")) null else toShort(row.getString(5)).orNull),
+      "paoEndNumber" -> toShort(row.getString(5)).orNull,
       "paoEndSuffix" -> row.getString(7),
       "saoText" -> splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
-      "saoStartNumber" -> (if (row.isNullAt(9) || row.getString(9).equals("")) null else toShort(row.getString(9)).orNull),
+      "saoStartNumber" -> toShort(row.getString(9)).orNull,
       "saoStartSuffix" -> row.getString(11),
-      "saoEndNumber" -> (if (row.isNullAt(10) || row.getString(10).equals("")) null else toShort(row.getString(10)).orNull),
+      "saoEndNumber" -> toShort(row.getString(10)).orNull,
       "saoEndSuffix" -> row.getString(12)
     )
   }

@@ -134,13 +134,13 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).orNull),
+      "buildingNumber" -> toShort(row.getString(3)).orNull,
       "easting" -> row.getFloat(23),
       "northing" -> row.getFloat(24),
       "location" -> row.get(25),
       "addressStatus" -> row.getString(30),
-      "paoStartNumber" -> (if (row.isNullAt(4) || row.getString(4).equals("")) null else toShort(row.getString(4)).getOrElse(null)),
-      "saoStartNumber" -> (if (row.isNullAt(9) || row.getString(9).equals("")) null else toShort(row.getString(9)).getOrElse(null)),
+      "paoStartNumber" -> toShort(row.getString(4)).orNull,
+      "saoStartNumber" -> toShort(row.getString(9)).orNull,
       "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
