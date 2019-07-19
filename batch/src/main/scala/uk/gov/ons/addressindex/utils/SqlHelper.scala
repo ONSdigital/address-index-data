@@ -177,7 +177,8 @@ object SqlHelper {
         functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
         functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
-        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+   //     functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(functions.regexp_replace(nisra("udprn"), "NULL", ""), "0", "").as("udprn"),
         functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
         functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
         nisra("xCoordinate").as("easting").cast(FloatType),
@@ -191,7 +192,7 @@ object SqlHelper {
         functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
         functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode")
 
-      ).filter("addressStatus != 'REJECTED'").filter("addressStatus != 'CANDIDATE'")
+      ).filter("addressStatus != 'REJECTED'")
 
     val nonHistoricalDF =
       historicalDF.filter("addressStatus != 'HISTORICAL'")

@@ -307,10 +307,10 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
 
       val line = result(3)
       line.getString(4) shouldBe "MILEWATER TERRACE" // ORGANISATION_NAME
-      line.getString(12) shouldBe  "185356870" // UPRN
-      line.getString(16) shouldBe "DO_TERRACE" // CLASSIFICATION
-      line.getString(24) shouldBe "15/04/2009" // CREATION_DATE
-      line.getString(28) shouldBe "54.6924356" // LAT
+      line.getString(11) shouldBe  "185356870" // UPRN
+      line.getString(15) shouldBe "DO_TERRACE" // CLASSIFICATION
+      line.getString(23) shouldBe "15/04/2009" // CREATION_DATE
+      line.getString(27) shouldBe "54.6924356" // LAT
     }
 
     "extract epoch from the file path" in {

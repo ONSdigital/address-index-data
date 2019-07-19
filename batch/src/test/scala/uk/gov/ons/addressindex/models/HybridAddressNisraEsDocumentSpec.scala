@@ -165,12 +165,13 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraEasting = 379171.00F
   val expectedNisraNorthing = 412816.00F
   val expectedNisraUprn = 100010977866L
+  val expectedNisraUdprn = 12345
   val expectedNisraAddressStatus = "APPROVED"
   val expectedNisraBuildingStatus = "WONKY"
   val expectedNisraClassificationCode = "DO_APART"
-  val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+  val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Little Town, AB1 7GH"
+  val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Little Town, AB1 7GH"
+  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN AB1 7GH"
   val expectedNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
@@ -201,6 +202,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraEasting = 379171.00F
   val actualNisraNorthing = 412816.00F
   val actualNisraUprn = 100010977866L
+  val actualNisraUdprn = "12345"
   val actualNisraAddressStatus = "APPROVED"
   val actualNisraBuildingStatus = "WONKY"
   val actualNisraClassificationCode = "DO_APART"
@@ -323,7 +325,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "altThoroughfare" -> expectedNisraAltThoroughfare,
     "dependentThoroughfare" -> expectedNisraDependentThoroughfare,
     "locality" -> expectedNisraLocality,
-    "townland" -> expectedNisraTownland,
+    "udprn" -> expectedNisraUdprn,
     "townName" -> expectedNisraTown,
     "postcode" -> expectedNisraPostCode,
     "complete" -> expectedNisraComplete,
@@ -1032,7 +1034,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraAltThoroughfare,
           actualNisraDependentThoroughfare,
           actualNisraLocality,
-          actualNisraTownland,
+          actualNisraUdprn,
           actualNisraTown,
           actualNisraPostCode,
           actualNisraEasting,
