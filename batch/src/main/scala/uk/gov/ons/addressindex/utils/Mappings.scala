@@ -497,17 +497,17 @@ object Mappings {
                               },
                               "lpiStartDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true"
                               },
                               "lpiLastUpdateDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "lpiEndDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true",
                                   "null_value": "2021-03-31T00:00:00Z"
                               },
@@ -556,18 +556,18 @@ object Mappings {
                               },
                               "endDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true",
                                   "null_value": "2021-03-31T00:00:00Z"
                               },
                               "entryDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "lastUpdateDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "organisationName": {
@@ -598,7 +598,7 @@ object Mappings {
                               },
                               "processDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "recordIdentifier": {
@@ -607,7 +607,7 @@ object Mappings {
                               },
                               "startDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true"
                               },
                               "subBuildingName": {
@@ -797,17 +797,17 @@ object Mappings {
                               },
                               "creationDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "commencementDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false"
                               },
                               "archivedDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "false",
                                   "null_value": "2021-03-31T00:00:00Z"
                               },
@@ -1293,12 +1293,12 @@ object Mappings {
                               },
                               "lpiStartDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true"
                               },
                               "lpiEndDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true",
                                   "null_value": "2021-03-31T00:00:00Z"
                               },
@@ -1312,13 +1312,13 @@ object Mappings {
                           "properties": {
                               "endDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true",
                                   "null_value": "2021-03-31T00:00:00Z"
                               },
                               "startDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true"
                               },
                               "uprn": {
@@ -1409,7 +1409,7 @@ object Mappings {
                               },
                               "creationDate": {
                                   "type": "date",
-                                  "format": "strict_date_optional_timeepoch_millis",
+                                  "format": "strict_date_optional_time||epoch_millis",
                                   "index": "true"
                               },
                               "addressStatus": {
