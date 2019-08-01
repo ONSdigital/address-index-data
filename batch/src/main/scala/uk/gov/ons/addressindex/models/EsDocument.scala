@@ -11,6 +11,8 @@ abstract class EsDocument {
 
   def rowToPaf(row: Row): Map[String, Any]
 
+  val numberAndLetterRegex: Regex = "\\d+[A-Z]".r
+
   /**
     * Creates formatted address from PAF address
     * Adapted from API code
@@ -22,27 +24,33 @@ abstract class EsDocument {
                                   subBuildingName: String, buildingName: String, doubleDependentLocality: String,
                                   dependentLocality: String, postTown: String, postcode: String): String = {
 
-    val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
-    val numberAndLetter = "\\d+[A-Z]".r
+    // org, department, building name, thoroughfare, dependent locality, post town, postcode
+    // org, department, po box, post town, postcode
+    // building number + building name, post town, postcode
 
-    val trimmedBuildingNumber = buildingNumber.trim
-    val trimmedDependentThoroughfare = splitAndCapitalise(dependentThoroughfare)
-    val trimmedThoroughfare = splitAndCapitalise(thoroughfare)
+    def strToOpt(str: String): Option[String] = if (str.isEmpty) None else Some(str)
 
-    val buildingNumberWithStreetName =
-      s"$trimmedBuildingNumber ${if (trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else ""}$trimmedThoroughfare"
+    def normalize(s: String): String = splitAndCapitalise(s)
 
-    val departmentNameEdit = splitAndCapitalise(departmentName)
-    val organisationNameEdit = splitAndCapitalise(organisationName)
-    val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
-    val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
-    val doubleDependentLocalityEdit = splitAndCapitaliseTowns(doubleDependentLocality)
-    val dependentLocalityEdit = splitAndCapitaliseTowns(dependentLocality)
-    val postTownEdit = splitAndCapitaliseTowns(postTown)
+    def normalizeTowns(s: String): String = splitAndCapitaliseTowns(s)
 
-    Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
-      poBoxNumberEdit, buildingNumberWithStreetName, doubleDependentLocalityEdit, dependentLocalityEdit,
-      postTownEdit, postcode).map(_.trim).filter(_.nonEmpty).mkString(", ")
+    val thoroughfares = Seq(dependentThoroughfare, thoroughfare).map(normalize).map(strToOpt)
+
+    val premises = Seq(subBuildingName, buildingName, buildingNumber).map(normalize).map(strToOpt)
+
+    val poBox = strToOpt(poBoxNumber).map("PO BOX " + _)
+
+    // merge the first entry in thoroughfare, and the last entry in premises, if they exist
+    val premsAndThoroughfare = (premises, thoroughfares) match {
+      case (sb :: b :: Some(n) :: Nil, Some(t) :: ts) => sb :: b :: poBox :: Some(n + " " + t) :: ts
+      case (sb :: Some(b) :: None :: Nil, Some(t) :: ts) => sb :: poBox :: Some(b + " " + t) :: ts
+      case (ps, ts) => (ps :+ poBox) ++ ts
+    }
+
+    val org = Seq(departmentName, organisationName).map(normalize).map(strToOpt)
+    val locality = Seq(doubleDependentLocality, dependentLocality, postTown).map(normalizeTowns).map(strToOpt)
+    val postcodeOpt = Seq(strToOpt(postcode))
+    (org ++ premsAndThoroughfare ++ locality ++ postcodeOpt).flatten.map(_.trim).mkString(", ")
   }
 
   /**
@@ -56,27 +64,10 @@ abstract class EsDocument {
                                        subBuildingName: String, buildingName: String, welshDoubleDependentLocality: String,
                                        welshDependentLocality: String, welshPostTown: String, postcode: String): String = {
 
-    val poBoxNumberEdit = if (poBoxNumber.isEmpty) "" else s"PO BOX ${poBoxNumber}"
-    val numberAndLetter = "\\d+[A-Z]".r
-
-    val trimmedBuildingNumber = buildingNumber.trim
-    val trimmedDependentThoroughfare = splitAndCapitalise(welshDependentThoroughfare)
-    val trimmedThoroughfare = splitAndCapitalise(welshThoroughfare)
-
-    val buildingNumberWithStreetName =
-      s"$trimmedBuildingNumber ${if (trimmedDependentThoroughfare.nonEmpty) s"$trimmedDependentThoroughfare, " else ""}$trimmedThoroughfare"
-
-    val departmentNameEdit = splitAndCapitalise(departmentName)
-    val organisationNameEdit = splitAndCapitalise(organisationName)
-    val subBuildingNameEdit = splitAndCapitalise(subBuildingName)
-    val buildingNameEdit = if (numberAndLetter.findFirstIn(buildingName.trim).isEmpty) splitAndCapitalise(buildingName) else buildingName
-    val welshDoubleDependentLocalityEdit = splitAndCapitaliseTowns(welshDoubleDependentLocality)
-    val welshDependentLocalityEdit = splitAndCapitaliseTowns(welshDependentLocality)
-    val welshPostTownEdit = splitAndCapitaliseTowns(welshPostTown)
-
-    Seq(departmentNameEdit, organisationNameEdit, subBuildingNameEdit, buildingNameEdit,
-      poBoxNumberEdit, buildingNumberWithStreetName, welshDoubleDependentLocalityEdit, welshDependentLocalityEdit,
-      welshPostTownEdit, postcode).map(_.trim).filter(_.nonEmpty).mkString(", ")
+    generateFormattedPafAddress(poBoxNumber, buildingNumber, welshDependentThoroughfare,
+      welshThoroughfare, departmentName, organisationName,
+      subBuildingName, buildingName, welshDoubleDependentLocality,
+      welshDependentLocality, welshPostTown, postcode)
   }
 
   /**
@@ -121,8 +112,12 @@ abstract class EsDocument {
       else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
       else s"$sao $pao $trimmedStreetDescriptor"
 
-    Seq(splitAndCapitalise(organisation), buildingNumberWithStreetDescription, splitAndCapitaliseTowns(locality),
-      splitAndCapitaliseTowns(townName), postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(", ")
+    Seq(splitAndCapitalise(organisation),
+      buildingNumberWithStreetDescription,
+      splitAndCapitaliseTowns(locality),
+      splitAndCapitaliseTowns(townName),
+      postcodeLocator
+    ).map(_.trim).filter(_.nonEmpty).mkString(", ")
   }
 
   def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
@@ -193,14 +188,14 @@ abstract class EsDocument {
   }
 
   // Used in splitAndCapitalise and splitAndCapitaliseTowns only
-  val numberStartPattern: Regex = "^[0-9]".r
+  val startsWithNumber: Regex = "^[0-9].*".r
 
   // check to see if the token is a listed acronym, if so skip capitilization
   // if it starts with a number, uppercase it
   def splitAndCapitalise(input: String): String = {
     input.trim.split(" ").map(it => {
       if (acronyms.contains(it)) it
-      else if (numberStartPattern.findFirstIn(it).isDefined) it.toUpperCase
+      else if (startsWithNumber.findFirstIn(it).isDefined) it.toUpperCase
       else it.toLowerCase.capitalize
     }).mkString(" ")
   }
@@ -216,7 +211,7 @@ abstract class EsDocument {
       if (acronyms.contains(it)) it
       else if (hyphenMatch.isDefined) hyphenMatch.get
       else if (lowercaseMatch.isDefined) lowercaseMatch.get
-      else if (numberStartPattern.findFirstIn(it).isDefined) it.toUpperCase
+      else if (startsWithNumber.findFirstIn(it).isDefined) it.toUpperCase
       else it.toLowerCase.capitalize
     }).mkString(" ")
   }

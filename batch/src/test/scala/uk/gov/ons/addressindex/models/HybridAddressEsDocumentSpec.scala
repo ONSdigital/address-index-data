@@ -387,6 +387,32 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Department, Cibo, Flat E, 50A, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
     }
 
+    "correctly avoid excess commas in buildings with a number, but no PO BOX or building number" in {
+      // Given
+      val pafBuildingName = "50A"
+      val poBoxNumber = ""
+      val buildingNumber = ""
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(
+        poBoxNumber = poBoxNumber,
+        buildingNumber = buildingNumber,
+        dependentThoroughfare = expectedPaf("dependentThoroughfare").toString,
+        thoroughfare = expectedPaf("thoroughfare").toString,
+        departmentName = expectedPaf("departmentName").toString,
+        organisationName = expectedPaf("organisationName").toString,
+        subBuildingName = expectedPaf("subBuildingName").toString,
+        buildingName = pafBuildingName,
+        doubleDependentLocality = expectedPaf("doubleDependentLocality").toString,
+        dependentLocality = expectedPaf("dependentLocality").toString,
+        postTown = expectedPaf("postTown").toString,
+        postcode = expectedPaf("postcode").toString
+      )
+
+      // Then
+      result shouldBe "Department, Cibo, Flat E, 50A Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
+    }
+
     "change uppercase Welsh address to mixed case" in {
       // Given
       val pafBuildingName = "HMP NEWPORT"
