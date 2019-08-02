@@ -1,11 +1,10 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
+import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
 
 import scala.io.{BufferedSource, Source}
 import scala.util.matching.Regex
-
-import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
 
 abstract class EsDocument {
 
@@ -73,11 +72,7 @@ abstract class EsDocument {
                                   paoStartSuffix: String, paoEndNumber: String, paoEndSuffix: String, paoText: String,
                                   streetDescriptor: String, locality: String, townName: String, postcodeLocator: String): String = {
 
-    val saoLeftRangeExists = saoStartNumber.nonEmpty || saoStartSuffix.nonEmpty
-    val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
-    val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
-    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
-      .map(_.trim).mkString
+    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix)
 
     val sao =
       if (saoText == organisation || saoText.isEmpty) saoNumbers
@@ -85,11 +80,7 @@ abstract class EsDocument {
       else if (saoNumbers.isEmpty) s"${normalize(saoText)},"
       else s"$saoNumbers, ${normalize(saoText)},"
 
-    val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
-    val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
-    val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
-    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix)
-      .map(_.trim).mkString
+    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix)
     val pao =
       if (paoText == organisation || paoText.isEmpty) paoNumbers
       else if (paoNumbers.isEmpty) s"${normalize(paoText)},"
@@ -144,18 +135,10 @@ abstract class EsDocument {
                 paoEndNumber: String, paoEndSuffix: String, paoText: String, streetDescriptor: String,
                 townName: String, locality: String, postcodeLocator: String): String = {
 
-    val saoLeftRangeExists = saoStartNumber.nonEmpty || saoStartSuffix.nonEmpty
-    val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
-    val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
-
-    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix).map(_.trim).mkString
+    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix)
     val sao = Seq(strToOpt(saoNumbers), strToOpt(saoText).filter(_ != organisation)).flatten.mkString(" ")
 
-    val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
-    val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
-    val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
-
-    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix).map(_.trim).mkString
+    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix)
     val pao = Seq(strToOpt(paoText).filter(_ != organisation), strToOpt(paoNumbers)).flatten.mkString(" ")
 
     val buildingNumberWithStreetDescription = Seq(sao, pao, streetDescriptor.trim).flatMap(strToOpt).mkString(" ")
@@ -191,6 +174,14 @@ abstract class EsDocument {
       else if (startsWithNumber.findFirstIn(it).isDefined) it.toUpperCase
       else it.toLowerCase.capitalize
     }).mkString(" ")
+  }
+
+  def hyphenateNumbers(startNumber: String, startSuffix: String, endNumber: String, endSuffix: String): String = {
+    (startNumber.trim, startSuffix.trim, endNumber.trim, endSuffix.trim) match {
+      case (sn, ss, "", "") => sn + ss
+      case ("", "", en, es) => en + es
+      case (sn, ss, en, es) => Seq(sn, ss, "-", en, es).mkString
+    }
   }
 
   /**
