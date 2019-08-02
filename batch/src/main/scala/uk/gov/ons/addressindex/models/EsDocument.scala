@@ -148,30 +148,17 @@ abstract class EsDocument {
     val saoRightRangeExists = saoEndNumber.nonEmpty || saoEndSuffix.nonEmpty
     val saoHyphen = if (saoLeftRangeExists && saoRightRangeExists) "-" else ""
 
-    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix)
-      .map(_.trim).mkString
-    val sao =
-      if (saoText == organisation || saoText.isEmpty) saoNumbers
-      else if (saoNumbers.isEmpty) s"$saoText"
-      else s"$saoNumbers $saoText"
+    val saoNumbers = Seq(saoStartNumber, saoStartSuffix, saoHyphen, saoEndNumber, saoEndSuffix).map(_.trim).mkString
+    val sao = Seq(strToOpt(saoNumbers), strToOpt(saoText).filter(_ != organisation)).flatten.mkString(" ")
 
     val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
     val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
     val paoHyphen = if (paoLeftRangeExists && paoRightRangeExists) "-" else ""
 
-    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix)
-      .map(_.trim).mkString
-    val pao =
-      if (paoText == organisation || paoText.isEmpty) paoNumbers
-      else if (paoNumbers.isEmpty) s"$paoText"
-      else s"$paoText $paoNumbers"
+    val paoNumbers = Seq(paoStartNumber, paoStartSuffix, paoHyphen, paoEndNumber, paoEndSuffix).map(_.trim).mkString
+    val pao = Seq(strToOpt(paoText).filter(_ != organisation), strToOpt(paoNumbers)).flatten.mkString(" ")
 
-    val trimmedStreetDescriptor = streetDescriptor.trim
-    val buildingNumberWithStreetDescription =
-      if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
-      else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
-      else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
-      else s"$sao $pao $trimmedStreetDescriptor"
+    val buildingNumberWithStreetDescription = Seq(sao, pao, streetDescriptor.trim).flatMap(strToOpt).mkString(" ")
 
     Seq(organisation, buildingNumberWithStreetDescription, locality,
       townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
