@@ -5,13 +5,13 @@ import org.apache.spark.sql.Row
 import scala.io.{BufferedSource, Source}
 import scala.util.matching.Regex
 
+import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
+
 abstract class EsDocument {
 
   def rowToLpi(row: Row): Map[String, Any]
 
   def rowToPaf(row: Row): Map[String, Any]
-
-  val numberAndLetterRegex: Regex = "\\d+[A-Z]".r
 
   /**
     * Creates formatted address from PAF address
@@ -24,20 +24,8 @@ abstract class EsDocument {
                                   subBuildingName: String, buildingName: String, doubleDependentLocality: String,
                                   dependentLocality: String, postTown: String, postcode: String): String = {
 
-    // org, department, building name, thoroughfare, dependent locality, post town, postcode
-    // org, department, po box, post town, postcode
-    // building number + building name, post town, postcode
-
-    def strToOpt(str: String): Option[String] = if (str.isEmpty) None else Some(str)
-
-    def normalize(s: String): String = splitAndCapitalise(s)
-
-    def normalizeTowns(s: String): String = splitAndCapitaliseTowns(s)
-
     val thoroughfares = Seq(dependentThoroughfare, thoroughfare).map(normalize).map(strToOpt)
-
     val premises = Seq(subBuildingName, buildingName, buildingNumber).map(normalize).map(strToOpt)
-
     val poBox = strToOpt(poBoxNumber).map("PO BOX " + _)
 
     // merge the first entry in thoroughfare, and the last entry in premises, if they exist
@@ -94,8 +82,8 @@ abstract class EsDocument {
     val sao =
       if (saoText == organisation || saoText.isEmpty) saoNumbers
       else if (saoText.contains("PO BOX")) if (saoNumbers.isEmpty) s"$saoText," else s"$saoNumbers, $saoText," // e.g. EX2 5ZX
-      else if (saoNumbers.isEmpty) s"${splitAndCapitalise(saoText)},"
-      else s"$saoNumbers, ${splitAndCapitalise(saoText)},"
+      else if (saoNumbers.isEmpty) s"${normalize(saoText)},"
+      else s"$saoNumbers, ${normalize(saoText)},"
 
     val paoLeftRangeExists = paoStartNumber.nonEmpty || paoStartSuffix.nonEmpty
     val paoRightRangeExists = paoEndNumber.nonEmpty || paoEndSuffix.nonEmpty
@@ -104,20 +92,20 @@ abstract class EsDocument {
       .map(_.trim).mkString
     val pao =
       if (paoText == organisation || paoText.isEmpty) paoNumbers
-      else if (paoNumbers.isEmpty) s"${splitAndCapitalise(paoText)},"
-      else s"${splitAndCapitalise(paoText)}, $paoNumbers"
+      else if (paoNumbers.isEmpty) s"${normalize(paoText)},"
+      else s"${normalize(paoText)}, $paoNumbers"
 
-    val trimmedStreetDescriptor = splitAndCapitalise(streetDescriptor)
+    val trimmedStreetDescriptor = normalize(streetDescriptor)
     val buildingNumberWithStreetDescription =
       if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
       else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
       else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
       else s"$sao $pao $trimmedStreetDescriptor"
 
-    Seq(splitAndCapitalise(organisation),
+    Seq(normalize(organisation),
       buildingNumberWithStreetDescription,
-      splitAndCapitaliseTowns(locality),
-      splitAndCapitaliseTowns(townName),
+      normalizeTowns(locality),
+      normalizeTowns(townName),
       postcodeLocator
     ).map(_.trim).filter(_.nonEmpty).mkString(", ")
   }
@@ -194,7 +182,7 @@ abstract class EsDocument {
 
   // check to see if the token is a listed acronym, if so skip capitilization
   // if it starts with a number, uppercase it
-  def splitAndCapitalise(input: String): String = {
+  def normalize(input: String): String = {
     input.trim.split(" ").map(it => {
       if (acronyms.contains(it)) it
       else if (startsWithNumber.findFirstIn(it).isDefined) it.toUpperCase
@@ -206,7 +194,7 @@ abstract class EsDocument {
   // next check to see of the token is on the list of hyphenated place, if so capitalise as per list
   // next check for parts in non-hyphenated names that are always lower case
   // if none of the above capitalize in the standard way
-  def splitAndCapitaliseTowns(input: String): String = {
+  def normalizeTowns(input: String): String = {
     input.trim.split(" ").map(it => {
       val hyphenMatch = hyphenplaces.get(it)
       val lowercaseMatch = lowercaseparts.get(it)
