@@ -37,7 +37,7 @@ For usage see below:
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
-  // each run of this application has a unique index name
+ //  each run of this application has a unique index name
   val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
 
   val url = s"http://$nodes:$port/$indexName"
@@ -51,10 +51,10 @@ For usage see below:
     postLoad(indexName)
   } else opts.printHelp()
 
-  // val indexName = generateIndexName(historical = true, skinny = true, nisra = true)
-  // val url = s"http://$nodes:$port/$indexName"
-  // postMapping(indexName, skinny = true)
-  // saveHybridAddresses(historical = true, skinny = true, nisra = true)
+//  val indexName = generateIndexName(historical = true, skinny = true, nisra = true)
+//  val url = s"http://$nodes:$port/$indexName"
+//  postMapping(indexName, skinny = true)
+//  saveHybridAddresses(historical = true, skinny = true, nisra = false)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)

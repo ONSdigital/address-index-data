@@ -13,7 +13,7 @@ object NisraSchema {
     StructField("dependentThoroughfare", StringType, nullable = true),
     StructField("altThoroughfare", StringType, nullable = true),
     StructField("locality", StringType, nullable = true),
-    StructField("townland", StringType, nullable = true),
+  //  StructField("townland", StringType, nullable = true),
     StructField("townName", StringType, nullable = true),
     StructField("county", StringType, nullable = true),
     StructField("postcode", StringType, nullable = true),

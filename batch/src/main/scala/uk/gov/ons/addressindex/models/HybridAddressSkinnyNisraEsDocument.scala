@@ -127,17 +127,20 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(17)).getOrElse(""),
       Option(row.getString(18)).getOrElse(""),
       Option(row.getString(19)).getOrElse(""),
-      Option(row.getString(20)).getOrElse(""),
+      // townland omitted for now
+      "",
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""))
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> (if (row.isNullAt(3) || row.getString(3).equals("")) null else toShort(row.getString(3)).orNull),
+      "buildingNumber" -> toShort(row.getString(3)).orNull,
       "easting" -> row.getFloat(23),
       "northing" -> row.getFloat(24),
       "location" -> row.get(25),
       "addressStatus" -> row.getString(30),
+      "paoStartNumber" -> toShort(row.getString(4)).orNull,
+      "saoStartNumber" -> toShort(row.getString(9)).orNull,
       "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
