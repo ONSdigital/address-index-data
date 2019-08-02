@@ -229,7 +229,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "altThoroughfare" -> normalize(Option(row.getString(17)).getOrElse("")),
       "dependentThoroughfare" -> normalize(Option(row.getString(18)).getOrElse("")),
       "locality" -> normalize(Option(row.getString(19)).getOrElse("")),
-      "townland" -> normalize(Option(row.getString(20)).getOrElse("")),
+      "udprn" -> toInt(row.getString(20)).orNull,
       "townName" -> normalize(Option(row.getString(21)).getOrElse("")),
       "postcode" -> row.getString(22),
       "complete" -> row.getString(14),
