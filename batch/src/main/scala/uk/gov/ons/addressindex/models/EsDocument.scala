@@ -12,17 +12,12 @@ abstract class EsDocument {
 
   def rowToPaf(row: Row): Map[String, Any]
 
-  /**
-    * Creates formatted address from PAF address
-    * Adapted from API code
-    *
-    * @return String of formatted address
-    */
-  def generateFormattedPafAddress(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String,
-                                  thoroughfare: String, departmentName: String, organisationName: String,
-                                  subBuildingName: String, buildingName: String, doubleDependentLocality: String,
-                                  dependentLocality: String, postTown: String, postcode: String): String = {
-
+  def generatePaf(poBoxNumber: String, buildingNumber: String,
+                  dependentThoroughfare: String, thoroughfare: String,
+                  departmentName: String, organisationName: String,
+                  subBuildingName: String, buildingName: String,
+                  doubleDependentLocality: String, dependentLocality: String,
+                  postTown: String, postcode: String): Seq[String] = {
     val thoroughfares = Seq(dependentThoroughfare, thoroughfare).map(normalize).map(strToOpt)
     val premises = Seq(subBuildingName, buildingName, buildingNumber).map(normalize).map(strToOpt)
     val poBox = strToOpt(poBoxNumber).map("PO BOX " + _)
@@ -39,7 +34,30 @@ abstract class EsDocument {
     val org = Seq(departmentName, organisationName).map(normalize).map(strToOpt)
     val locality = Seq(doubleDependentLocality, dependentLocality, postTown).map(normalizeTowns).map(strToOpt)
     val postcodeOpt = Seq(strToOpt(postcode))
-    (org ++ premsAndThoroughfare ++ locality ++ postcodeOpt).flatten.map(_.trim).mkString(", ")
+    (org ++ premsAndThoroughfare ++ locality ++ postcodeOpt).flatten
+  }
+
+
+  /**
+    * Creates formatted address from PAF address
+    * Adapted from API code
+    *
+    * @return String of formatted address
+    */
+  def generateFormattedPafAddress(poBoxNumber: String, buildingNumber: String,
+                                  dependentThoroughfare: String, thoroughfare: String,
+                                  departmentName: String, organisationName: String,
+                                  subBuildingName: String, buildingName: String,
+                                  doubleDependentLocality: String, dependentLocality: String,
+                                  postTown: String, postcode: String): String = {
+    generatePaf(
+      poBoxNumber, buildingNumber,
+      dependentThoroughfare, thoroughfare,
+      departmentName, organisationName,
+      subBuildingName, buildingName,
+      doubleDependentLocality, dependentLocality,
+      postTown, postcode
+    ).mkString(", ")
   }
 
   /**
@@ -48,15 +66,43 @@ abstract class EsDocument {
     *
     * @return String of Welsh formatted address
     */
-  def generateWelshFormattedPafAddress(poBoxNumber: String, buildingNumber: String, welshDependentThoroughfare: String,
-                                       welshThoroughfare: String, departmentName: String, organisationName: String,
-                                       subBuildingName: String, buildingName: String, welshDoubleDependentLocality: String,
-                                       welshDependentLocality: String, welshPostTown: String, postcode: String): String = {
-
+  def generateWelshFormattedPafAddress(poBoxNumber: String, buildingNumber: String,
+                                       welshDependentThoroughfare: String, welshThoroughfare: String,
+                                       departmentName: String, organisationName: String,
+                                       subBuildingName: String, buildingName: String,
+                                       welshDoubleDependentLocality: String, welshDependentLocality: String,
+                                       welshPostTown: String,
+                                       postcode: String): String = {
     generateFormattedPafAddress(poBoxNumber, buildingNumber, welshDependentThoroughfare,
       welshThoroughfare, departmentName, organisationName,
       subBuildingName, buildingName, welshDoubleDependentLocality,
       welshDependentLocality, welshPostTown, postcode)
+  }
+
+  def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare: String,
+                thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
+                subBuildingName: String, buildingName: String, doubleDependentLocality: String,
+                welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
+                postTown: String, welshPostTown: String, postcode: String): String = {
+
+    def unpair(eng: String, welsh: String): List[Option[String]] = {
+      (strToOpt(eng), strToOpt(welsh)) match {
+        case (Some(e), Some(w)) if e == w => List(Some(e))
+        case (e, w) => List(e, w)
+      }
+    }
+
+    ((departmentName :: organisationName ::
+      subBuildingName :: buildingName ::
+      poBoxNumber :: buildingNumber :: Nil
+      ).map(strToOpt) :::
+      unpair(dependentThoroughfare, welshDependentThoroughfare) :::
+      unpair(thoroughfare, welshThoroughfare) :::
+      unpair(doubleDependentLocality, welshDoubleDependentLocality) :::
+      unpair(dependentLocality, welshDependentLocality) :::
+      unpair(postTown, welshPostTown) :::
+      strToOpt(postcode) :: Nil
+      ).flatten.mkString(" ")
   }
 
   /**
@@ -72,15 +118,14 @@ abstract class EsDocument {
                                   paoStartSuffix: String, paoEndNumber: String, paoEndSuffix: String, paoText: String,
                                   streetDescriptor: String, locality: String, townName: String, postcodeLocator: String): String = {
 
-    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix)
-
+    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
     val sao =
       if (saoText == organisation || saoText.isEmpty) saoNumbers
       else if (saoText.contains("PO BOX")) if (saoNumbers.isEmpty) s"$saoText," else s"$saoNumbers, $saoText," // e.g. EX2 5ZX
       else if (saoNumbers.isEmpty) s"${normalize(saoText)},"
       else s"$saoNumbers, ${normalize(saoText)},"
 
-    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix)
+    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
     val pao =
       if (paoText == organisation || paoText.isEmpty) paoNumbers
       else if (paoNumbers.isEmpty) s"${normalize(paoText)},"
@@ -101,50 +146,23 @@ abstract class EsDocument {
     ).map(_.trim).filter(_.nonEmpty).mkString(", ")
   }
 
-  def concatPaf(poBoxNumber: String, buildingNumber: String, dependentThoroughfare: String, welshDependentThoroughfare:
-  String, thoroughfare: String, welshThoroughfare: String, departmentName: String, organisationName: String,
-                subBuildingName: String, buildingName: String, doubleDependentLocality: String,
-                welshDoubleDependentLocality: String, dependentLocality: String, welshDependentLocality: String,
-                postTown: String, welshPostTown: String, postcode: String): String = {
-
-    val langDependentThoroughfare = if (dependentThoroughfare == welshDependentThoroughfare)
-      s"$dependentThoroughfare" else s"$dependentThoroughfare $welshDependentThoroughfare"
-
-    val langThoroughfare = if (thoroughfare == welshThoroughfare)
-      s"$thoroughfare" else s"$thoroughfare $welshThoroughfare"
-
-    val langDoubleDependentLocality = if (doubleDependentLocality == welshDoubleDependentLocality)
-      s"$doubleDependentLocality" else s"$doubleDependentLocality $welshDoubleDependentLocality"
-
-    val langDependentLocality = if (dependentLocality == welshDependentLocality)
-      s"$dependentLocality" else s"$dependentLocality $welshDependentLocality"
-
-    val langPostTown = if (postTown == welshPostTown)
-      s"$postTown" else s"$postTown $welshPostTown"
-
-    val buildingNumberWithStreetName =
-      s"$buildingNumber ${if (langDependentThoroughfare.nonEmpty) s"$langDependentThoroughfare " else ""}$langThoroughfare"
-
-    Seq(departmentName, organisationName, subBuildingName, buildingName,
-      poBoxNumber, buildingNumberWithStreetName, langDoubleDependentLocality, langDependentLocality,
-      langPostTown, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
-  }
-
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
-                saoText: String, organisation: String, paoStartNumber: String, paoStartSuffix: String,
-                paoEndNumber: String, paoEndSuffix: String, paoText: String, streetDescriptor: String,
-                townName: String, locality: String, postcodeLocator: String): String = {
+                saoText: String,
+                organisation: String,
+                paoStartNumber: String, paoStartSuffix: String, paoEndNumber: String, paoEndSuffix: String,
+                paoText: String,
+                streetDescriptor: String, townName: String, locality: String, postcodeLocator: String): String = {
 
-    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix)
-    val sao = Seq(strToOpt(saoNumbers), strToOpt(saoText).filter(_ != organisation)).flatten.mkString(" ")
+    val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
+    val sao = List(strToOpt(saoNumbers), strToOpt(saoText).filter(_ != organisation))
 
-    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix)
-    val pao = Seq(strToOpt(paoText).filter(_ != organisation), strToOpt(paoNumbers)).flatten.mkString(" ")
+    val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
+    val pao = List(strToOpt(paoText).filter(_ != organisation), strToOpt(paoNumbers))
 
-    val buildingNumberWithStreetDescription = Seq(sao, pao, streetDescriptor.trim).flatMap(strToOpt).mkString(" ")
+    val data = strToOpt(organisation) :: sao ::: pao :::
+      List(streetDescriptor, locality, townName, postcodeLocator).map(strToOpt)
 
-    Seq(organisation, buildingNumberWithStreetDescription, locality,
-      townName, postcodeLocator).map(_.trim).filter(_.nonEmpty).mkString(" ")
+    data.flatten.mkString(" ")
   }
 
   // Used in splitAndCapitalise and splitAndCapitaliseTowns only
@@ -176,6 +194,8 @@ abstract class EsDocument {
     }).mkString(" ")
   }
 
+  // add a hyphen between the start and end values if both exist
+  // concatenate all values
   def hyphenateNumbers(startNumber: String, startSuffix: String, endNumber: String, endSuffix: String): String = {
     (startNumber.trim, startSuffix.trim, endNumber.trim, endSuffix.trim) match {
       case (sn, ss, "", "") => sn + ss
