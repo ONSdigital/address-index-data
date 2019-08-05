@@ -26,7 +26,7 @@ abstract class EsDocument {
     val premsAndThoroughfare = (premises, thoroughfares) match {
       case (sub_build :: build :: Some(number) :: Nil, Some(thorough_first) :: thorough_rest) =>
         sub_build :: build :: poBox :: Some(number + " " + thorough_first) :: thorough_rest
-      case (sub_build :: Some(startsWithNumber(build)) :: None :: Nil, Some(thorough_first) :: thorough_rest) =>
+      case (sub_build :: Some(build@startsWithNumber()) :: None :: Nil, Some(thorough_first) :: thorough_rest) =>
         sub_build :: poBox :: Some(build + " " + thorough_first) :: thorough_rest
       case (premises, thoroughfares) => (premises :+ poBox) ++ thoroughfares
     }
@@ -36,7 +36,6 @@ abstract class EsDocument {
     val postcodeOpt = Seq(strToOpt(postcode))
     (org ++ premsAndThoroughfare ++ locality ++ postcodeOpt).flatten
   }
-
 
   /**
     * Creates formatted address from PAF address
