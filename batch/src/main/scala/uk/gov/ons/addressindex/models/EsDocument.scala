@@ -24,11 +24,11 @@ abstract class EsDocument {
 
     // merge the first entry in thoroughfare, and the last entry in premises, if they exist
     val premsAndThoroughfare = (premises, thoroughfares) match {
-      case (sb :: b :: Some(n) :: Nil, Some(t) :: ts) =>
-        sb :: b :: poBox :: Some(n + " " + t) :: ts
-      case (sb :: Some(b) :: None :: Nil, Some(t) :: ts) if startsWithNumber.unapplySeq(b).isDefined =>
-        sb :: poBox :: Some(b + " " + t) :: ts
-      case (ps, ts) => (ps :+ poBox) ++ ts
+      case (sub_build :: build :: Some(number) :: Nil, Some(thorough_first) :: thorough_rest) =>
+        sub_build :: build :: poBox :: Some(number + " " + thorough_first) :: thorough_rest
+      case (sub_build :: Some(startsWithNumber(build)) :: None :: Nil, Some(thorough_first) :: thorough_rest) =>
+        sub_build :: poBox :: Some(build + " " + thorough_first) :: thorough_rest
+      case (premises, thoroughfares) => (premises :+ poBox) ++ thoroughfares
     }
 
     val org = Seq(departmentName, organisationName).map(normalize).map(strToOpt)
