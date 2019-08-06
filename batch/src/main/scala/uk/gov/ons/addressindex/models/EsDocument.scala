@@ -115,34 +115,20 @@ abstract class EsDocument {
   def generateFormattedNagAddress(saoStartNumber: String, saoStartSuffix: String, saoEndNumber: String,
                                   saoEndSuffix: String, saoText: String, organisation: String, paoStartNumber: String,
                                   paoStartSuffix: String, paoEndNumber: String, paoEndSuffix: String, paoText: String,
-                                  streetDescriptor: String, locality: String, townName: String, postcodeLocator: String): String = {
+                                  streetDescriptor: String, locality: String, townName: String, postcodeLocator: String
+                                 ): String = {
 
+    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else t)
     val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
-    val sao =
-      if (saoText == organisation || saoText.isEmpty) saoNumbers
-      else if (saoText.contains("PO BOX")) if (saoNumbers.isEmpty) s"$saoText," else s"$saoNumbers, $saoText," // e.g. EX2 5ZX
-      else if (saoNumbers.isEmpty) s"${normalize(saoText)},"
-      else s"$saoNumbers, ${normalize(saoText)},"
+    val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
     val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
-    val pao =
-      if (paoText == organisation || paoText.isEmpty) paoNumbers
-      else if (paoNumbers.isEmpty) s"${normalize(paoText)},"
-      else s"${normalize(paoText)}, $paoNumbers"
+    val paoNumbersAndStreet = List(paoNumbers, normalize(streetDescriptor)).flatMap(strToOpt).mkString(" ")
+    val pao = List(strToOpt(paoText).filter(_ != organisation).map(normalize), strToOpt(paoNumbersAndStreet))
 
-    val trimmedStreetDescriptor = normalize(streetDescriptor)
-    val buildingNumberWithStreetDescription =
-      if (pao.isEmpty) s"$sao $trimmedStreetDescriptor"
-      else if (sao.isEmpty) s"$pao $trimmedStreetDescriptor"
-      else if (pao.isEmpty && sao.isEmpty) trimmedStreetDescriptor
-      else s"$sao $pao $trimmedStreetDescriptor"
-
-    Seq(normalize(organisation),
-      buildingNumberWithStreetDescription,
-      normalizeTowns(locality),
-      normalizeTowns(townName),
-      postcodeLocator
-    ).map(_.trim).filter(_.nonEmpty).mkString(", ")
+    (strToOpt(normalize(organisation)) :: sao ::: pao :::
+      strToOpt(normalizeTowns(locality)) :: strToOpt(normalizeTowns(townName)) :: strToOpt(postcodeLocator) :: Nil)
+      .flatten.mkString(", ")
   }
 
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
