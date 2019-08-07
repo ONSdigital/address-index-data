@@ -1,9 +1,11 @@
 package uk.gov.ons.addressindex.models
 
+import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.Row
 import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
 
 import scala.io.{BufferedSource, Source}
+import scala.util.Try
 import scala.util.matching.Regex
 
 abstract class EsDocument {
@@ -256,5 +258,21 @@ abstract class EsDocument {
     // `Source.fromFile` needs an absolute path to the file, and current directory depends on where sbt was lauched
     // `getResource` may return null, that's why we wrap it into an `Option`
     Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile(currentDirectory + path))
+  }
+
+  def toShort(s: String): Option[Short] = {
+    Try(s.toShort).toOption
+  }
+
+  def toInt(s: String): Option[Int] = {
+    Try(s.toInt).toOption
+  }
+
+  def addLeadingZeros(in: String): String = {
+    val tokens = in.split(" ")
+    val newTokens = tokens.map{tok =>
+      if (toInt(tok).isDefined) StringUtils.leftPad(tok,4,"0") else tok
+    }
+    return newTokens.mkString(" ")
   }
 }

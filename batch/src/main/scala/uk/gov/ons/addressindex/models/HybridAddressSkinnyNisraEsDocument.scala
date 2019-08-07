@@ -1,7 +1,6 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.toShort
 
 case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               parentUprn: Long,
@@ -63,7 +62,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
       row.getString(1)
-    )
+    ),
+    "secondarySort" -> addLeadingZeros((if (row.isNullAt(23)) "" else row.getShort(23).toString) + row.getString(24) + row.getString(11) + row.getString(20))
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(

@@ -2,8 +2,6 @@ package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
 
-import scala.util.Try
-
 case class HybridAddressNisraEsDocument(uprn: Long,
                                         postcodeIn: String,
                                         postcodeOut: String,
@@ -83,7 +81,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
       row.getString(1)
-    )
+    ),
+    "secondarySort" -> addLeadingZeros((if (row.isNullAt(23)) "" else row.getShort(23).toString) + row.getString(24) + row.getString(11) + row.getString(20))
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
@@ -174,13 +173,6 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "source" -> row.getAs[String]("source")
   )
 
-  def toShort(s: String): Option[Short] = {
-    Try(s.toShort).toOption
-  }
-
-  def toInt(s: String): Option[Int] = {
-    Try(s.toInt).toOption
-  }
 
   def buildingNameExtra(s: String): String = {
     try {

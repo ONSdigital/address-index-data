@@ -514,6 +514,9 @@ object Mappings {
                               "mixedNag": {
                                   "type": "text",
                                   "index": "false"
+                              },
+                              "secondarySort": {
+                                  "type": "keyword"
                               }
                           }
                       },
@@ -1305,6 +1308,9 @@ object Mappings {
                               "mixedNag": {
                                   "type": "text",
                                   "index": "false"
+                              },
+                              "secondarySort": {
+                                  "type": "keyword"
                               }
                           }
                       },
