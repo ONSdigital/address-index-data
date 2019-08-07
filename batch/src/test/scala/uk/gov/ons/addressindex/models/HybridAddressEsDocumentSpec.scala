@@ -387,6 +387,25 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Department, Cibo, Flat E, 50A, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
     }
 
+    "change uppercase address containing a hyphenated town name to mixed case" in {
+      // Given
+      val pafOrganisationName = "ACME STATS PLC"
+      val pafDependentLocality = "LEE-ON-THE-SOLENT"
+      val pafPostTown = "BARROW-IN-FURNESS"
+      val pafBuildingName = "HMP WHITELEY"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(expectedPaf("poBoxNumber").toString,
+        expectedPaf("buildingNumber").toString, expectedPaf("dependentThoroughfare").toString,
+        expectedPaf("thoroughfare").toString, expectedPaf("departmentName").toString ,
+        pafOrganisationName, expectedPaf("subBuildingName").toString,
+        pafBuildingName, expectedPaf("doubleDependentLocality").toString,
+        pafDependentLocality, pafPostTown, expectedPaf("postcode").toString)
+
+      // Then
+      result shouldBe "Department, Acme Stats PLC, Flat E, HMP Whiteley, PO BOX 6, 1 Throughfare, Some Street, Locality, Lee-on-the-Solent, Barrow-in-Furness, POSTCODE"
+    }
+
     "avoid excess commas in buildings with a numbered building name, but no PO BOX or building number" in {
       // Given
       val pafBuildingName = "50A"
