@@ -123,7 +123,7 @@ abstract class EsDocument {
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
     val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
-    val paoNumbersAndStreet = List(paoNumbers, normalize(streetDescriptor)).flatMap(strToOpt).mkString(" ")
+    val paoNumbersAndStreet = List(paoNumbers, normalizeTowns(streetDescriptor)).flatMap(strToOpt).mkString(" ")
     val pao = List(strToOpt(paoText).filter(_ != organisation).map(normalize), strToOpt(paoNumbersAndStreet))
 
     (strToOpt(normalize(organisation)) :: sao ::: pao :::
@@ -169,8 +169,9 @@ abstract class EsDocument {
   // if none of the above capitalize in the standard way
   def normalizeTowns(input: String): String = {
     input.trim.split(" ").map(it => {
-      val hyphenMatch = hyphenplaces.get(it)
-      val lowercaseMatch = lowercaseparts.get(it)
+      val upper = it.toUpperCase
+      val hyphenMatch = hyphenplaces.get(upper)
+      val lowercaseMatch = lowercaseparts.get(upper)
       if (acronyms.contains(it)) it
       else if (hyphenMatch.isDefined) hyphenMatch.get
       else if (lowercaseMatch.isDefined) lowercaseMatch.get

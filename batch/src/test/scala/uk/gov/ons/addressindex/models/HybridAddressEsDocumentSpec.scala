@@ -549,6 +549,25 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Barrow-in-Furness, KL8 7HQ"
     }
 
+    "change uppercase nag address containing a hyphenated street descriptor to mixed case" in {
+      // Given
+      val nagOrganisation = "ACME STATS PLC"
+      val streetDescriptor = "LEE-ON-THE-SOLENT PROMENADE WEST"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
+        expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
+        expectedNag("saoEndSuffix").toString, expectedNag("saoText").toString ,
+        nagOrganisation, expectedNag("paoStartNumber").toString,
+        expectedNag("paoStartSuffix").toString, expectedNag("paoEndNumber").toString,
+        expectedNag("paoEndSuffix").toString, expectedNag("paoText").toString,
+        streetDescriptor, expectedNag("locality").toString,
+        expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
+
+      // Then
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP Lee-on-the-Solent Promenade West, Locality Xyz, Town B, KL8 7HQ"
+    }
+
     "create NAG with expected formatted address (sao empty)" in {
       // Given
       val saoStartNumber = ""
