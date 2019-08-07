@@ -172,7 +172,7 @@ abstract class EsDocument {
       val upper = it.toUpperCase
       val hyphenMatch = hyphenplaces.get(upper)
       val lowercaseMatch = lowercaseparts.get(upper)
-      if (acronyms.contains(it)) it
+      if (acronyms.contains(upper)) it
       else if (hyphenMatch.isDefined) hyphenMatch.get
       else if (lowercaseMatch.isDefined) lowercaseMatch.get
       else if (startsWithNumber.findFirstIn(it).isDefined) it.toUpperCase
