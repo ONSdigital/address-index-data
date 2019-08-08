@@ -111,6 +111,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagSecondarySort = "6623JJ SOMETHING ELSE THE BUILDING NAME"
 
   // Actual Nag Values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -186,6 +187,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraSaoStartSuffix = ""
   val expectedNisraSaoEndNumber = null
   val expectedNisraSaoEndSuffix = ""
+  val expectedNisraSecondarySort = "THE SUB BUILDING NAME AN ORGANISATION"
 
   // NISRA actual
   val actualNisraOrganisation = "AN ORGANISATION"
@@ -300,7 +302,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiLastUpdateDate" -> expectedNagLpiLastUpdateDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
-    "mixedNag" -> expectedNagMixed
+    "mixedNag" -> expectedNagMixed,
+    "secondarySort" -> expectedNagSecondarySort
   )
 
   val expectedNisra = Map[String,Any](
@@ -338,7 +341,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "saoStartNumber" -> expectedNisraSaoStartNumber,
     "saoStartSuffix" -> expectedNisraSaoStartSuffix,
     "saoEndNumber" -> expectedNisraSaoEndNumber,
-    "saoEndSuffix" -> expectedNisraSaoEndSuffix
+    "saoEndSuffix" -> expectedNisraSaoEndSuffix,
+    "secondarySort" -> expectedNisraSecondarySort
   )
 
   "Hybrid Address Elastic Search Document" should {
