@@ -145,7 +145,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
-      "postcode" -> row.getString(22)
+      "postcode" -> row.getString(22),
+      "secondarySort" -> addLeadingZeros(row.getString(9) + row.getString(11) + " " + row.getString(13) + " " + row.getString(15))
     )
   }
 

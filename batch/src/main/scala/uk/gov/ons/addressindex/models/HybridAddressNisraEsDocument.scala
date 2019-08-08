@@ -234,7 +234,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "saoStartNumber" -> toShort(row.getString(9)).orNull,
       "saoStartSuffix" -> row.getString(11),
       "saoEndNumber" -> toShort(row.getString(10)).orNull,
-      "saoEndSuffix" -> row.getString(12)
+      "saoEndSuffix" -> row.getString(12),
+      "secondarySort" -> addLeadingZeros(row.getString(9) + row.getString(11) + " " + row.getString(13) + " " + row.getString(15))
     )
   }
 

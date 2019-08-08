@@ -832,6 +832,9 @@ object Mappings {
                               "mixedAltNisra": {
                                   "type": "text",
                                   "index": "false"
+                              },
+                              "secondarySort": {
+                                  "type": "keyword"
                               }
                           }
                       },
@@ -1446,6 +1449,9 @@ object Mappings {
                               "mixedAltNisra": {
                                   "type": "text",
                                   "index": "false"
+                              },
+                              "secondarySort": {
+                                  "type": "keyword"
                               }
                           }
                       },
