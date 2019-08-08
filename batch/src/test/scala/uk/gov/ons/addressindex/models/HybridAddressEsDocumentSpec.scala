@@ -512,6 +512,17 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
+    "pad the secondary sort field (for postcode search) with leading zeros where needed" in {
+      // Given
+      val secondarySort = "FLAT 43A AARVARKS R US UNIT 75"
+
+      // When
+      val result = HybridAddressEsDocument.addLeadingZeros(secondarySort)
+
+      // Then
+      result shouldBe "FLAT 0043A AARVARKS R US UNIT 0075"
+    }
+
     "change uppercase nag address containing a hyphenated town name to mixed case" in {
       // Given
       val nagOrganisation = "ACME STATS PLC"
