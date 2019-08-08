@@ -269,10 +269,11 @@ abstract class EsDocument {
   }
 
   def addLeadingZeros(in: String): String = {
-    val tokens = in.split(" ")
+    val tokens = StringUtils.trimToEmpty(in).split(" ")
     val newTokens = tokens.map{tok =>
-      if (toInt(tok).isDefined) StringUtils.leftPad(tok,4,"0") else tok
+    val ntok = tok.filter(_.isDigit)
+    if (toInt(ntok).isDefined) tok.replace(ntok,StringUtils.leftPad(ntok,4,"0")) else tok
     }
-    return newTokens.mkString(" ")
+    newTokens.mkString(" ")
   }
 }
