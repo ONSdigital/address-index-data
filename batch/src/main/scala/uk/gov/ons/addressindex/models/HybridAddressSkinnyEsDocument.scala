@@ -55,7 +55,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalizeTowns(row.getString(31)),
       row.getString(1)
     ),
-    "secondarySort" -> addLeadingZeros((if (row.isNullAt(23)) "" else row.getShort(23).toString) + row.getString(24) + " " + row.getString(11) + " " + row.getString(20))
+    "secondarySort" -> addLeadingZeros((if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20))
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
