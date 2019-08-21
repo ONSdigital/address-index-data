@@ -63,7 +63,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalizeTowns(row.getString(31)),
       row.getString(1)
     ),
-    "secondarySort" -> addLeadingZeros((if (row.isNullAt(23)) "" else row.getShort(23).toString) + row.getString(24) + " " + row.getString(11) + " " + row.getString(20))
+    "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
@@ -146,7 +146,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(22),
-      "secondarySort" -> addLeadingZeros(Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse(""))
+      "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " ")
     )
   }
 

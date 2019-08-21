@@ -64,7 +64,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
-  val expectedNagSecondarySort = "6623JJ SOMETHING ELSE THE BUILDING NAME"
+  val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
 
   // Actual Nag values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -119,7 +119,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN AB1 7GH"
   val expectedNisraAddressStatus = "APPROVED"
   val expectedNisraClassificationCode = "DO_APART"
-  val expectedNisraSecondarySort = "0001 THE SUB BUILDING NAME AN ORGANISATION"
+  val expectedNisraSecondarySort = "THE BUILDING NAME 0001 THE SUB BUILDING NAME AN ORGANISATION"
 
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
