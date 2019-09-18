@@ -12,7 +12,7 @@ object Mappings {
               "index": {
                   "similarity": {
                       "default": {
-                          "type": "classic"
+                          "type": "BM25"
                       }
                   }
               },
@@ -915,7 +915,7 @@ object Mappings {
               "index": {
                   "similarity": {
                       "default": {
-                          "type": "classic"
+                          "type": "BM25"
                       }
                   }
               },
