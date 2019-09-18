@@ -20,6 +20,7 @@ object Mappings {
                   "filter": {
                       "address_synonym_filter": {
                           "type": "synonym",
+                          "lenient": "true",
                           "synonyms": [
                               "ADJ, ADJACENT",
                               "ALY => ALLEY, ALY",
@@ -178,7 +179,6 @@ object Mappings {
                               "WLS => WELL, WLS",
                               "WLS => WELLS, WLS",
                               "XING => CROSSING, XING",
-      
                               "DEPT => DEPARTMENT, DEPT",
                               "OFC => OFFICE, OFC",
                               "LLC, LLP => LTD, LIMITED, LLC, LLP",
@@ -188,12 +188,10 @@ object Mappings {
                               "PLC, CCC => CO, COMPANY, PLC, CCC",
                               "CORP, CORPORATION",
                               "INC, INCOMPORATED, CORPORATION",
-      
                               "E => EAST, E",
                               "W => WEST, W",
                               "S => SOUTH, S",
                               "N => NORTH, N",
-      
                               "SAINT => ST, SAINT, SANT",
                               "SANT => ST, SAINT, SANT",
                               "0TH, ZEROTH, 0ED, SERO, SEROFED, DIM, DIMFED",
@@ -209,7 +207,6 @@ object Mappings {
                               "10TH, TENTH, 10FED, DEGFED",
                               "11TH, ELEVENTH, 11FED, UNFED, DDEG",
                               "12TH, TWELFTH, 12FED, DEUDDEGFED",
-      
                               "CAREHOME => CARE HOME, CAREHOME, RESIDENTIAL HOME, NURSING HOME, RETIREMENT HOME",
                               "CARE, RESIDENTIAL, NURSING, RETIREMENT",
                               "HMP, HM PRISON",
