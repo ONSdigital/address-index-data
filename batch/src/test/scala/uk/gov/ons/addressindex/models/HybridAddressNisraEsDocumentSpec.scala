@@ -111,6 +111,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
 
   // Actual Nag Values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -153,8 +154,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   // NISRA expected
   val expectedNisraOrganisation = "An Organisation"
   val expectedNisraSubBuildingName = "The Sub Building Name"
-  val expectedNisraBuildingName = "The Building Name"
-  val expectedNisraBuildingNumber = "1A"
+  val expectedNisraBuildingName = "The Building Name 1A"
+  val expectedNisraBuildingNumber = null
   val expectedNisraThoroughfare = "Thoroughfare Road"
   val expectedNisraDependentThoroughfare = "Off Here"
   val expectedNisraAltThoroughfare = "An Alternative Name"
@@ -165,12 +166,28 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraEasting = 379171.00F
   val expectedNisraNorthing = 412816.00F
   val expectedNisraUprn = 100010977866L
+  val expectedNisraUdprn = 12345
+  val expectedNisraAddressStatus = "APPROVED"
+  val expectedNisraBuildingStatus = "WONKY"
+  val expectedNisraClassificationCode = "DO_APART"
+  val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Little Town, AB1 7GH"
+  val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Little Town, AB1 7GH"
+  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN AB1 7GH"
   val expectedNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
-  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
+  val expectedNisraComplete = "1"
+  val expectedNisraPaoText = "The Building Name"
+  val expectedNisraPaoStartNumber = 1
+  val expectedNisraPaoStartSuffix = "A"
+  val expectedNisraPaoEndNumber = null
+  val expectedNisraPaoEndSuffix = ""
+  val expectedNisraSaoText = "The Sub Building Name"
+  val expectedNisraSaoStartNumber  = null
+  val expectedNisraSaoStartSuffix = ""
+  val expectedNisraSaoEndNumber = null
+  val expectedNisraSaoEndSuffix = ""
+  val expectedNisraSecondarySort = "THE BUILDING NAME THE SUB BUILDING NAME AN ORGANISATION"
 
   // NISRA actual
   val actualNisraOrganisation = "AN ORGANISATION"
@@ -187,18 +204,31 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraEasting = 379171.00F
   val actualNisraNorthing = 412816.00F
   val actualNisraUprn = 100010977866L
-  val actualNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
-  val actualNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
-  val actualNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+  val actualNisraUdprn = "12345"
+  val actualNisraAddressStatus = "APPROVED"
+  val actualNisraBuildingStatus = "WONKY"
+  val actualNisraClassificationCode = "DO_APART"
   val actualNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
-
-
+  val actualNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
+  val actualNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
+  val actualNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+  val actualNisraComplete = "1"
+  val actualNisraPaoText = "THE BUILDING NAME"
+  val actualNisraPaoStartNumber = "1"
+  val actualNisraPaoStartSuffix = "A"
+  val actualNisraPaoEndNumber = ""
+  val actualNisraPaoEndSuffix = ""
+  val actualNisraSaoText = "THE SUB BUILDING NAME"
+  val actualNisraSaoStartNumber  = ""
+  val actualNisraSaoStartSuffix = ""
+  val actualNisraSaoEndNumber = ""
+  val actualNisraSaoEndSuffix = ""
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map(
+  val expectedPaf = Map[String,Any](
     "buildingNumber" -> expectedPafBuildingNumber,
     "udprn" -> expectedPafUdprn,
     "lastUpdateDate" -> expectedPafLastUpdateDate,
@@ -233,7 +263,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map(
+  val expectedNag = Map[String,Any](
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -272,31 +302,47 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiLastUpdateDate" -> expectedNagLpiLastUpdateDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
-    "mixedNag" -> expectedNagMixed
+    "mixedNag" -> expectedNagMixed,
+    "secondarySort" -> expectedNagSecondarySort
   )
 
-  val expectedNisra = Map(
+  val expectedNisra = Map[String,Any](
     "uprn" -> expectedNisraUprn,
+    "buildingNumber" -> expectedNisraBuildingNumber,
+    "easting" -> expectedNisraEasting,
+    "northing" -> expectedNisraNorthing,
+    "location" -> nagLocation,
+    "creationDate" -> expectedNisraCreationDate,
+    "commencementDate" -> expectedNisraCommencementDate,
+    "archivedDate" -> expectedNisraArchivedDate,
+    "buildingStatus" -> expectedNisraBuildingStatus,
+    "addressStatus" -> expectedNisraAddressStatus,
+    "classificationCode" -> expectedNisraClassificationCode,
+    "mixedNisra" -> expectedNisraMixed,
+    "mixedAltNisra" -> expectedNisraAltMixed,
+    "nisraAll" -> expectedNisraAll,
     "organisationName" -> expectedNisraOrganisation,
     "subBuildingName" -> expectedNisraSubBuildingName,
     "buildingName" -> expectedNisraBuildingName,
-    "buildingNumber" -> expectedNisraBuildingNumber,
     "thoroughfare" -> expectedNisraThoroughfare,
     "altThoroughfare" -> expectedNisraAltThoroughfare,
     "dependentThoroughfare" -> expectedNisraDependentThoroughfare,
     "locality" -> expectedNisraLocality,
-    "townland" -> expectedNisraTownland,
+    "udprn" -> expectedNisraUdprn,
     "townName" -> expectedNisraTown,
     "postcode" -> expectedNisraPostCode,
-    "easting" -> expectedNisraEasting,
-    "northing" -> expectedNisraNorthing,
-    "location" -> nagLocation,
-    "mixedNisra" -> expectedNisraMixed,
-    "creationDate" -> expectedNisraCreationDate,
-    "commencementDate" -> expectedNisraCommencementDate,
-    "archivedDate" -> expectedNisraArchivedDate,
-    "mixedAltNisra" -> expectedNisraAltMixed,
-    "nisraAll" -> expectedNisraAll
+    "complete" -> expectedNisraComplete,
+    "paoText" -> expectedNisraPaoText,
+    "paoStartNumber" -> expectedNisraPaoStartNumber,
+    "paoStartSuffix" -> expectedNisraPaoStartSuffix,
+    "paoEndNumber" -> expectedNisraPaoEndNumber,
+    "paoEndSuffix" -> expectedNisraPaoEndSuffix,
+    "saoText" -> expectedNisraSaoText,
+    "saoStartNumber" -> expectedNisraSaoStartNumber,
+    "saoStartSuffix" -> expectedNisraSaoStartSuffix,
+    "saoEndNumber" -> expectedNisraSaoEndNumber,
+    "saoEndSuffix" -> expectedNisraSaoEndSuffix,
+    "secondarySort" -> expectedNisraSecondarySort
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -973,15 +1019,26 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
         // Given
         val row = Row(
           actualNisraUprn,
-          actualNisraOrganisation,
           actualNisraSubBuildingName,
           actualNisraBuildingName,
           actualNisraBuildingNumber,
+          actualNisraPaoStartNumber,
+          actualNisraPaoEndNumber,
+          actualNisraPaoStartSuffix,
+          actualNisraPaoEndSuffix,
+          actualNisraPaoText,
+          actualNisraSaoStartNumber,
+          actualNisraSaoEndNumber,
+          actualNisraSaoStartSuffix,
+          actualNisraSaoEndSuffix,
+          actualNisraSaoText,
+          actualNisraComplete,
+          actualNisraOrganisation,
           actualNisraThoroughfare,
           actualNisraAltThoroughfare,
           actualNisraDependentThoroughfare,
           actualNisraLocality,
-          actualNisraTownland,
+          actualNisraUdprn,
           actualNisraTown,
           actualNisraPostCode,
           actualNisraEasting,
@@ -990,9 +1047,9 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraCreationDate,
           actualNisraCommencementDate,
           actualNisraArchivedDate,
-          actualNisraMixed,
-          actualNisraAltMixed,
-          actualNisraAll
+          actualNisraBuildingStatus,
+          actualNisraAddressStatus,
+          actualNisraClassificationCode
         )
 
         // When

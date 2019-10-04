@@ -64,6 +64,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
 
   // Actual Nag values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -106,7 +107,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map(
+  val expectedPaf = Map[String,Any](
     "endDate" -> expectedPafEndDate,
     "uprn" -> expectedPafUprn,
     "startDate" -> expectedPafStartDate,
@@ -115,7 +116,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map(
+  val expectedNag = Map[String,Any](
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -132,7 +133,8 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "language" -> expectedNagLanguage,
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
-    "mixedNag" -> expectedNagMixed
+    "mixedNag" -> expectedNagMixed,
+    "secondarySort" -> expectedNagSecondarySort
   )
 
   "Hybrid Address Elastic Search Document" should {

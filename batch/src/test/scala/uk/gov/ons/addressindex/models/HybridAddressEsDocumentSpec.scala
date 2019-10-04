@@ -111,6 +111,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
 
   // Actual Nag Values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -153,7 +154,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map(
+  val expectedPaf = Map[String,Any](
     "buildingNumber" -> expectedPafBuildingNumber,
     "udprn" -> expectedPafUdprn,
     "lastUpdateDate" -> expectedPafLastUpdateDate,
@@ -188,7 +189,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map(
+  val expectedNag = Map[String,Any](
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -227,7 +228,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "lpiStartDate" -> expectedNagLpiStartDate,
     "lpiLastUpdateDate" -> expectedNagLpiLastUpdateDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
-    "mixedNag" -> expectedNagMixed
+    "mixedNag" -> expectedNagMixed,
+    "secondarySort" -> expectedNagSecondarySort
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -387,6 +389,77 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Department, Cibo, Flat E, 50A, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
     }
 
+    "change uppercase address containing a hyphenated town name to mixed case" in {
+      // Given
+      val pafOrganisationName = "ACME STATS PLC"
+      val pafDependentLocality = "LEE-ON-THE-SOLENT"
+      val pafPostTown = "BARROW-IN-FURNESS"
+      val pafBuildingName = "HMP WHITELEY"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(expectedPaf("poBoxNumber").toString,
+        expectedPaf("buildingNumber").toString, expectedPaf("dependentThoroughfare").toString,
+        expectedPaf("thoroughfare").toString, expectedPaf("departmentName").toString ,
+        pafOrganisationName, expectedPaf("subBuildingName").toString,
+        pafBuildingName, expectedPaf("doubleDependentLocality").toString,
+        pafDependentLocality, pafPostTown, expectedPaf("postcode").toString)
+
+      // Then
+      result shouldBe "Department, Acme Stats PLC, Flat E, HMP Whiteley, PO BOX 6, 1 Throughfare, Some Street, Locality, Lee-on-the-Solent, Barrow-in-Furness, POSTCODE"
+    }
+
+    "avoid excess commas in buildings with a numbered building name, but no PO BOX or building number" in {
+      // Given
+      val pafBuildingName = "50A"
+      val poBoxNumber = ""
+      val buildingNumber = ""
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(
+        poBoxNumber = poBoxNumber,
+        buildingNumber = buildingNumber,
+        dependentThoroughfare = expectedPaf("dependentThoroughfare").toString,
+        thoroughfare = expectedPaf("thoroughfare").toString,
+        departmentName = expectedPaf("departmentName").toString,
+        organisationName = expectedPaf("organisationName").toString,
+        subBuildingName = expectedPaf("subBuildingName").toString,
+        buildingName = pafBuildingName,
+        doubleDependentLocality = expectedPaf("doubleDependentLocality").toString,
+        dependentLocality = expectedPaf("dependentLocality").toString,
+        postTown = expectedPaf("postTown").toString,
+        postcode = expectedPaf("postcode").toString
+      )
+
+      // Then
+      result shouldBe "Department, Cibo, Flat E, 50A Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
+    }
+
+    "keep excess commas in buildings with a worded building name, but no PO BOX or building number" in {
+      // Given
+      val pafBuildingName = "Flat 10"
+      val poBoxNumber = ""
+      val buildingNumber = ""
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedPafAddress(
+        poBoxNumber = poBoxNumber,
+        buildingNumber = buildingNumber,
+        dependentThoroughfare = expectedPaf("dependentThoroughfare").toString,
+        thoroughfare = expectedPaf("thoroughfare").toString,
+        departmentName = expectedPaf("departmentName").toString,
+        organisationName = expectedPaf("organisationName").toString,
+        subBuildingName = expectedPaf("subBuildingName").toString,
+        buildingName = pafBuildingName,
+        doubleDependentLocality = expectedPaf("doubleDependentLocality").toString,
+        dependentLocality = expectedPaf("dependentLocality").toString,
+        postTown = expectedPaf("postTown").toString,
+        postcode = expectedPaf("postcode").toString
+      )
+
+      // Then
+      result shouldBe "Department, Cibo, Flat E, Flat 10, Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
+    }
+
     "change uppercase Welsh address to mixed case" in {
       // Given
       val pafBuildingName = "HMP NEWPORT"
@@ -458,6 +531,17 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, PO BOX 5678, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
     }
 
+    "pad the secondary sort field (for postcode search) with leading zeros where needed" in {
+      // Given
+      val secondarySort = "FLAT 43A AARVARKS R US UNIT 75"
+
+      // When
+      val result = HybridAddressEsDocument.addLeadingZeros(secondarySort)
+
+      // Then
+      result shouldBe "FLAT 0043A AARVARKS R US UNIT 0075"
+    }
+
     "change uppercase nag address containing a hyphenated town name to mixed case" in {
       // Given
       val nagOrganisation = "ACME STATS PLC"
@@ -476,6 +560,25 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // Then
       result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Lee-on-the-Solent, Barrow-in-Furness, KL8 7HQ"
+    }
+
+    "change uppercase nag address containing a hyphenated street descriptor to mixed case" in {
+      // Given
+      val nagOrganisation = "ACME STATS PLC"
+      val streetDescriptor = "LEE-ON-THE-SOLENT PROMENADE WEST"
+
+      // When
+      val result = HybridAddressEsDocument.generateFormattedNagAddress(expectedNag("saoStartNumber").toString,
+        expectedNag("saoStartSuffix").toString, expectedNag("saoEndNumber").toString,
+        expectedNag("saoEndSuffix").toString, expectedNag("saoText").toString ,
+        nagOrganisation, expectedNag("paoStartNumber").toString,
+        expectedNag("paoStartSuffix").toString, expectedNag("paoEndNumber").toString,
+        expectedNag("paoEndSuffix").toString, expectedNag("paoText").toString,
+        streetDescriptor, expectedNag("locality").toString,
+        expectedNag("townName").toString, expectedNag("postcodeLocator").toString)
+
+      // Then
+      result shouldBe "Acme Stats PLC, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP Lee-on-the-Solent Promenade West, Locality Xyz, Town B, KL8 7HQ"
     }
 
     "create NAG with expected formatted address (sao empty)" in {

@@ -29,16 +29,16 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "blpuLogicalStatus" -> row.getByte(8),
     "localCustodianCode" -> row.getShort(9),
     "rpc" -> row.getByte(10),
-    "organisation" -> splitAndCapitalise(row.getString(11)),
+    "organisation" -> normalize(row.getString(11)),
     "legalName" -> row.getString(12),
     "usrn" -> row.getInt(13),
     "lpiKey" -> row.getString(14),
-    "paoText" -> splitAndCapitalise(row.getString(15)),
+    "paoText" -> normalize(row.getString(15)),
     "paoStartNumber" -> (if (row.isNullAt(16)) null else row.getShort(16)),
     "paoStartSuffix" -> row.getString(17),
     "paoEndNumber" -> (if (row.isNullAt(18)) null else row.getShort(18)),
     "paoEndSuffix" -> row.getString(19),
-    "saoText" -> splitAndCapitalise(row.getString(20)),
+    "saoText" -> normalize(row.getString(20)),
     "saoStartNumber" -> (if (row.isNullAt(21)) null else row.getShort(21)),
     "saoStartSuffix" -> row.getString(22),
     "saoEndNumber" -> (if (row.isNullAt(23)) null else row.getShort(23)),
@@ -48,9 +48,9 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "lpiLogicalStatus" -> row.getByte(27),
     "usrnMatchIndicator" -> row.getByte(28),
     "language" -> row.getString(29),
-    "streetDescriptor" -> splitAndCapitalise(row.getString(30)),
-    "townName" -> splitAndCapitaliseTowns(row.getString(31)),
-    "locality" -> splitAndCapitalise(row.getString(32)),
+    "streetDescriptor" -> normalize(row.getString(30)),
+    "townName" -> normalizeTowns(row.getString(31)),
+    "locality" -> normalize(row.getString(32)),
     "streetClassification" -> (if (row.isNullAt(33)) null else row.getByte(33)),
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
@@ -70,18 +70,19 @@ object HybridAddressNisraEsDocument extends EsDocument {
       row.getString(22),
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
       row.getString(24),
-      splitAndCapitalise(row.getString(20)),
-      splitAndCapitalise(row.getString(11)),
+      normalize(row.getString(20)),
+      normalize(row.getString(11)),
       if (row.isNullAt(16)) "" else row.getShort(16).toString,
       row.getString(17),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,
       row.getString(19),
-      splitAndCapitalise(row.getString(15)),
-      splitAndCapitalise(row.getString(30)),
-      splitAndCapitalise(row.getString(32)),
-      splitAndCapitaliseTowns(row.getString(31)),
+      normalize(row.getString(15)),
+      normalize(row.getString(30)),
+      normalize(row.getString(32)),
+      normalizeTowns(row.getString(31)),
       row.getString(1)
-    )
+    ),
+    "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
@@ -90,24 +91,24 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "proOrder" -> row.getLong(2),
     "uprn" -> row.getLong(3),
     "udprn" -> row.getInt(4),
-    "organisationName" -> splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
-    "departmentName" -> splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
-    "subBuildingName" -> splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-    "buildingName" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
+    "organisationName" -> normalize(Option(row.getString(5)).getOrElse("")),
+    "departmentName" -> normalize(Option(row.getString(6)).getOrElse("")),
+    "subBuildingName" -> normalize(Option(row.getString(7)).getOrElse("")),
+    "buildingName" -> normalize(Option(row.getString(8)).getOrElse("")),
     "buildingNumber" -> (if (row.isNullAt(9)) null else row.getShort(9)),
-    "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(10)).getOrElse("")),
-    "thoroughfare" -> splitAndCapitalise(Option(row.getString(11)).getOrElse("")),
-    "doubleDependentLocality" -> splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
-    "dependentLocality" -> splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
-    "postTown" -> splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),
+    "dependentThoroughfare" -> normalize(Option(row.getString(10)).getOrElse("")),
+    "thoroughfare" -> normalize(Option(row.getString(11)).getOrElse("")),
+    "doubleDependentLocality" -> normalize(Option(row.getString(12)).getOrElse("")),
+    "dependentLocality" -> normalize(Option(row.getString(13)).getOrElse("")),
+    "postTown" -> normalizeTowns(Option(row.getString(14)).getOrElse("")),
     "postcode" -> Option(row.getString(15)).getOrElse(""),
     "postcodeType" -> Option(row.getString(16)).getOrElse(""),
     "deliveryPointSuffix" -> Option(row.getString(17)).getOrElse(""),
-    "welshDependentThoroughfare" -> splitAndCapitalise(Option(row.getString(18)).getOrElse("")),
-    "welshThoroughfare" -> splitAndCapitalise(Option(row.getString(19)).getOrElse("")),
-    "welshDoubleDependentLocality" -> splitAndCapitalise(Option(row.getString(20)).getOrElse("")),
-    "welshDependentLocality" -> splitAndCapitalise(Option(row.getString(21)).getOrElse("")),
-    "welshPostTown" -> splitAndCapitaliseTowns(Option(row.getString(22)).getOrElse("")),
+    "welshDependentThoroughfare" -> normalize(Option(row.getString(18)).getOrElse("")),
+    "welshThoroughfare" -> normalize(Option(row.getString(19)).getOrElse("")),
+    "welshDoubleDependentLocality" -> normalize(Option(row.getString(20)).getOrElse("")),
+    "welshDependentLocality" -> normalize(Option(row.getString(21)).getOrElse("")),
+    "welshPostTown" -> normalizeTowns(Option(row.getString(22)).getOrElse("")),
     "poBoxNumber" -> Option(row.getString(23)).getOrElse(""),
     "processDate" -> row.getDate(24),
     "startDate" -> row.getDate(25),
@@ -135,28 +136,28 @@ object HybridAddressNisraEsDocument extends EsDocument {
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
       Option(row.getString(10)).getOrElse(""),
-      splitAndCapitalise(Option(row.getString(11)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(12)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(13)).getOrElse("")),
-      splitAndCapitaliseTowns(Option(row.getString(14)).getOrElse("")),
+      normalize(Option(row.getString(11)).getOrElse("")),
+      normalize(Option(row.getString(6)).getOrElse("")),
+      normalize(Option(row.getString(5)).getOrElse("")),
+      normalize(Option(row.getString(7)).getOrElse("")),
+      normalize(Option(row.getString(8)).getOrElse("")),
+      normalize(Option(row.getString(12)).getOrElse("")),
+      normalize(Option(row.getString(13)).getOrElse("")),
+      normalizeTowns(Option(row.getString(14)).getOrElse("")),
       Option(row.getString(15)).getOrElse("")
     ),
     "mixedWelshPaf" -> generateWelshFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
-      splitAndCapitalise(Option(row.getString(18)).getOrElse(Option(row.getString(10)).getOrElse(""))),
-      splitAndCapitalise(Option(row.getString(19)).getOrElse(Option(row.getString(11)).getOrElse(""))),
-      splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      splitAndCapitalise(Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse(""))),
-      splitAndCapitalise(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
-      splitAndCapitaliseTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
+      normalize(Option(row.getString(18)).getOrElse(Option(row.getString(10)).getOrElse(""))),
+      normalize(Option(row.getString(19)).getOrElse(Option(row.getString(11)).getOrElse(""))),
+      normalize(Option(row.getString(6)).getOrElse("")),
+      normalize(Option(row.getString(5)).getOrElse("")),
+      normalize(Option(row.getString(7)).getOrElse("")),
+      normalize(Option(row.getString(8)).getOrElse("")),
+      normalize(Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse(""))),
+      normalize(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
+      normalizeTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
       Option(row.getString(15)).getOrElse("")
     )
   )
@@ -172,35 +173,69 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "source" -> row.getAs[String]("source")
   )
 
+
+  def buildingNameExtra(s: String): String = {
+    try {
+      val stest: Short = s.toShort
+      ""
+    } catch {
+      case e: Exception => " " + s
+    }
+  }
+
   def rowToNisra(row: Row): Map[String, Any] = {
 
-    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(Option(row.getString(1)).getOrElse(""), Option(row.getString(2)).getOrElse(""),
-      Option(row.getString(3)).getOrElse(""), Option(row.getString(4)).getOrElse(""), Option(row.getString(5)).getOrElse(""),
-        Option(row.getString(6)).getOrElse(""), Option(row.getString(7)).getOrElse(""), Option(row.getString(8)).getOrElse(""),
-          Option(row.getString(9)).getOrElse(""), Option(row.getString(10)).getOrElse(""), Option(row.getString(11)).getOrElse(""))
+    val nisraFormatted: Array[String] = generateFormattedNisraAddresses(
+      Option(row.getString(15)).getOrElse(""),
+      Option(row.getString(1)).getOrElse(""),
+      Option(row.getString(2)).getOrElse(""),
+      Option(row.getString(3)).getOrElse(""),
+      Option(row.getString(16)).getOrElse(""),
+      Option(row.getString(17)).getOrElse(""),
+      Option(row.getString(18)).getOrElse(""),
+      Option(row.getString(19)).getOrElse(""),
+      // townland omitted for now
+      "",
+      Option(row.getString(21)).getOrElse(""),
+      Option(row.getString(22)).getOrElse(""))
 
     Map(
       "uprn" -> row.getLong(0),
-      "buildingNumber" -> row.getString(4),
-      "easting" -> row.getFloat(12),
-      "northing" -> row.getFloat(13),
-      "location" -> row.get(14),
-      "creationDate" -> row.getDate(15),
-      "commencementDate" -> row.getDate(16),
-      "archivedDate" -> row.getDate(17),
+      "buildingNumber" -> toShort(row.getString(3)).orNull,
+      "easting" -> row.getFloat(23),
+      "northing" -> row.getFloat(24),
+      "location" -> row.get(25),
+      "creationDate" -> row.getDate(26),
+      "commencementDate" -> row.getDate(27),
+      "archivedDate" -> row.getDate(28),
+      "buildingStatus" -> row.getString(29),
+      "addressStatus" -> row.getString(30),
+      "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
-      "organisationName" -> splitAndCapitalise(Option(row.getString(1)).getOrElse("")),
-      "subBuildingName" -> splitAndCapitalise(Option(row.getString(2)).getOrElse("")),
-      "buildingName" -> splitAndCapitalise(Option(row.getString(3)).getOrElse("")),
-      "thoroughfare" -> splitAndCapitalise(Option(row.getString(5)).getOrElse("")),
-      "altThoroughfare" -> splitAndCapitalise(Option(row.getString(6)).getOrElse("")),
-      "dependentThoroughfare" -> splitAndCapitalise(Option(row.getString(7)).getOrElse("")),
-      "locality" -> splitAndCapitalise(Option(row.getString(8)).getOrElse("")),
-      "townland" -> splitAndCapitalise(Option(row.getString(9)).getOrElse("")),
-      "townName" -> splitAndCapitalise(Option(row.getString(10)).getOrElse("")),
-      "postcode" -> row.getString(11)
+      "organisationName" -> normalize(Option(row.getString(15)).getOrElse("")),
+      "subBuildingName" -> normalize(Option(row.getString(1)).getOrElse("")),
+      "buildingName" -> (normalize(Option(row.getString(2)).getOrElse("")) + buildingNameExtra(Option(row.getString(3)).getOrElse("1"))),
+      "thoroughfare" -> normalize(Option(row.getString(16)).getOrElse("")),
+      "altThoroughfare" -> normalize(Option(row.getString(17)).getOrElse("")),
+      "dependentThoroughfare" -> normalize(Option(row.getString(18)).getOrElse("")),
+      "locality" -> normalize(Option(row.getString(19)).getOrElse("")),
+      "udprn" -> toInt(row.getString(20)).orNull,
+      "townName" -> normalize(Option(row.getString(21)).getOrElse("")),
+      "postcode" -> row.getString(22),
+      "complete" -> row.getString(14),
+      "paoText" -> normalize(Option(row.getString(8)).getOrElse("")),
+      "paoStartNumber" -> toShort(row.getString(4)).orNull,
+      "paoStartSuffix" -> row.getString(6),
+      "paoEndNumber" -> toShort(row.getString(5)).orNull,
+      "paoEndSuffix" -> row.getString(7),
+      "saoText" -> normalize(Option(row.getString(13)).getOrElse("")),
+      "saoStartNumber" -> toShort(row.getString(9)).orNull,
+      "saoStartSuffix" -> row.getString(11),
+      "saoEndNumber" -> toShort(row.getString(10)).orNull,
+      "saoEndSuffix" -> row.getString(12),
+      "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " ")
     )
   }
 
@@ -208,21 +243,21 @@ object HybridAddressNisraEsDocument extends EsDocument {
                                       altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
                                       postcode: String): Array[String] = {
 
-    val trimmedSubBuildingName = splitAndCapitalise(subBuildingName)
-    val trimmedBuildingName = splitAndCapitalise(buildingName)
-    val trimmedThoroughfare = splitAndCapitalise(thoroughfare)
-    val trimmedAltThoroughfare = splitAndCapitalise(altThoroughfare)
-    val trimmedDependentThoroughfare = splitAndCapitalise(dependentThoroughfare)
+    val trimmedSubBuildingName = normalize(subBuildingName)
+    val trimmedBuildingName = normalize(buildingName)
+    val trimmedThoroughfare = normalize(thoroughfare)
+    val trimmedAltThoroughfare = normalize(altThoroughfare)
+    val trimmedDependentThoroughfare = normalize(dependentThoroughfare)
 
     val buildingNumberWithStreetDescription = s"${buildingNumber.toUpperCase} $trimmedDependentThoroughfare"
 
     Array(
-      Seq(splitAndCapitalise(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
-        trimmedThoroughfare, splitAndCapitaliseTowns(locality), splitAndCapitaliseTowns(townland), splitAndCapitaliseTowns(townName),
+      Seq(normalize(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
+        trimmedThoroughfare, normalizeTowns(locality), normalizeTowns(townland), normalizeTowns(townName),
         postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", "),
       if (!altThoroughfare.isEmpty)
-        Seq(splitAndCapitalise(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
-          trimmedAltThoroughfare, splitAndCapitaliseTowns(locality), splitAndCapitaliseTowns(townland), splitAndCapitaliseTowns(townName),
+        Seq(normalize(organisationName), trimmedSubBuildingName, trimmedBuildingName, buildingNumberWithStreetDescription,
+          trimmedAltThoroughfare, normalizeTowns(locality), normalizeTowns(townland), normalizeTowns(townName),
           postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", ") else "",
       Seq(organisationName, subBuildingName, buildingName, buildingNumber, dependentThoroughfare, thoroughfare,
         altThoroughfare, locality, townland, townName, postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
