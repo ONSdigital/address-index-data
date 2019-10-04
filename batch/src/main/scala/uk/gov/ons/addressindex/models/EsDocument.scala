@@ -210,7 +210,7 @@ abstract class EsDocument {
   /**
     * Convert external file into list
     *
-    * @param fileName
+    * @param fileName name of the file
     * @return
     */
   private def fileToList(fileName: String): Seq[String] = {
@@ -236,8 +236,8 @@ abstract class EsDocument {
   /**
     * Fetch file stream as buffered source
     *
-    * @param fileName
-    * @return
+    * @param fileName name of the file
+    * @return BufferedSource
     */
   def getResource(fileName: String): BufferedSource = {
     val path = "/" + fileName

@@ -38,21 +38,21 @@ For usage see below:
   val port = config.getString("addressindex.elasticsearch.port")
 
   //  each run of this application has a unique index name
-//  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-//  val url = s"http://$nodes:$port/$indexName"
-//
-//  if (!opts.help()) {
-//    AddressIndexFileReader.validateFileNames()
-//    postMapping(indexName, skinny = opts.skinny())
-//    preLoad(indexName)
-//    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-//    postLoad(indexName)
-//  } else opts.printHelp()
+  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+  val url = s"http://$nodes:$port/$indexName"
 
-    val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
-    val url = s"http://$nodes:$port/$indexName"
-    postMapping(indexName, skinny = false)
-    saveHybridAddresses(historical = false, skinny = false, nisra = false)
+  if (!opts.help()) {
+    AddressIndexFileReader.validateFileNames()
+    postMapping(indexName, skinny = opts.skinny())
+    preLoad(indexName)
+    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+    postLoad(indexName)
+  } else opts.printHelp()
+
+//    val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+//    val url = s"http://$nodes:$port/$indexName"
+//    postMapping(indexName, skinny = false)
+//    saveHybridAddresses(historical = false, skinny = false, nisra = false)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
