@@ -49,10 +49,10 @@ For usage see below:
     postLoad(indexName)
   } else opts.printHelp()
 
-  //  val indexName = generateIndexName(historical = false, skinny = true, nisra = true)
-  //  val url = s"http://$nodes:$port/$indexName"
-  //  postMapping(indexName, skinny = true)
-  //  saveHybridAddresses(historical = false, skinny = true, nisra = true)
+//    val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+//    val url = s"http://$nodes:$port/$indexName"
+//    postMapping(indexName, skinny = false)
+//    saveHybridAddresses(historical = false, skinny = false, nisra = false)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
@@ -95,6 +95,7 @@ For usage see below:
         } else {
           Mappings.hybrid
         })
+      .param("include_type_name", "true")
       .header("Content-type", "application/json")
       .asString
     if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")

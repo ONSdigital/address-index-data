@@ -2,7 +2,7 @@ package uk.gov.ons.addressindex.utils
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.{ArrayType, FloatType, LongType, ShortType}
+import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -177,7 +177,6 @@ object SqlHelper {
         functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
         functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
-   //     functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
         functions.regexp_replace(nisra("udprn"), "NULL", "").as("udprn"),
         functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
         functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
