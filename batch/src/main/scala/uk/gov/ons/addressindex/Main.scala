@@ -104,6 +104,7 @@ For usage see below:
   private def preLoad(indexName: String): Unit = {
     val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"refresh_interval":"-1"}}""")
+      .header("Content-type", "application/json")
       .asString
     if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
   }
@@ -111,10 +112,12 @@ For usage see below:
   private def postLoad(indexName: String): Unit = {
     val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"number_of_replicas":1}}""")
+      .header("Content-type", "application/json")
       .asString
     if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
     val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"refresh_interval":"1s"}}""")
+      .header("Content-type", "application/json")
       .asString
     if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
   }
