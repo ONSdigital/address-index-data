@@ -999,5 +999,98 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       // Then
       result shouldBe "6473-6623JJ THE BUILDING NAME 56HH-7755 AND ANOTHER STREET DESCRIPTOR KL8 7HQ"
     }
+
+    "generate concatenated paf (all fields) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = "1000"
+      val pafDependentThoroughfare = "throughfare"
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = "6"
+      val pafDependentLocality = "STIXTON"
+      val pafBuildingName = "COTTAGE"
+      val pafOrganisationName = "CIBO"
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = "department"
+      val pafDoubleDependentLocality = "locality"
+      val pafSubBuildingName = "FLAT E"
+      val pafThoroughfare = "SOME_STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("Department", "Cibo", "Flat E", "Cottage", "PO BOX 6", "1000 Throughfare", "Some_street", "Locality", "Stixton", "London", "POSTCODE")
+
+    }
+
+    "generate concatenated paf (building number no dependent locality) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = "1000"
+      val pafDependentThoroughfare = ""
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = ""
+      val pafDependentLocality = "SIXTON"
+      val pafBuildingName = ""
+      val pafOrganisationName = ""
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = ""
+      val pafDoubleDependentLocality = ""
+      val pafSubBuildingName = ""
+      val pafThoroughfare = "SOME_STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("1000 Some_street", "Sixton", "London", "POSTCODE")
+
+    }
+
+    "generate concatenated paf (building name containing number no dependent locality) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = ""
+      val pafDependentThoroughfare = ""
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = ""
+      val pafDependentLocality = "SIXTON"
+      val pafBuildingName = "22B"
+      val pafOrganisationName = ""
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = ""
+      val pafDoubleDependentLocality = ""
+      val pafSubBuildingName = ""
+      val pafThoroughfare = "BAKER STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("22B Baker Street", "Sixton", "London", "POSTCODE")
+
+    }
   }
 }

@@ -28,8 +28,12 @@ abstract class EsDocument {
     val premsAndThoroughfare = (premises, thoroughfares) match {
       case (sub_build :: build :: Some(number) :: Nil, Some(thorough_first) :: thorough_rest) =>
         sub_build :: build :: poBox :: Some(number + " " + thorough_first) :: thorough_rest
+      case (sub_build :: build :: Some(number) :: Nil, None :: thorough_rest) =>
+        sub_build :: build :: poBox :: Some(number + " " + thorough_rest.headOption.getOrElse(Some("")).getOrElse("")) :: Nil
       case (sub_build :: Some(build@startsWithNumber()) :: None :: Nil, Some(thorough_first) :: thorough_rest) =>
         sub_build :: poBox :: Some(build + " " + thorough_first) :: thorough_rest
+      case (sub_build :: Some(build@startsWithNumber()) :: None :: Nil, None :: thorough_rest) =>
+        sub_build :: poBox :: Some(build + " " + thorough_rest.headOption.getOrElse(Some("")).getOrElse("")) :: Nil
       case (premises, thoroughfares) => (premises :+ poBox) ++ thoroughfares
     }
 
