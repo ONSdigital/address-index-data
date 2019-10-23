@@ -175,6 +175,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraClassificationCode = "DO_APART"
   val actualNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Off Here, An Alternative Name, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val actualNisraBuildingNumMixed = "1, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
+  val actualNisraBuildingNameMixed = "1A, Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A OFF HERE THOROUGHFARE ROAD AN ALTERNATIVE NAME A LOCALITY XYZ BIG TOWNLAND LITTLE TOWN AB1 7GH"
   val actualNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
@@ -377,6 +379,52 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
       // Then
       result(1) shouldBe expected
       result(2) shouldBe expectedAll
+    }
+
+    "create NISRA with expected formatted address (number and thoroughfare)" in {
+
+      // When
+      val result = HybridAddressNisraEsDocument.generateFormattedNisraAddresses(
+        "",
+        "",
+        "",
+        "1",
+        actualNisraThoroughfare,
+        "",
+        "",
+        actualNisraLocality,
+        actualNisraTownland,
+        actualNisraTown,
+        actualNisraPostCode)
+
+      val expected =  actualNisraBuildingNumMixed
+
+      // Then
+      result(0) shouldBe expected
+    }
+
+
+    "create NISRA with expected formatted address (part-numeric building and thoroughfare)" in {
+
+      // Also tests nisraAll
+      // When
+      val result = HybridAddressNisraEsDocument.generateFormattedNisraAddresses(
+        "",
+        "",
+        "1A",
+        "",
+        actualNisraThoroughfare,
+        "",
+        "",
+        actualNisraLocality,
+        actualNisraTownland,
+        actualNisraTown,
+        actualNisraPostCode)
+
+      val expected =  actualNisraBuildingNameMixed
+
+      // Then
+      result(0) shouldBe expected
     }
   }
 }
