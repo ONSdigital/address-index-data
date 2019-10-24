@@ -180,6 +180,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
           trimmedBuildingName,
           buildingNumber,
           trimmedAltThoroughfare,
+          trimmedDependentThoroughfare,
           normalizeTowns(locality),
           normalizeTowns(townland),
           normalizeTowns(townName),
