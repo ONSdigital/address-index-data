@@ -38,7 +38,8 @@ For usage see below:
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
- // username and password should be set in the local application.conf
+ // username and password should be set in the local application.conf when running locally
+ // use the secure Jenkins environment variables for on-prem
   val username = config.getString("addressindex.elasticsearch.user")
   val password = config.getString("addressindex.elasticsearch.pass")
 
