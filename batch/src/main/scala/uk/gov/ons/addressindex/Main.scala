@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 import scalaj.http.{Http, HttpResponse}
+import org.apache.commons.codec.binary.Base64
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
@@ -37,9 +38,18 @@ For usage see below:
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
-  //  each run of this application has a unique index name
-  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-  val url = s"http://$nodes:$port/$indexName"
+ // username and password should be set in the local application.conf
+  val username = config.getString("addressindex.elasticsearch.user")
+  val password = config.getString("addressindex.elasticsearch.pass")
+
+  def encodeCredentials(username: String, password: String): String = {
+    new String(Base64.encodeBase64String((username + ":" + password).getBytes))
+  }
+  val authHeader = "Basic " +  encodeCredentials(username, password)
+
+//    each run of this application has a unique index name
+    val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+    val url = s"http://$nodes:$port/$indexName"
 
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
@@ -49,10 +59,10 @@ For usage see below:
     postLoad(indexName)
   } else opts.printHelp()
 
-//    val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
-//    val url = s"http://$nodes:$port/$indexName"
-//    postMapping(indexName, skinny = false)
-//    saveHybridAddresses(historical = false, skinny = false, nisra = false)
+  //    val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+  //    val url = s"http://$nodes:$port/$indexName"
+  //    postMapping(indexName, skinny = false)
+  //    saveHybridAddresses(historical = false, skinny = false, nisra = false)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
@@ -97,6 +107,7 @@ For usage see below:
         })
       .param("include_type_name", "true")
       .header("Content-type", "application/json")
+      .header("Authorization", authHeader)
       .asString
     if (response.code != 200) throw new Exception(s"Could not create mapping using PUT: code ${response.code} body ${response.body}")
   }
@@ -105,6 +116,8 @@ For usage see below:
     val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"refresh_interval":"-1"}}""")
       .header("Content-type", "application/json")
+      // .header("WWW-Authenticate","Basic xxcxc")
+      .header("Authorization", authHeader)
       .asString
     if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
   }
@@ -113,11 +126,13 @@ For usage see below:
     val replicaResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"number_of_replicas":1}}""")
       .header("Content-type", "application/json")
+      .header("Authorization", authHeader)
       .asString
     if (replicaResponse.code != 200) throw new Exception(s"Could not set number of replicas using PUT: code ${replicaResponse.code} body ${replicaResponse.body}")
     val refreshResponse: HttpResponse[String] = Http(url + "/_settings")
       .put("""{"index":{"refresh_interval":"1s"}}""")
       .header("Content-type", "application/json")
+      .header("Authorization", authHeader)
       .asString
     if (refreshResponse.code != 200) throw new Exception(s"Could not set refresh interval using PUT: code ${refreshResponse.code} body ${refreshResponse.body}")
   }
