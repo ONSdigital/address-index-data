@@ -4,9 +4,8 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.DataFrame
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 import scalaj.http.{Http, HttpResponse}
-import org.apache.commons.codec.binary.Base64
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
-import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper}
+import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper, AuthUtil}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
 /**
@@ -38,15 +37,11 @@ For usage see below:
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
- // username and password should be set in the local application.conf when running locally
- // use the secure Jenkins environment variables for on-prem
+ // username and password should be set in the local application.conf
+ // this file is not checked into Git (application_full.conf on Spark server)
   val username = config.getString("addressindex.elasticsearch.user")
   val password = config.getString("addressindex.elasticsearch.pass")
-
-  def encodeCredentials(username: String, password: String): String = {
-    new String(Base64.encodeBase64String((username + ":" + password).getBytes))
-  }
-  val authHeader = "Basic " +  encodeCredentials(username, password)
+  val authHeader = s"Basic ${AuthUtil.encodeCredentials(username, password)}"
 
 //    each run of this application has a unique index name
     val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
