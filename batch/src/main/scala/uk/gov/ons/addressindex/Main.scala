@@ -80,15 +80,15 @@ For usage see below:
 
     if (nisra) {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical))
+        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical))
       } else {
-        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName/address", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical))
+        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical))
       }
     } else {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
       } else {
-        ElasticSearchWriter.saveHybridAddresses(s"$indexName/address", SqlHelper.aggregateHybridIndex(paf, nag, historical))
+        ElasticSearchWriter.saveHybridAddresses(s"$indexName", SqlHelper.aggregateHybridIndex(paf, nag, historical))
       }
     }
   }
@@ -101,7 +101,6 @@ For usage see below:
         } else {
           Mappings.hybrid
         })
-      .param("include_type_name", "true")
       .header("Content-type", "application/json")
       .header("Authorization", authHeader)
       .asString
