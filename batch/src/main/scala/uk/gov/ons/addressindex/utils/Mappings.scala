@@ -913,8 +913,8 @@ object Mappings {
                   "similarity": {
                       "default": {
                           "type": "BM25",
-                          "b": "0.75",
-                          "k1": "0.3"
+                          "b": "0.1",
+                          "k1": "0.1"
                       }
                   }
               },
