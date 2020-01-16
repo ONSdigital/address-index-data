@@ -194,34 +194,34 @@ class SqlHelperSpec extends WordSpec with Matchers {
       // Then
       result.length shouldBe 5
       val firstLine = result(0)
-      firstLine.getLong(0) shouldBe 1l
+      firstLine.getLong(0) shouldBe 1L
       firstLine.getInt(1) shouldBe 1
-      firstLine.getAs[Array[Long]](2) shouldBe Array(1l)
+      firstLine.getAs[Array[Long]](2) shouldBe Array(1L)
       firstLine.getAs[Array[Long]](3) shouldBe Array()
 
       val secondLine = result(1)
-      secondLine.getLong(0) shouldBe 1l
+      secondLine.getLong(0) shouldBe 1L
       secondLine.getInt(1) shouldBe 2
-      secondLine.getAs[Array[Long]](2) shouldBe Array(2l, 3l, 4l)
-      secondLine.getAs[Array[Long]](3) shouldBe Array(1l, 1l, 1l)
+      secondLine.getAs[Array[Long]](2) shouldBe Array(2L, 3L, 4L)
+      secondLine.getAs[Array[Long]](3) shouldBe Array(1L, 1L, 1L)
 
       val thirdLine = result(2)
-      thirdLine.getLong(0) shouldBe 1l
+      thirdLine.getLong(0) shouldBe 1L
       thirdLine.getInt(1) shouldBe 3
-      thirdLine.getAs[Array[Long]](2) shouldBe Array(5l, 6l, 7l, 8l, 9l)
-      thirdLine.getAs[Array[Long]](3) shouldBe Array(2l, 2l, 2l, 3l, 3l)
+      thirdLine.getAs[Array[Long]](2) shouldBe Array(5L, 6L, 7L, 8L, 9l)
+      thirdLine.getAs[Array[Long]](3) shouldBe Array(2L, 2L, 2L, 3L, 3L)
 
       val forthLine = result(3)
-      forthLine.getLong(0) shouldBe 10l
+      forthLine.getLong(0) shouldBe 10L
       forthLine.getInt(1) shouldBe 1
-      forthLine.getAs[Array[Long]](2) shouldBe Array(10l)
+      forthLine.getAs[Array[Long]](2) shouldBe Array(10L)
       forthLine.getAs[Array[Long]](3) shouldBe Array()
 
       val fifthLine = result(4)
       fifthLine.getLong(0) shouldBe 10l
       fifthLine.getInt(1) shouldBe 2
-      fifthLine.getAs[Array[Long]](2) shouldBe Array(11l, 12l)
-      fifthLine.getAs[Array[Long]](3) shouldBe Array(10l, 10l)
+      fifthLine.getAs[Array[Long]](2) shouldBe Array(11L, 12L)
+      fifthLine.getAs[Array[Long]](3) shouldBe Array(10L, 10L)
     }
 
     "aggregate crossrefs from crossref table" in {
@@ -272,13 +272,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
-      val nisra = SparkProvider.sqlContext.read
-        .format("com.databricks.spark.csv")
-        .option("header", "true")
-        .option("delimiter", "|")
-        .schema(CSVSchemas.postcodeAddressFileSchema)
-        .load("batch/src/test/resources/txt/nisra/NISRA_test_data.txt")
-
       val expectedFirstRelations = Array(
         Map(
           "level" -> 1,
@@ -327,7 +320,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.relatives.length shouldBe 3
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
@@ -430,7 +423,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.relatives.length shouldBe 3
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
@@ -527,7 +520,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.relatives.length shouldBe 3
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
@@ -640,7 +633,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.classificationCode shouldBe Some("RD")
       firstResult.postcodeOut shouldBe "KL8"
       firstResult.postcodeIn shouldBe "1JQ"
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.relatives.length shouldBe 3
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
@@ -705,7 +698,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
       firstResult.classificationCode shouldBe Some("RD")
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
@@ -758,7 +751,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
       firstResult.classificationCode shouldBe Some("RD")
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
@@ -805,7 +798,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
       firstResult.classificationCode shouldBe Some("RD")
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
@@ -867,7 +860,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
       firstResult.classificationCode shouldBe Some("RD")
-      firstResult.parentUprn shouldBe 1l
+      firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty

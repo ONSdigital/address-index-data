@@ -12,7 +12,9 @@ object Mappings {
               "index": {
                   "similarity": {
                       "default": {
-                          "type": "classic"
+                          "type": "BM25",
+                          "b": "0.75",
+                          "k1": "0.3"
                       }
                   }
               },
@@ -20,6 +22,7 @@ object Mappings {
                   "filter": {
                       "address_synonym_filter": {
                           "type": "synonym",
+                          "lenient": "true",
                           "synonyms": [
                               "ADJ, ADJACENT",
                               "ALY => ALLEY, ALY",
@@ -178,7 +181,6 @@ object Mappings {
                               "WLS => WELL, WLS",
                               "WLS => WELLS, WLS",
                               "XING => CROSSING, XING",
-      
                               "DEPT => DEPARTMENT, DEPT",
                               "OFC => OFFICE, OFC",
                               "LLC, LLP => LTD, LIMITED, LLC, LLP",
@@ -188,12 +190,10 @@ object Mappings {
                               "PLC, CCC => CO, COMPANY, PLC, CCC",
                               "CORP, CORPORATION",
                               "INC, INCOMPORATED, CORPORATION",
-      
                               "E => EAST, E",
                               "W => WEST, W",
                               "S => SOUTH, S",
                               "N => NORTH, N",
-      
                               "SAINT => ST, SAINT, SANT",
                               "SANT => ST, SAINT, SANT",
                               "0TH, ZEROTH, 0ED, SERO, SEROFED, DIM, DIMFED",
@@ -209,7 +209,6 @@ object Mappings {
                               "10TH, TENTH, 10FED, DEGFED",
                               "11TH, ELEVENTH, 11FED, UNFED, DDEG",
                               "12TH, TWELFTH, 12FED, DEUDDEGFED",
-      
                               "CAREHOME => CARE HOME, CAREHOME, RESIDENTIAL HOME, NURSING HOME, RETIREMENT HOME",
                               "CARE, RESIDENTIAL, NURSING, RETIREMENT",
                               "HMP, HM PRISON",
@@ -318,587 +317,585 @@ object Mappings {
               }
           },
           "mappings": {
-              "address": {
-                  "properties": {
-                      "lpi": {
-                          "properties": {
-                              "addressBasePostal": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "easting": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "location": {
-                                  "type": "geo_point",
-                                  "index": "true"
-                              },
-                              "legalName": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "level": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "locality": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "lpiLogicalStatus": {
-                                  "type": "byte",
-                                  "index": "true"
-                              },
-                              "blpuLogicalStatus": {
-                                  "type": "byte",
-                                  "index": "true"
-                              },
-                              "lpiKey": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "northing": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "officialFlag": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "organisation": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "paoEndNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "paoEndSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "paoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "paoStartSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "paoText": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "postcodeLocator": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoEndNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "saoEndSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "saoStartSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoText": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "streetDescriptor": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "townName": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "usrn": {
-                                  "type": "integer",
-                                  "index": "false"
-                              },
-                              "parentUprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "multiOccCount": {
-                                  "type": "short",
-                                  "index": "false"
-                              },
-                              "localCustodianCode": {
-                                  "type": "short",
-                                  "index": "false"
-                              },
-                              "rpc": {
-                                  "type": "byte",
-                                  "index": "false"
-                              },
-                              "usrnMatchIndicator": {
-                                  "type": "byte",
-                                  "index": "false"
-                              },
-                              "language": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "streetClassification": {
-                                  "type": "byte",
-                                  "index": "false"
-                              },
-                              "classScheme": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "nagAll": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer",
-                                  "fields": {
-                                      "bigram": {
-                                          "type": "text",
-                                          "analyzer": "welsh_bigram_analyzer"
-                                      },
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "lpiStartDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true"
-                              },
-                              "lpiLastUpdateDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "lpiEndDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true",
-                                  "null_value": "2021-03-31T00:00:00Z"
-                              },
-                              "mixedNag": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "secondarySort": {
-                                  "type": "keyword"
-                              }
-                          }
-                      },
-                      "paf": {
-                          "properties": {
-                              "buildingName": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "buildingNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "changeType": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "deliveryPointSuffix": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "departmentName": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "dependentLocality": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "dependentThoroughfare": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "doubleDependentLocality": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "endDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true",
-                                  "null_value": "2021-03-31T00:00:00Z"
-                              },
-                              "entryDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "lastUpdateDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "organisationName": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "poBoxNumber": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "postTown": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "postcode": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "postcodeType": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "proOrder": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "processDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "recordIdentifier": {
-                                  "type": "byte",
-                                  "index": "false"
-                              },
-                              "startDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true"
-                              },
-                              "subBuildingName": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "thoroughfare": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "upper_keyword"
-                              },
-                              "udprn": {
-                                  "type": "integer",
-                                  "index": "false"
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "welshDependentLocality": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "welshDependentThoroughfare": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "welshDoubleDependentLocality": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "welshPostTown": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "welshThoroughfare": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer"
-                              },
-                              "pafAll": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer",
-                                  "fields": {
-                                      "bigram": {
-                                          "type": "text",
-                                          "analyzer": "welsh_bigram_analyzer"
-                                      }
-                                  }
-                              },
-                              "mixedPaf": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "mixedWelshPaf": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
+              "properties": {
+                  "lpi": {
+                      "properties": {
+                          "addressBasePostal": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "easting": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "location": {
+                              "type": "geo_point",
+                              "index": "true"
+                          },
+                          "legalName": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "level": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "locality": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "lpiLogicalStatus": {
+                              "type": "byte",
+                              "index": "true"
+                          },
+                          "blpuLogicalStatus": {
+                              "type": "byte",
+                              "index": "true"
+                          },
+                          "lpiKey": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "northing": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "officialFlag": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "organisation": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "paoEndNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "paoEndSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "paoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "paoStartSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
-                          }
-                      },
-                      "nisra": {
-                          "properties": {
-                              "buildingNumber": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
+                          },
+                          "paoText": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "postcodeLocator": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoEndNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "saoEndSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "saoStartSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoText": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "streetDescriptor": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
-                              },
-                              "thoroughfare": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "easting": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "location": {
-                                  "type": "geo_point",
-                                  "index": "true"
-                              },
-                              "northing": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "paoEndNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "paoEndSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "paoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "paoStartSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "paoText": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "saoEndNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "saoEndSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "saoStartSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoText": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer"
-                              },
-                              "nisraAll": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer",
-                                  "fields": {
-                                      "bigram": {
-                                          "type": "text",
-                                          "analyzer": "welsh_bigram_analyzer"
-                                      },
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "buildingStatus": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "addressStatus": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "classificationCode": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "creationDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "commencementDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false"
-                              },
-                              "archivedDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "false",
-                                  "null_value": "2021-03-31T00:00:00Z"
-                              },
-                              "postcode": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "mixedNisra": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "mixedAltNisra": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "secondarySort": {
-                                  "type": "keyword"
                               }
-                          }
-                      },
-                      "uprn": {
-                          "type": "long",
-                          "index": "true"
-                      },
-                      "postcodeIn": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "postcodeOut": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "parentUprn": {
-                          "type": "text",
-                          "index": "false"
-                      },
-                      "relatives": {
-                          "properties": {
-                              "level": {
-                                  "type": "integer",
-                                  "index": "false"
-                              },
-                              "siblings": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "parents": {
-                                  "type": "long",
-                                  "index": "false"
+                          },
+                          "townName": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "usrn": {
+                              "type": "integer",
+                              "index": "false"
+                          },
+                          "parentUprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "multiOccCount": {
+                              "type": "short",
+                              "index": "false"
+                          },
+                          "localCustodianCode": {
+                              "type": "short",
+                              "index": "false"
+                          },
+                          "rpc": {
+                              "type": "byte",
+                              "index": "false"
+                          },
+                          "usrnMatchIndicator": {
+                              "type": "byte",
+                              "index": "false"
+                          },
+                          "language": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "streetClassification": {
+                              "type": "byte",
+                              "index": "false"
+                          },
+                          "classScheme": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "nagAll": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer",
+                              "fields": {
+                                  "bigram": {
+                                      "type": "text",
+                                      "analyzer": "welsh_bigram_analyzer"
+                                  },
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
                               }
+                          },
+                          "lpiStartDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true"
+                          },
+                          "lpiLastUpdateDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "lpiEndDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true",
+                              "null_value": "2021-03-31T00:00:00Z"
+                          },
+                          "mixedNag": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "secondarySort": {
+                              "type": "keyword"
                           }
-                      },
-                      "crossRefs": {
-                          "properties": {
-                              "crossReference": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "source": {
-                                  "type": "text",
-                                  "index": "false"
-                              }
-                          }
-                      },
-                      "classificationCode": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "fromSource": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "postcode": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
                       }
+                  },
+                  "paf": {
+                      "properties": {
+                          "buildingName": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "buildingNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "changeType": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "deliveryPointSuffix": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "departmentName": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "dependentLocality": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "dependentThoroughfare": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "doubleDependentLocality": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "endDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true",
+                              "null_value": "2021-03-31T00:00:00Z"
+                          },
+                          "entryDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "lastUpdateDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "organisationName": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "poBoxNumber": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "postTown": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "postcode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "postcodeType": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "proOrder": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "processDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "recordIdentifier": {
+                              "type": "byte",
+                              "index": "false"
+                          },
+                          "startDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true"
+                          },
+                          "subBuildingName": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "thoroughfare": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "upper_keyword"
+                          },
+                          "udprn": {
+                              "type": "integer",
+                              "index": "false"
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "welshDependentLocality": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "welshDependentThoroughfare": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "welshDoubleDependentLocality": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "welshPostTown": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "welshThoroughfare": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer"
+                          },
+                          "pafAll": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer",
+                              "fields": {
+                                  "bigram": {
+                                      "type": "text",
+                                      "analyzer": "welsh_bigram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedPaf": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshPaf": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          }
+                      }
+                  },
+                  "nisra": {
+                      "properties": {
+                          "buildingNumber": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
+                          },
+                          "thoroughfare": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
+                          },
+                          "easting": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "location": {
+                              "type": "geo_point",
+                              "index": "true"
+                          },
+                          "northing": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "paoEndNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "paoEndSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "paoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "paoStartSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
+                          },
+                          "paoText": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "saoEndNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "saoEndSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "saoStartSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoText": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer"
+                          },
+                          "nisraAll": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer",
+                              "fields": {
+                                  "bigram": {
+                                      "type": "text",
+                                      "analyzer": "welsh_bigram_analyzer"
+                                  },
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "buildingStatus": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "addressStatus": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "classificationCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "creationDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "commencementDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false"
+                          },
+                          "archivedDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "false",
+                              "null_value": "2021-03-31T00:00:00Z"
+                          },
+                          "postcode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "mixedNisra": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedAltNisra": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "secondarySort": {
+                              "type": "keyword"
+                          }
+                      }
+                  },
+                  "uprn": {
+                      "type": "long",
+                      "index": "true"
+                  },
+                  "postcodeIn": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "postcodeOut": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "parentUprn": {
+                      "type": "text",
+                      "index": "false"
+                  },
+                  "relatives": {
+                      "properties": {
+                          "level": {
+                              "type": "integer",
+                              "index": "false"
+                          },
+                          "siblings": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "parents": {
+                              "type": "long",
+                              "index": "false"
+                          }
+                      }
+                  },
+                  "crossRefs": {
+                      "properties": {
+                          "crossReference": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "source": {
+                              "type": "text",
+                              "index": "false"
+                          }
+                      }
+                  },
+                  "classificationCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "postcode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
                   }
               }
           }
@@ -915,7 +912,9 @@ object Mappings {
               "index": {
                   "similarity": {
                       "default": {
-                          "type": "classic"
+                          "type": "BM25",
+                          "b": "0.1",
+                          "k1": "0.1"
                       }
                   }
               },
@@ -1213,271 +1212,269 @@ object Mappings {
               }
           },
           "mappings": {
-              "address": {
-                  "properties": {
-                      "lpi": {
-                          "properties": {
-                              "addressBasePostal": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "easting": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "location": {
-                                  "type": "geo_point",
-                                  "index": "true"
-                              },
-                              "lpiLogicalStatus": {
-                                  "type": "byte",
-                                  "index": "true"
-                              },
-                              "northing": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "paoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "paoStartSuffix": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "postcodeLocator": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "saoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "language": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "streetDescriptor": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "parentUprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "nagAll": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer",
-                                  "fields": {
-                                      "bigram": {
-                                          "type": "text",
-                                          "analyzer": "welsh_bigram_analyzer"
-                                      },
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "lpiStartDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true"
-                              },
-                              "lpiEndDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true",
-                                  "null_value": "2021-03-31T00:00:00Z"
-                              },
-                              "mixedNag": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "secondarySort": {
-                                  "type": "keyword"
-                              }
-                          }
-                      },
-                      "paf": {
-                          "properties": {
-                              "endDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true",
-                                  "null_value": "2021-03-31T00:00:00Z"
-                              },
-                              "startDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true"
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "mixedPaf": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "mixedWelshPaf": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
+              "properties": {
+                  "lpi": {
+                      "properties": {
+                          "addressBasePostal": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "easting": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "location": {
+                              "type": "geo_point",
+                              "index": "true"
+                          },
+                          "lpiLogicalStatus": {
+                              "type": "byte",
+                              "index": "true"
+                          },
+                          "northing": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "paoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "paoStartSuffix": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
-                          }
-                      },
-                      "nisra": {
-                          "properties": {
-                              "buildingNumber": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
+                          },
+                          "postcodeLocator": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "saoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "language": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "streetDescriptor": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
-                              },
-                              "thoroughfare": {
-                                  "type": "text",
-                                  "analyzer": "welsh_no_split_analyzer",
-                                  "fields": {
-                                      "keyword": {
-                                          "type": "keyword"
-                                      }
-                                  }
-                              },
-                              "paoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "saoStartNumber": {
-                                  "type": "short",
-                                  "index": "true"
-                              },
-                              "easting": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "location": {
-                                  "type": "geo_point",
-                                  "index": "true"
-                              },
-                              "northing": {
-                                  "type": "float",
-                                  "index": "false"
-                              },
-                              "uprn": {
-                                  "type": "long",
-                                  "index": "false"
-                              },
-                              "nisraAll": {
-                                  "type": "text",
-                                  "analyzer": "welsh_split_analyzer",
-                                  "fields": {
-                                      "bigram": {
-                                          "type": "text",
-                                          "analyzer": "welsh_bigram_analyzer"
-                                      },
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "creationDate": {
-                                  "type": "date",
-                                  "format": "strict_date_optional_time||epoch_millis",
-                                  "index": "true"
-                              },
-                              "addressStatus": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "classificationCode": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "postcode": {
-                                  "type": "text",
-                                  "index": "true",
-                                  "analyzer": "keyword"
-                              },
-                              "mixedNisra": {
-                                  "type": "text",
-                                  "fields": {
-                                      "partial": {
-                                          "search_analyzer": "keyword_analyzer",
-                                          "type": "text",
-                                          "analyzer": "edge_ngram_analyzer"
-                                      }
-                                  }
-                              },
-                              "mixedAltNisra": {
-                                  "type": "text",
-                                  "index": "false"
-                              },
-                              "secondarySort": {
-                                  "type": "keyword"
                               }
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "parentUprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "nagAll": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer",
+                              "fields": {
+                                  "bigram": {
+                                      "type": "text",
+                                      "analyzer": "welsh_bigram_analyzer"
+                                  },
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "lpiStartDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true"
+                          },
+                          "lpiEndDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true",
+                              "null_value": "2021-03-31T00:00:00Z"
+                          },
+                          "mixedNag": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "secondarySort": {
+                              "type": "keyword"
                           }
-                      },
-                      "uprn": {
-                          "type": "long",
-                          "index": "true"
-                      },
-                      "parentUprn": {
-                          "type": "text",
-                          "index": "false"
-                      },
-                      "classificationCode": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "fromSource": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
-                      },
-                      "postcode": {
-                          "type": "text",
-                          "index": "true",
-                          "analyzer": "keyword"
                       }
+                  },
+                  "paf": {
+                      "properties": {
+                          "endDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true",
+                              "null_value": "2021-03-31T00:00:00Z"
+                          },
+                          "startDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true"
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "mixedPaf": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshPaf": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          }
+                      }
+                  },
+                  "nisra": {
+                      "properties": {
+                          "buildingNumber": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
+                          },
+                          "thoroughfare": {
+                              "type": "text",
+                              "analyzer": "welsh_no_split_analyzer",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
+                          },
+                          "paoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "saoStartNumber": {
+                              "type": "short",
+                              "index": "true"
+                          },
+                          "easting": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "location": {
+                              "type": "geo_point",
+                              "index": "true"
+                          },
+                          "northing": {
+                              "type": "float",
+                              "index": "false"
+                          },
+                          "uprn": {
+                              "type": "long",
+                              "index": "false"
+                          },
+                          "nisraAll": {
+                              "type": "text",
+                              "analyzer": "welsh_split_analyzer",
+                              "fields": {
+                                  "bigram": {
+                                      "type": "text",
+                                      "analyzer": "welsh_bigram_analyzer"
+                                  },
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "creationDate": {
+                              "type": "date",
+                              "format": "strict_date_optional_time||epoch_millis",
+                              "index": "true"
+                          },
+                          "addressStatus": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "classificationCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "postcode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
+                          "mixedNisra": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedAltNisra": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "secondarySort": {
+                              "type": "keyword"
+                          }
+                      }
+                  },
+                  "uprn": {
+                      "type": "long",
+                      "index": "true"
+                  },
+                  "parentUprn": {
+                      "type": "text",
+                      "index": "false"
+                  },
+                  "classificationCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "postcode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
                   }
               }
           }

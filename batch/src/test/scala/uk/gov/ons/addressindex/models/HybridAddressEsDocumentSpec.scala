@@ -8,7 +8,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
   // Expected Paf values
-  val expectedPafBuildingNumber = 1.toShort
+  val expectedPafBuildingNumber: Short = 1.toShort
   val expectedPafUdprn = 19
   val expectedPafLastUpdateDate = new java.sql.Date(format.parse("2016-02-10").getTime)
   val expectedPafProOrder = 272650L
@@ -36,13 +36,13 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedPafWelshThoroughfare = "Welsh2"
   val expectedPafThoroughfare = "Some Street"
   val expectedPafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
-  val expectedPafRecordIdentifier = 27.toByte
+  val expectedPafRecordIdentifier: Byte = 27.toByte
   val expectedPafAll = "DEPARTMENT CIBO FLAT E COTTAGE 6 1 THROUGHFARE WELSH1 SOME STREET WELSH2 LOCALITY WELSH3 STIXTON WELSH4 LONDON WELSH5 POSTCODE"
   val expectedPafMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
   val expectedPafWelshMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE"
 
   // Actual Paf values
-  val actualPafBuildingNumber = 1.toShort
+  val actualPafBuildingNumber: Short = 1.toShort
   val actualPafUdprn = 19
   val actualPafLastUpdateDate = new java.sql.Date(format.parse("2016-02-10").getTime)
   val actualPafProOrder = 272650L
@@ -70,25 +70,25 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val actualPafWelshThoroughfare = "WELSH2"
   val actualPafThoroughfare = "SOME STREET"
   val actualPafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
-  val actualPafRecordIdentifier = 27.toByte
+  val actualPafRecordIdentifier: Byte = 27.toByte
 
   // Expected Nag values
   val expectedNagOrganisation = "Something Else"
   val expectedNagOfficialFlag = "Y"
-  val expectedNagPaoStartNumber = 56.toShort
+  val expectedNagPaoStartNumber: Short = 56.toShort
   val expectedNagPostcodeLocator = "KL8 7HQ"
   val expectedNagSaoEndSuffix = "JJ"
-  val expectedNagSaoStartNumber = 6473.toShort
+  val expectedNagSaoStartNumber: Short = 6473.toShort
   val expectedNagUsrn = 9402538
-  val expectedNagLpiLogicalStatus = 1.toByte
+  val expectedNagLpiLogicalStatus: Byte = 1.toByte
   val expectedNagEasting = 379171.00F
   val expectedNagPaoEndSuffix = "OP"
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
   val expectedNagUprn = 100010971565L
   val expectedNagNorthing = 412816.00F
   val expectedNagLpiKey = "1610L000014429"
-  val expectedNagSaoEndNumber = 6623.toShort
-  val expectedNagPaoEndNumber = 7755.toShort
+  val expectedNagSaoEndNumber: Short = 6623.toShort
+  val expectedNagPaoEndNumber: Short = 7755.toShort
   val expectedNagTownName = "Town B"
   val expectedNagLegalName = "ANOTHER LEGAL NAME"
   val expectedNagSaoStartSuffix = "FF"
@@ -99,13 +99,13 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLocality = "Locality Xyz"
   val expectedNagLevel = "UP THERE SOME WHERE"
   val expectedNagParentUprn = 999910971564L
-  val expectedNagMultiOccCount = 0.toShort
-  val expectedNagBlpuLogicalStatus = 1.toByte
-  val expectedNagLocalCustodianCode = 4218.toShort
-  val expectedNagRpc = 1.toByte
-  val expectedNagUsrnMatchIndicator = 1.toByte
+  val expectedNagMultiOccCount: Short = 0.toShort
+  val expectedNagBlpuLogicalStatus: Byte = 1.toByte
+  val expectedNagLocalCustodianCode: Short = 4218.toShort
+  val expectedNagRpc: Byte = 1.toByte
+  val expectedNagUsrnMatchIndicator: Byte = 1.toByte
   val expectedNagLanguage = "ENG"
-  val expectedNagStreetClassification = 8.toByte
+  val expectedNagStreetClassification: Byte = 8.toByte
   val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
@@ -116,20 +116,20 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   // Actual Nag Values
   val actualNagOrganisation = "SOMETHING ELSE"
   val actualNagOfficialFlag = "Y"
-  val actualNagPaoStartNumber = 56.toShort
+  val actualNagPaoStartNumber: Short = 56.toShort
   val actualNagPostcodeLocator = "KL8 7HQ"
   val actualNagSaoEndSuffix = "JJ"
-  val actualNagSaoStartNumber = 6473.toShort
+  val actualNagSaoStartNumber: Short = 6473.toShort
   val actualNagUsrn = 9402538
-  val actualNagLpiLogicalStatus = 1.toByte
+  val actualNagLpiLogicalStatus: Byte = 1.toByte
   val actualNagEasting = 379171.00F
   val actualNagPaoEndSuffix = "OP"
   val actualNagStreetDescriptor = "AND ANOTHER STREET DESCRIPTOR"
   val actualNagUprn = 100010971565L
   val actualNagNorthing = 412816.00F
   val actualNagLpiKey = "1610L000014429"
-  val actualNagSaoEndNumber = 6623.toShort
-  val actualNagPaoEndNumber = 7755.toShort
+  val actualNagSaoEndNumber: Short = 6623.toShort
+  val actualNagPaoEndNumber: Short = 7755.toShort
   val actualNagTownName = "TOWN B"
   val actualNagLegalName = "ANOTHER LEGAL NAME"
   val actualNagSaoStartSuffix = "FF"
@@ -140,13 +140,13 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val actualNagLocality = "LOCALITY XYZ"
   val actualNagLevel = "UP THERE SOME WHERE"
   val actualNagParentUprn = 999910971564L
-  val actualNagMultiOccCount = 0.toShort
-  val actualNagBlpuLogicalStatus = 1.toByte
-  val actualNagLocalCustodianCode = 4218.toShort
-  val actualNagRpc = 1.toByte
-  val actualNagUsrnMatchIndicator = 1.toByte
+  val actualNagMultiOccCount: Short = 0.toShort
+  val actualNagBlpuLogicalStatus: Byte = 1.toByte
+  val actualNagLocalCustodianCode: Short = 4218.toShort
+  val actualNagRpc: Byte = 1.toByte
+  val actualNagUsrnMatchIndicator: Byte = 1.toByte
   val actualNagLanguage = "ENG"
-  val actualNagStreetClassification = 8.toByte
+  val actualNagStreetClassification: Byte = 8.toByte
   val actualNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val actualNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
@@ -154,7 +154,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
-  val expectedPaf = Map[String,Any](
+  val expectedPaf: Map[String, Any] = Map[String,Any](
     "buildingNumber" -> expectedPafBuildingNumber,
     "udprn" -> expectedPafUdprn,
     "lastUpdateDate" -> expectedPafLastUpdateDate,
@@ -189,7 +189,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "mixedWelshPaf" -> expectedPafWelshMixed
   )
 
-  val expectedNag = Map[String,Any](
+  val expectedNag: Map[String, Any] = Map[String,Any](
     "uprn" -> expectedNagUprn,
     "postcodeLocator" -> expectedNagPostcodeLocator,
     "addressBasePostal" -> expectedNagAddressBasePostal,
@@ -998,6 +998,99 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
 
       // Then
       result shouldBe "6473-6623JJ THE BUILDING NAME 56HH-7755 AND ANOTHER STREET DESCRIPTOR KL8 7HQ"
+    }
+
+    "generate concatenated paf (all fields) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = "1000"
+      val pafDependentThoroughfare = "throughfare"
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = "6"
+      val pafDependentLocality = "STIXTON"
+      val pafBuildingName = "COTTAGE"
+      val pafOrganisationName = "CIBO"
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = "department"
+      val pafDoubleDependentLocality = "locality"
+      val pafSubBuildingName = "FLAT E"
+      val pafThoroughfare = "SOME_STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("Department", "Cibo", "Flat E", "Cottage", "PO BOX 6", "1000 Throughfare", "Some_street", "Locality", "Stixton", "London", "POSTCODE")
+
+    }
+
+    "generate concatenated paf (building number no dependent locality) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = "1000"
+      val pafDependentThoroughfare = ""
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = ""
+      val pafDependentLocality = "SIXTON"
+      val pafBuildingName = ""
+      val pafOrganisationName = ""
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = ""
+      val pafDoubleDependentLocality = ""
+      val pafSubBuildingName = ""
+      val pafThoroughfare = "SOME_STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("1000 Some_street", "Sixton", "London", "POSTCODE")
+
+    }
+
+    "generate concatenated paf (building name containing number no dependent locality) with commas as recommended by Royal Mail" in {
+
+      // Given
+      val pafBuildingNumber = ""
+      val pafDependentThoroughfare = ""
+      val pafPostcode = "POSTCODE"
+      val pafPoBoxNumber = ""
+      val pafDependentLocality = "SIXTON"
+      val pafBuildingName = "22B"
+      val pafOrganisationName = ""
+      val pafPostTown = "LONDON"
+      val pafDepartmentName = ""
+      val pafDoubleDependentLocality = ""
+      val pafSubBuildingName = ""
+      val pafThoroughfare = "BAKER STREET"
+
+      // When
+      val result = HybridAddressEsDocument.generatePaf(
+        poBoxNumber= pafPoBoxNumber, buildingNumber = pafBuildingNumber,
+        dependentThoroughfare = pafDependentThoroughfare, thoroughfare= pafThoroughfare,
+        departmentName = pafDepartmentName, organisationName = pafOrganisationName,
+        subBuildingName = pafSubBuildingName, buildingName = pafBuildingName,
+        doubleDependentLocality = pafDoubleDependentLocality, dependentLocality = pafDependentLocality,
+        postTown = pafPostTown, postcode = pafPostcode
+      )
+
+      // Then
+      result shouldBe List("22B Baker Street", "Sixton", "London", "POSTCODE")
+
     }
   }
 }
