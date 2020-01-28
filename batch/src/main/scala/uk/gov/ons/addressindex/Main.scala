@@ -55,7 +55,7 @@ For usage see below:
 //    postLoad(indexName)
 //  } else opts.printHelp()
 
-      val indexName = "country05"
+      val indexName = "country07"
       val url = s"http://$nodes:$port/$indexName"
       postMapping(indexName, skinny = false)
       saveHybridAddresses(historical = false, skinny = true, nisra = true)
