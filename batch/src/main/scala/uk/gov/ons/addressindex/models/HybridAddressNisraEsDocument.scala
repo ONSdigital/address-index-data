@@ -14,7 +14,8 @@ case class HybridAddressNisraEsDocument(uprn: Long,
                                         nisra: Seq[Map[String, Any]],
                                         classificationCode: Option[String],
                                         postcode: String,
-                                        fromSource: String)
+                                        fromSource: String,
+                                        countryCode: String)
 
 object HybridAddressNisraEsDocument extends EsDocument {
 
@@ -56,6 +57,7 @@ object HybridAddressNisraEsDocument extends EsDocument {
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
     "lpiEndDate" -> row.getDate(36),
+    "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
@@ -236,7 +238,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "saoStartSuffix" -> row.getString(11),
       "saoEndNumber" -> toShort(row.getString(10)).orNull,
       "saoEndSuffix" -> row.getString(12),
-      "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " ")
+      "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " "),
+      "country" -> "N"
     )
   }
 

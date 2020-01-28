@@ -8,7 +8,8 @@ case class HybridAddressSkinnyEsDocument(uprn: Long,
                                          paf: Seq[Map[String, Any]],
                                          classificationCode: Option[String],
                                          postcode: String,
-                                         fromSource: String)
+                                         fromSource: String,
+                                         countryCode: String)
 
 object HybridAddressSkinnyEsDocument extends EsDocument {
 
@@ -28,6 +29,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "streetDescriptor" -> normalize(row.getString(30)),
     "lpiStartDate" -> row.getDate(34),
     "lpiEndDate" -> row.getDate(36),
+    "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,

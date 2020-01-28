@@ -12,7 +12,8 @@ case class HybridAddressEsDocument(uprn: Long,
                                    crossRefs: Seq[Map[String, String]],
                                    classificationCode: Option[String],
                                    postcode: String,
-                                   fromSource: String)
+                                   fromSource: String,
+                                   countryCode: String)
 
 object HybridAddressEsDocument extends EsDocument {
 
@@ -54,6 +55,7 @@ object HybridAddressEsDocument extends EsDocument {
     "lpiStartDate" -> row.getDate(34),
     "lpiLastUpdateDate" -> row.getDate(35),
     "lpiEndDate" -> row.getDate(36),
+    "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       if (row.isNullAt(23)) "" else row.getShort(23).toString,

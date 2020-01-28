@@ -91,7 +91,8 @@ object SqlHelper {
         $streetTable.streetClassification,
         $lpiTable.startDate as lpiStartDate,
         $lpiTable.lastUpdateDate as lpiLastUpdateDate,
-        $lpiTable.endDate as lpiEndDate
+        $lpiTable.endDate as lpiEndDate,
+        $blpuTable.country
       FROM $blpuTable
       LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
       LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
@@ -283,6 +284,8 @@ object SqlHelper {
 
         val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
 
+        val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -291,7 +294,8 @@ object SqlHelper {
           outputNisra,
           classificationCode,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -393,6 +397,8 @@ object SqlHelper {
 
         val fromSource = "EW"
 
+        val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -400,7 +406,8 @@ object SqlHelper {
           outputPaf,
           classificationCode,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -504,6 +511,8 @@ object SqlHelper {
 
         val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
 
+        val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressNisraEsDocument(
           uprn,
           postCodeIn,
@@ -516,7 +525,8 @@ object SqlHelper {
           outputNisra,
           classificationCode,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -604,6 +614,8 @@ object SqlHelper {
 
         val fromSource = "EW"
 
+        val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -615,7 +627,8 @@ object SqlHelper {
           outputCrossRefs,
           classificationCode,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }

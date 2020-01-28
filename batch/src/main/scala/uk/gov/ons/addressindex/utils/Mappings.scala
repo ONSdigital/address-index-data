@@ -892,6 +892,11 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
+                  "countryCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
                   "postcode": {
                       "type": "text",
                       "index": "true",
@@ -1467,6 +1472,11 @@ object Mappings {
                       "analyzer": "keyword"
                   },
                   "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "countryCode": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
