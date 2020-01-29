@@ -709,12 +709,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
-      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-
-      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
-
     }
 
     "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" in {
@@ -762,11 +756,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
-      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
-
-      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
-
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents" in {
@@ -809,12 +798,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
-
-      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(2)("lpiStartDate")) should contain oneOf(format.parse("2008-09-08"),format.parse("2009-09-08"),format.parse("2007-10-10"))
-
-      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
 
       val thirdResult = result(5)
       thirdResult.uprn shouldBe 185472578L
@@ -872,11 +855,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
       secondResult.nisra shouldBe empty
-
-      List(secondResult.lpi.head("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
-      List(secondResult.lpi(1)("lpiStartDate")) should contain oneOf(format.parse("2009-09-08"),format.parse("2007-10-10"))
-
-      secondResult.paf.head("endDate") shouldBe format.parse("2012-04-25")
 
       val thirdResult = result(4)
       thirdResult.uprn shouldBe 185472578L

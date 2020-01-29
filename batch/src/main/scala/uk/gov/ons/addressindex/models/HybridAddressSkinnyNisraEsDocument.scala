@@ -28,8 +28,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
     "lpiLogicalStatus" -> row.getByte(27),
     "language" -> row.getString(29),
     "streetDescriptor" -> normalize(row.getString(30)),
- //   "lpiStartDate" -> row.getDate(34),
-  //  "lpiEndDate" -> row.getDate(36),
     "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
@@ -70,8 +68,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(3),
- //   "startDate" -> row.getDate(25),
-  //  "endDate" -> row.getDate(26),
     "pafAll" -> concatPaf(Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
       Option(row.getString(10)).getOrElse(""),
@@ -129,7 +125,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(17)).getOrElse(""),
       Option(row.getString(18)).getOrElse(""),
       Option(row.getString(19)).getOrElse(""),
-      // townland omitted for now
       "",
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""))
