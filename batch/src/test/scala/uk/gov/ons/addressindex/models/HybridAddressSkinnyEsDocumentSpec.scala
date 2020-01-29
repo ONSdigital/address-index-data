@@ -65,6 +65,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
+  val expectedNagCountry = "E"
 
   // Actual Nag values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -103,14 +104,15 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val actualNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val actualNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val actualNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
+  val actualNagCountry = "E"
 
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
   val expectedPaf: Map[String, Any] = Map[String,Any](
-    "endDate" -> expectedPafEndDate,
+ //   "endDate" -> expectedPafEndDate,
     "uprn" -> expectedPafUprn,
-    "startDate" -> expectedPafStartDate,
+ //   "startDate" -> expectedPafStartDate,
     "pafAll" -> expectedPafAll,
     "mixedPaf" -> expectedPafMixed,
     "mixedWelshPaf" -> expectedPafWelshMixed
@@ -131,10 +133,11 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
     "streetDescriptor" -> expectedNagStreetDescriptor,
     "nagAll" -> expectedNagAll,
     "language" -> expectedNagLanguage,
-    "lpiStartDate" -> expectedNagLpiStartDate,
-    "lpiEndDate" -> expectedNagLpiEndDate,
+ //   "lpiStartDate" -> expectedNagLpiStartDate,
+ //   "lpiEndDate" -> expectedNagLpiEndDate,
     "mixedNag" -> expectedNagMixed,
-    "secondarySort" -> expectedNagSecondarySort
+    "secondarySort" -> expectedNagSecondarySort,
+    "country" -> expectedNagCountry
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -178,7 +181,8 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         actualNagStreetClassification,
         actualNagLpiStartDate,
         actualNagLpiLastUpdateDate,
-        actualNagLpiEndDate
+        actualNagLpiEndDate,
+        actualNagCountry
       )
 
       // When
@@ -216,9 +220,9 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
         actualPafWelshPostTown,
         actualPafPoBoxNumber,
         actualPafProcessDate,
-        actualPafStartDate,
-        actualPafEndDate,
-        actualPafLastUpdateDate,
+ //       actualPafStartDate,
+ //       actualPafEndDate,
+//        actualPafLastUpdateDate,
         actualPafEntryDate
       )
 

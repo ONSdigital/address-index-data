@@ -1300,17 +1300,6 @@ object Mappings {
                                   }
                               }
                           },
-                          "lpiStartDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
-                          "lpiEndDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
                           "mixedNag": {
                               "type": "text",
                               "index": "false"
@@ -1322,17 +1311,6 @@ object Mappings {
                   },
                   "paf": {
                       "properties": {
-                          "endDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
-                          "startDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
                           "uprn": {
                               "type": "long",
                               "index": "false"

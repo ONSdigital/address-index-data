@@ -27,8 +27,8 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "lpiLogicalStatus" -> row.getByte(27),
     "language" -> row.getString(29),
     "streetDescriptor" -> normalize(row.getString(30)),
-    "lpiStartDate" -> row.getDate(34),
-    "lpiEndDate" -> row.getDate(36),
+  //  "lpiStartDate" -> row.getDate(34),
+  //  "lpiEndDate" -> row.getDate(36),
     "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
@@ -62,8 +62,8 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(3),
-    "startDate" -> row.getDate(25),
-    "endDate" -> row.getDate(26),
+  //  "startDate" -> row.getDate(25),
+  //  "endDate" -> row.getDate(26),
     "pafAll" -> concatPaf(Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
       Option(row.getString(10)).getOrElse(""),
