@@ -892,6 +892,11 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
+                  "countryCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
                   "postcode": {
                       "type": "text",
                       "index": "true",
@@ -1295,17 +1300,6 @@ object Mappings {
                                   }
                               }
                           },
-                          "lpiStartDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
-                          "lpiEndDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
                           "mixedNag": {
                               "type": "text",
                               "index": "false"
@@ -1317,17 +1311,6 @@ object Mappings {
                   },
                   "paf": {
                       "properties": {
-                          "endDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
-                          "startDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
                           "uprn": {
                               "type": "long",
                               "index": "false"
@@ -1467,6 +1450,11 @@ object Mappings {
                       "analyzer": "keyword"
                   },
                   "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "countryCode": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
