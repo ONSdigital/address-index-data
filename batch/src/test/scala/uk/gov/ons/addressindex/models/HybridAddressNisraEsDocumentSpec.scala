@@ -191,6 +191,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraSaoEndSuffix = ""
   val expectedNisraSecondarySort = "THE BUILDING NAME THE SUB BUILDING NAME AN ORGANISATION"
   val expectedNisraLocalCouncil = "BELFAST"
+  val expectedNisraLGDCode = "N09000003"
 
   // NISRA actual
   val actualNisraOrganisation = "AN ORGANISATION"
@@ -231,6 +232,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraSaoEndNumber = ""
   val actualNisraSaoEndSuffix = ""
   val actualNisraLocalCouncil = "BELFAST"
+  val actualNisraLGDCode = "N09000003"
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
@@ -350,7 +352,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "saoEndNumber" -> expectedNisraSaoEndNumber,
     "saoEndSuffix" -> expectedNisraSaoEndSuffix,
     "secondarySort" -> expectedNisraSecondarySort,
-    "localCouncil" -> expectedNisraLocalCouncil
+    "localCouncil" -> expectedNisraLocalCouncil,
+    "LGDCode" -> expectedNisraLGDCode
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -1059,7 +1062,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraBuildingStatus,
           actualNisraAddressStatus,
           actualNisraClassificationCode,
-          actualNisraLocalCouncil
+          actualNisraLocalCouncil,
+          actualNisraLGDCode
         )
 
         // When

@@ -7,6 +7,8 @@ case class HybridAddressSkinnyEsDocument(uprn: Long,
                                          lpi: Seq[Map[String, Any]],
                                          paf: Seq[Map[String, Any]],
                                          classificationCode: Option[String],
+                                         censusAddressType: String,
+                                         censusEstabType: String,
                                          postcode: String,
                                          fromSource: String,
                                          countryCode: String)

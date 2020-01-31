@@ -267,4 +267,20 @@ abstract class EsDocument {
     }
     newTokens.mkString(" ")
   }
+
+  def nisraCouncilNameToCode(cname: String): String = cname match {
+
+    case "ANTRIM AND NEWTONABBEY" => "N09000001"
+    case "BANBRIDGE AND CRAIGAVON" => "N09000002"
+    case "BELFAST" => "N09000003"
+    case "CAUSEWAY COAST AND GLENS" => "N09000004"
+    case "DERRY CITY AND STRABANE" => "N09000005"
+    case "FERMANAGH AND OMAGH" => "N09000006"
+    case "LISBURN AND CASTLEREAGH" => "N09000007"
+    case "MID AND EAST ANTRIM" => "N09000008"
+    case "MID ULSTER" => "N09000009"
+    case "NEWRY, MOURNE AND DOWN" => "N09000010"
+    case "ARDS AND NORTH DOWN" => "N09000011"
+    case _ => "N09000012"
+  }
 }

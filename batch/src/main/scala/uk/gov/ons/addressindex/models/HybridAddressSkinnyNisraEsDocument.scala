@@ -8,6 +8,8 @@ case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               paf: Seq[Map[String, Any]],
                                               nisra: Seq[Map[String, Any]],
                                               classificationCode: Option[String],
+                                              censusAddressType: String,
+                                              censusEstabType: String,
                                               postcode: String,
                                               fromSource: String,
                                               countryCode: String)
@@ -144,7 +146,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(22),
       "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " "),
-      "localCouncil" -> row.getString(32)
+      "localCouncil" -> row.getString(32),
+      "LGDCode" -> nisraCouncilNameToCode(row.getString(32))
     )
   }
 

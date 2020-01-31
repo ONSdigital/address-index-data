@@ -13,6 +13,8 @@ case class HybridAddressNisraEsDocument(uprn: Long,
                                         crossRefs: Seq[Map[String, String]],
                                         nisra: Seq[Map[String, Any]],
                                         classificationCode: Option[String],
+                                        censusAddressType: String,
+                                        censusEstabType: String,
                                         postcode: String,
                                         fromSource: String,
                                         countryCode: String)
@@ -238,7 +240,8 @@ object HybridAddressNisraEsDocument extends EsDocument {
       "saoEndNumber" -> toShort(row.getString(10)).orNull,
       "saoEndSuffix" -> row.getString(12),
       "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " "),
-      "localCouncil" -> row.getString(32)
+      "localCouncil" -> row.getString(32),
+      "LGDCode" -> nisraCouncilNameToCode(row.getString(32))
     )
   }
 
