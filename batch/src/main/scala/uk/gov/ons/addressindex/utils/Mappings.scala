@@ -462,6 +462,10 @@ object Mappings {
                               "type": "byte",
                               "index": "false"
                           },
+                          "country": {
+                              "type": "text",
+                              "index": "false"
+                          },
                           "usrnMatchIndicator": {
                               "type": "byte",
                               "index": "false"
@@ -817,6 +821,16 @@ object Mappings {
                               "index": "true",
                               "analyzer": "keyword"
                           },
+                          "localCouncil": {
+                              "type": "text",
+                              "index": "false",
+                              "analyzer": "keyword"
+                          },
+                          "LGDCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
                           "mixedNisra": {
                               "type": "text",
                               "fields": {
@@ -886,6 +900,16 @@ object Mappings {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
+                  },
+                  "censusAddressType": {
+                       "type": "text",
+                       "index": "true",
+                       "analyzer": "keyword"
+                  },
+                  "censusEstabType": {
+                       "type": "text",
+                       "index": "true",
+                       "analyzer": "keyword"
                   },
                   "fromSource": {
                       "type": "text",
@@ -1268,6 +1292,10 @@ object Mappings {
                               "type": "text",
                               "index": "false"
                           },
+                          "country": {
+                              "type": "text",
+                              "index": "false"
+                          },
                           "streetDescriptor": {
                               "type": "text",
                               "analyzer": "welsh_no_split_analyzer",
@@ -1417,6 +1445,16 @@ object Mappings {
                               "index": "true",
                               "analyzer": "keyword"
                           },
+                          "localCouncil": {
+                              "type": "text",
+                              "index": "false",
+                              "analyzer": "keyword"
+                          },
+                          "LGDCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
                           "mixedNisra": {
                               "type": "text",
                               "fields": {
@@ -1445,6 +1483,16 @@ object Mappings {
                       "index": "false"
                   },
                   "classificationCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "censusAddressType": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "censusEstabType": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"

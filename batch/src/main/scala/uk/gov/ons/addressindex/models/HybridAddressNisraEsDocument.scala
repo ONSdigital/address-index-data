@@ -13,6 +13,8 @@ case class HybridAddressNisraEsDocument(uprn: Long,
                                         crossRefs: Seq[Map[String, String]],
                                         nisra: Seq[Map[String, Any]],
                                         classificationCode: Option[String],
+                                        censusAddressType: String,
+                                        censusEstabType: String,
                                         postcode: String,
                                         fromSource: String,
                                         countryCode: String)

@@ -276,6 +276,9 @@ object SqlHelper {
           else
             Some(nisraCodeToABP(nisraClassCode))
         }
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
@@ -294,6 +297,8 @@ object SqlHelper {
           outputPaf,
           outputNisra,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
           fromSource,
           countryCode
@@ -390,6 +395,9 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
         val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
 
@@ -406,6 +414,8 @@ object SqlHelper {
           outputLpis,
           outputPaf,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
           fromSource,
           countryCode
@@ -499,6 +509,9 @@ object SqlHelper {
             Some(nisraCodeToABP(nisraClassCode))
         }
 
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
@@ -525,6 +538,8 @@ object SqlHelper {
           outputCrossRefs,
           outputNisra,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
           fromSource,
           countryCode
@@ -600,7 +615,10 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
+
         val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -627,6 +645,8 @@ object SqlHelper {
           outputPaf,
           outputCrossRefs,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
           fromSource,
           countryCode

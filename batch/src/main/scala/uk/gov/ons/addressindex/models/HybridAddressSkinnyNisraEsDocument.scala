@@ -8,6 +8,8 @@ case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               paf: Seq[Map[String, Any]],
                                               nisra: Seq[Map[String, Any]],
                                               classificationCode: Option[String],
+                                              censusAddressType: String,
+                                              censusEstabType: String,
                                               postcode: String,
                                               fromSource: String,
                                               countryCode: String)

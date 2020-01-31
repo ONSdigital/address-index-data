@@ -11,6 +11,8 @@ case class HybridAddressEsDocument(uprn: Long,
                                    paf: Seq[Map[String, Any]],
                                    crossRefs: Seq[Map[String, String]],
                                    classificationCode: Option[String],
+                                   censusAddressType: String,
+                                   censusEstabType: String,
                                    postcode: String,
                                    fromSource: String,
                                    countryCode: String)
