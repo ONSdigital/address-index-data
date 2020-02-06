@@ -509,8 +509,10 @@ object SqlHelper {
             Some(nisraCodeToABP(nisraClassCode))
         }
 
-        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
-        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -615,10 +617,12 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressEsDocument.rowToPaf(row))
         val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
-
         val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
-        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""))
-        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""))
+
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))

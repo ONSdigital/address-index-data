@@ -4,20 +4,36 @@ import org.scalatest.{Matchers, WordSpec}
 
 class CensusClassificationHelperSpec extends WordSpec with Matchers {
 
-    val expectedEstabType = "Household"
-    val expectedAddressType = "HH"
+    val expectedEstabType = "NA"
+    val expectedAddressType1 = "AAAA"
+    val expectedAddressType2 = "BBBB"
 
     "CensusClassificationHelper" should {
-      "return the correct address Type" in {
+      "return the correct address Type with CouncilTax true" in {
 
         // Given
-        val ABPcodeIn = "HH"
+        val ABPcodeIn = "RD07"
+        val councilTaxIn = true
 
         // When
-        val result = CensusClassificationHelper.ABPToAddressType(ABPcodeIn)
+        val result = CensusClassificationHelper.ABPToAddressType(ABPcodeIn, councilTaxIn)
 
         // Then
-        result shouldBe expectedAddressType
+        result shouldBe expectedAddressType1
+
+      }
+
+      "return the correct address Type with CouncilTax false" in {
+
+        // Given
+        val ABPcodeIn = "RD01"
+        val councilTaxIn = false
+
+        // When
+        val result = CensusClassificationHelper.ABPToAddressType(ABPcodeIn, councilTaxIn)
+
+        // Then
+        result shouldBe expectedAddressType2
 
       }
 
@@ -25,9 +41,9 @@ class CensusClassificationHelperSpec extends WordSpec with Matchers {
 
         // Given
         val ABPcodeIn = "Household"
-
+        val councilTaxIn = true
         // When
-        val result = CensusClassificationHelper.ABPToEstabType(ABPcodeIn)
+        val result = CensusClassificationHelper.ABPToEstabType(ABPcodeIn, councilTaxIn)
 
         // Then
         result shouldBe expectedEstabType

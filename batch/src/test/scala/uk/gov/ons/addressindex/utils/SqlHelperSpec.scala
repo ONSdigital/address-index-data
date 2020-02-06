@@ -232,7 +232,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateCrossRefInformation(crossref).orderBy("uprn", "crossReference").collect()
 
       // Then
-      result.length shouldBe 8
+      result.length shouldBe 10
       val firstLine = result(0)
       firstLine.getAs[Long]("uprn") shouldBe 2L
       firstLine.getAs[String]("crossReference") shouldBe "E04000324"
@@ -245,13 +245,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val fifthLine = result(4)
       fifthLine.getAs[Long]("uprn") shouldBe 100010971565L
-      fifthLine.getAs[String]("crossReference") shouldBe "E01001700"
-      fifthLine.getAs[String]("source") shouldBe "7666OL"
+      fifthLine.getAs[String]("crossReference") shouldBe "44654912"
+      fifthLine.getAs[String]("source") shouldBe "7666VC"
 
       val seventhLine = result(6)
       seventhLine.getAs[Long]("uprn") shouldBe 100010971565L
-      seventhLine.getAs[String]("crossReference") shouldBe "E03801409"
-      seventhLine.getAs[String]("source") shouldBe "7666OU"
+      seventhLine.getAs[String]("crossReference") shouldBe "E01001700"
+      seventhLine.getAs[String]("source") shouldBe "7666OL"
     }
 
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
@@ -291,6 +291,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
       )
 
       val expectedSecondCrossRefs = Array(
+        Map(
+          "crossReference" -> "44654912",
+          "source" -> "7666VC"
+        ),
+        Map(
+          "crossReference" -> "44654913",
+          "source" -> "7666VN"
+        ),
         Map(
           "crossReference" -> "E05001602",
           "source" -> "7666MI"
@@ -333,7 +341,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
-      secondResult.crossRefs.length shouldBe 4
+      secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
@@ -395,6 +403,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val expectedSecondCrossRefs = Array(
         Map(
+          "crossReference" -> "44654912",
+          "source" -> "7666VC"
+        ),
+        Map(
+          "crossReference" -> "44654913",
+          "source" -> "7666VN"
+        ),
+        Map(
           "crossReference" -> "E05001602",
           "source" -> "7666MI"
         ),
@@ -436,7 +452,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
-      secondResult.crossRefs.length shouldBe 4
+      secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
@@ -492,6 +508,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val expectedSecondCrossRefs = Array(
         Map(
+          "crossReference" -> "44654912",
+          "source" -> "7666VC"
+        ),
+        Map(
+          "crossReference" -> "44654913",
+          "source" -> "7666VN"
+        ),
+        Map(
           "crossReference" -> "E05001602",
           "source" -> "7666MI"
         ),
@@ -533,7 +557,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
-      secondResult.crossRefs.length shouldBe 4
+      secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
