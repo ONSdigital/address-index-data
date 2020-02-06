@@ -629,6 +629,14 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val expectedSecondCrossRefs = Array(
         Map(
+          "crossReference" -> "44654912",
+          "source" -> "7666VC"
+        ),
+        Map(
+          "crossReference" -> "44654913",
+          "source" -> "7666VN"
+        ),
+        Map(
           "crossReference" -> "E05001602",
           "source" -> "7666MI"
         ),
@@ -670,7 +678,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
-      secondResult.crossRefs.length shouldBe 4
+      secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
 
