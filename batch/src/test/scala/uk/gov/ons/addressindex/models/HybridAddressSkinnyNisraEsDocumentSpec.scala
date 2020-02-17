@@ -150,6 +150,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "nagAll" -> expectedNagAll,
     "language" -> expectedNagLanguage,
     "mixedNag" -> expectedNagMixed,
+    "mixedWelshNag" -> "",
     "secondarySort" -> expectedNagSecondarySort,
     "country" -> expectedNagCountry
   )

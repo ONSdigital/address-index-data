@@ -68,7 +68,7 @@ object HybridAddressEsDocument extends EsDocument {
       row.getString(19), row.getString(15), row.getString(30),
       row.getString(31), row.getString(32), row.getString(1)
     ),
-    "mixedNag" -> generateFormattedNagAddress(
+    "mixedNag" -> (if (row.getString(29) != "ENG") "" else generateFormattedNagAddress(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       row.getString(22),
       if (row.isNullAt(23)) "" else row.getShort(23).toString,
@@ -84,7 +84,24 @@ object HybridAddressEsDocument extends EsDocument {
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
       row.getString(1)
-    ),
+    )),
+    "mixedWelshNag" -> (if (row.getString(29) == "ENG") "" else generateFormattedNagAddress(
+      if (row.isNullAt(21)) "" else row.getShort(21).toString,
+      row.getString(22),
+      if (row.isNullAt(23)) "" else row.getShort(23).toString,
+      row.getString(24),
+      normalize(row.getString(20)),
+      normalize(row.getString(11)),
+      if (row.isNullAt(16)) "" else row.getShort(16).toString,
+      row.getString(17),
+      if (row.isNullAt(18)) "" else row.getShort(18).toString,
+      row.getString(19),
+      normalize(row.getString(15)),
+      normalize(row.getString(30)),
+      normalize(row.getString(32)),
+      normalizeTowns(row.getString(31)),
+      row.getString(1)
+    )),
     "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
 

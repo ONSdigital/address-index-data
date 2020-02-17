@@ -311,6 +311,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "lpiLastUpdateDate" -> expectedNagLpiLastUpdateDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
     "mixedNag" -> expectedNagMixed,
+    "mixedWelshNag" -> "",
     "secondarySort" -> expectedNagSecondarySort,
     "country" -> expectedNagCountry
   )

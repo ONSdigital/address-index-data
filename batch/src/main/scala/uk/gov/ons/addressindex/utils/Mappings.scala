@@ -515,7 +515,23 @@ object Mappings {
                           },
                           "mixedNag": {
                               "type": "text",
-                              "index": "false"
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshNag": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
                           },
                           "secondarySort": {
                               "type": "keyword"
@@ -1330,7 +1346,23 @@ object Mappings {
                           },
                           "mixedNag": {
                               "type": "text",
-                              "index": "false"
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshNag": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
                           },
                           "secondarySort": {
                               "type": "keyword"
