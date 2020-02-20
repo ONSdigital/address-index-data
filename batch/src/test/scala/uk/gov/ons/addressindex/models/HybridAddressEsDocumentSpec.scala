@@ -111,6 +111,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedWelshNagMixed = ""
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
   val expectedNagCountry = "E"
 
@@ -231,7 +232,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
     "lpiLastUpdateDate" -> expectedNagLpiLastUpdateDate,
     "lpiEndDate" -> expectedNagLpiEndDate,
     "mixedNag" -> expectedNagMixed,
-    "mixedWelshNag" -> "",
+    "mixedWelshNag" -> expectedWelshNagMixed,
     "secondarySort" -> expectedNagSecondarySort,
     "country" -> expectedNagCountry
   )
