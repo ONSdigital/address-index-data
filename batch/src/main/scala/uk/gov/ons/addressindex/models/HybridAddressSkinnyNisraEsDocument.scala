@@ -103,7 +103,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(14)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""),
-      Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
+      Option(row.getString(15)).getOrElse("")
     ),
     "mixedPaf" -> generateFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
@@ -131,7 +131,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse(""))),
       normalize(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
       normalizeTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
-      Option(row.getString(15)).getOrElse("")
+      Option(row.getString(15)).getOrElse("")  + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
     )
   )
 
@@ -147,7 +147,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(19)).getOrElse(""),
       "",
       Option(row.getString(21)).getOrElse(""),
-      Option(row.getString(22)).getOrElse(""))
+      Option(row.getString(22)).getOrElse("")  + " " + Option(row.getString(22)).getOrElse("").replace(" ","")
+    )
 
     Map(
       "uprn" -> row.getLong(0),
