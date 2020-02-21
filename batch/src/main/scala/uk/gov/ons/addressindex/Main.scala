@@ -43,22 +43,22 @@ For usage see below:
   val password = config.getString("addressindex.elasticsearch.pass")
   val authHeader = s"Basic ${AuthUtil.encodeCredentials(username, password)}"
 
- //   each run of this application has a unique index name
-//    val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-//    val url = s"http://$nodes:$port/$indexName"
-//
-//  if (!opts.help()) {
-//    AddressIndexFileReader.validateFileNames()
-//    postMapping(indexName, skinny = opts.skinny())
-//    preLoad(indexName)
-//    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-//    postLoad(indexName)
-//  } else opts.printHelp()
+ //  each run of this application has a unique index name
+    val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+    val url = s"http://$nodes:$port/$indexName"
 
-      val indexName = "postcodetest6_current"
-      val url = s"http://$nodes:$port/$indexName"
-      postMapping(indexName, skinny = true)
-      saveHybridAddresses(historical = true, skinny = true, nisra = false)
+  if (!opts.help()) {
+    AddressIndexFileReader.validateFileNames()
+    postMapping(indexName, skinny = opts.skinny())
+    preLoad(indexName)
+    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+    postLoad(indexName)
+  } else opts.printHelp()
+
+//      val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+//      val url = s"http://$nodes:$port/$indexName"
+//      postMapping(indexName, skinny = true)
+//      saveHybridAddresses(historical = true, skinny = true, nisra = false)
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
