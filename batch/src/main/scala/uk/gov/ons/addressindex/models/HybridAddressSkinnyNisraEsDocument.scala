@@ -63,7 +63,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(row.getString(30)),
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
-      row.getString(1)
+      row.getString(1) + " " + row.getString(1).replace(" ","")
     )),
     "mixedWelshNag" -> (if (row.getString(29) == "ENG") "" else generateFormattedNagAddress(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
@@ -80,7 +80,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(row.getString(30)),
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
-      row.getString(1)
+      row.getString(1) + " " + row.getString(1).replace(" ","")
     )),
     "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
@@ -103,7 +103,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       Option(row.getString(21)).getOrElse(""),
       Option(row.getString(14)).getOrElse(""),
       Option(row.getString(22)).getOrElse(""),
-      Option(row.getString(15)).getOrElse("")),
+      Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
+    ),
     "mixedPaf" -> generateFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
@@ -116,7 +117,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(Option(row.getString(12)).getOrElse("")),
       normalize(Option(row.getString(13)).getOrElse("")),
       normalizeTowns(Option(row.getString(14)).getOrElse("")),
-      Option(row.getString(15)).getOrElse("")
+      Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
     ),
     "mixedWelshPaf" -> generateWelshFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
