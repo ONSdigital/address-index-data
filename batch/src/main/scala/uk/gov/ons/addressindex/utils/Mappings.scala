@@ -520,6 +520,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -530,6 +533,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -685,6 +691,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -695,6 +704,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           }
@@ -854,6 +866,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -1351,6 +1366,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -1361,6 +1379,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -1382,6 +1403,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
@@ -1392,6 +1416,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           }
@@ -1494,6 +1521,9 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
+                                  },
+                                  "keyword": {
+                                      "type": "keyword"
                                   }
                               }
                           },
