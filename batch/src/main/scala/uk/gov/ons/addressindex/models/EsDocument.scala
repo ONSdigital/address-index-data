@@ -129,7 +129,7 @@ abstract class EsDocument {
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
     val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
-    val paoNumbersAndStreet = List(paoNumbers, normalizeTowns(streetDescriptor)).flatMap(strToOpt).mkString(" ")
+    val paoNumbersAndStreet = List(paoNumbers, normalize(streetDescriptor)).flatMap(strToOpt).mkString(" ")
     val pao = List(strToOpt(paoText).filter(_ != organisation).map(normalize), strToOpt(paoNumbersAndStreet))
 
     (strToOpt(normalize(organisation)) :: sao ::: pao :::
