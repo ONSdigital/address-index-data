@@ -172,7 +172,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalizeTowns(Option(row.getString(14)).getOrElse("")),
       Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
     ).take(20).replaceAll(",",""),
-    "mixedWelshPaf" -> generateWelshFormattedPafAddress(
+    "mixedWelshPafStart" -> generateWelshFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
       normalize(Option(row.getString(18)).getOrElse(Option(row.getString(10)).getOrElse(""))),
