@@ -14,6 +14,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedPafAll = "DEPARTMENT CIBO FLAT E COTTAGE 6 1 THROUGHFARE WELSH1 SOME STREET WELSH2 LOCALITY WELSH3 STIXTON WELSH4 LONDON WELSH5 POSTCODE"
   val expectedPafMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE POSTCODE"
   val expectedPafWelshMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE POSTCODE"
+  val expectedPafMixedStart = "Department Cibo Fl"
+  val expectedPafWelshMixedStart = "Department Cibo Fl"
 
   // Actual Paf Values
   val actualPafBuildingNumber: Short = 1.toShort
@@ -65,6 +67,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ KL87HQ"
   val expectedWelshNagMixed = ""
+  val expectedMixedNagStart = "Something Else 6473"
+  val expectedMixedWelshNagStart = ""
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
   val expectedNagCountry = "E"
 
@@ -118,6 +122,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraPaoStartNumber = 1
   val expectedNisraSaoStartNumber = 1
   val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Thoroughfare Road, Off Here, A Locality Xyz, Little Town, AB1 7GH AB17GH"
+  val expectedNisraMixedStart = "An Organisation The"
   val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A, An Alternative Name, Off Here, A Locality Xyz, Little Town, AB1 7GH AB17GH"
   val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A THOROUGHFARE ROAD OFF HERE AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN AB1 7GH AB17GH"
   val expectedNisraAddressStatus = "APPROVED"
@@ -132,7 +137,9 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "uprn" -> expectedPafUprn,
     "pafAll" -> expectedPafAll,
     "mixedPaf" -> expectedPafMixed,
-    "mixedWelshPaf" -> expectedPafWelshMixed
+    "mixedWelshPaf" -> expectedPafWelshMixed,
+    "mixedPafStart" -> expectedPafMixedStart,
+    "mixedWelshPafStart" -> expectedPafWelshMixedStart
   )
 
   val expectedNag: Map[String, Any] = Map(
@@ -152,6 +159,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "language" -> expectedNagLanguage,
     "mixedNag" -> expectedNagMixed,
     "mixedWelshNag" -> expectedWelshNagMixed,
+    "mixedNagStart" -> expectedMixedNagStart,
+    "mixedWelshNagStart" -> expectedMixedWelshNagStart,
     "secondarySort" -> expectedNagSecondarySort,
     "country" -> expectedNagCountry
   )
@@ -211,6 +220,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "buildingNumber" -> expectedNisraBuildingNumber,
     "mixedAltNisra" -> expectedNisraAltMixed,
     "nisraAll" -> expectedNisraAll,
+    "mixedNisraStart" -> expectedNisraMixedStart,
     "secondarySort" -> expectedNisraSecondarySort,
     "localCouncil" -> expectedNisraLocalCouncil,
     "LGDCode" -> expectedNisraLGDCode

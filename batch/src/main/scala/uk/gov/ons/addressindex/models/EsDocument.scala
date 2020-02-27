@@ -138,7 +138,7 @@ abstract class EsDocument {
   }
 
   def capitalizeFirst(text: String): String = {
-    text.charAt(0).toUpper + text.substring(1)
+    if (text.isEmpty) "" else text.take(1).toUpperCase + text.drop(1)
   }
 
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,

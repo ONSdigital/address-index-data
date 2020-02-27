@@ -82,6 +82,40 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalizeTowns(row.getString(31)),
       row.getString(1) + " " + row.getString(1).replace(" ","")
     )),
+    "mixedNagStart" -> (if (row.getString(29) != "ENG") "" else generateFormattedNagAddress(
+      if (row.isNullAt(21)) "" else row.getShort(21).toString,
+      row.getString(22),
+      if (row.isNullAt(23)) "" else row.getShort(23).toString,
+      row.getString(24),
+      normalize(row.getString(20)),
+      normalize(row.getString(11)),
+      if (row.isNullAt(16)) "" else row.getShort(16).toString,
+      row.getString(17),
+      if (row.isNullAt(18)) "" else row.getShort(18).toString,
+      row.getString(19),
+      normalize(row.getString(15)),
+      normalize(row.getString(30)),
+      normalize(row.getString(32)),
+      normalizeTowns(row.getString(31)),
+      row.getString(1) + " " + row.getString(1).replace(" ","")
+    )).take(20).replaceAll(",",""),
+    "mixedWelshNagStart" -> (if (row.getString(29) == "ENG") "" else generateFormattedNagAddress(
+      if (row.isNullAt(21)) "" else row.getShort(21).toString,
+      row.getString(22),
+      if (row.isNullAt(23)) "" else row.getShort(23).toString,
+      row.getString(24),
+      normalize(row.getString(20)),
+      normalize(row.getString(11)),
+      if (row.isNullAt(16)) "" else row.getShort(16).toString,
+      row.getString(17),
+      if (row.isNullAt(18)) "" else row.getShort(18).toString,
+      row.getString(19),
+      normalize(row.getString(15)),
+      normalize(row.getString(30)),
+      normalize(row.getString(32)),
+      normalizeTowns(row.getString(31)),
+      row.getString(1) + " " + row.getString(1).replace(" ","")
+    )).take(20).replaceAll(",",""),
     "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
 
@@ -132,7 +166,35 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       normalize(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
       normalizeTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
       Option(row.getString(15)).getOrElse("")  + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
-    )
+    ),
+    "mixedPafStart" -> generateFormattedPafAddress(
+      Option(row.getString(23)).getOrElse(""),
+      if (row.isNullAt(9)) "" else row.getShort(9).toString,
+      Option(row.getString(10)).getOrElse(""),
+      normalize(Option(row.getString(11)).getOrElse("")),
+      normalize(Option(row.getString(6)).getOrElse("")),
+      normalize(Option(row.getString(5)).getOrElse("")),
+      normalize(Option(row.getString(7)).getOrElse("")),
+      normalize(Option(row.getString(8)).getOrElse("")),
+      normalize(Option(row.getString(12)).getOrElse("")),
+      normalize(Option(row.getString(13)).getOrElse("")),
+      normalizeTowns(Option(row.getString(14)).getOrElse("")),
+      Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
+    ).take(20).replaceAll(",",""),
+    "mixedWelshPaf" -> generateWelshFormattedPafAddress(
+      Option(row.getString(23)).getOrElse(""),
+      if (row.isNullAt(9)) "" else row.getShort(9).toString,
+      normalize(Option(row.getString(18)).getOrElse(Option(row.getString(10)).getOrElse(""))),
+      normalize(Option(row.getString(19)).getOrElse(Option(row.getString(11)).getOrElse(""))),
+      normalize(Option(row.getString(6)).getOrElse("")),
+      normalize(Option(row.getString(5)).getOrElse("")),
+      normalize(Option(row.getString(7)).getOrElse("")),
+      normalize(Option(row.getString(8)).getOrElse("")),
+      normalize(Option(row.getString(20)).getOrElse(Option(row.getString(12)).getOrElse(""))),
+      normalize(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
+      normalizeTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
+      Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
+    ).take(20).replaceAll(",","")
   )
 
   def rowToNisra(row: Row): Map[String, Any] = {
@@ -161,6 +223,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument {
       "saoStartNumber" -> toShort(row.getString(9)).orNull,
       "classificationCode" -> row.getString(31),
       "mixedNisra" -> nisraFormatted(0),
+      "mixedNisraStart" -> nisraFormatted(0).take(20).replaceAll(",",""),
       "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(22),
