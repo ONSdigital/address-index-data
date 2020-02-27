@@ -520,9 +520,6 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
                           },
@@ -533,11 +530,14 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                          "mixedNagStart": {
+                              "type": "keyword"
+                          },
+                          "mixedWelshNagStart": {
+                              "type": "keyword"
                           },
                           "secondarySort": {
                               "type": "keyword"
@@ -691,9 +691,6 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
                           },
@@ -704,11 +701,14 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                          "mixedPafStart": {
+                             "type": "keyword"
+                          },
+                          "mixedWelshPafStart": {
+                            "type": "keyword"
                           }
                       }
                   },
@@ -866,11 +866,11 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                          "mixedNisraStart": {
+                           "type": "keyword"
                           },
                           "mixedAltNisra": {
                               "type": "text",
@@ -1366,9 +1366,6 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
                           },
@@ -1379,11 +1376,14 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                          "mixedNagStart": {
+                              "type": "keyword"
+                          },
+                          "mixedWelshNagStart": {
+                              "type": "keyword"
                           },
                           "secondarySort": {
                               "type": "keyword"
@@ -1403,11 +1403,8 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
-                              }
+                               }
                           },
                           "mixedWelshPaf": {
                               "type": "text",
@@ -1416,11 +1413,14 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                           "mixedPafStart": {
+                             "type": "keyword"
+                          },
+                            "mixedWelshPafStart": {
+                              "type": "keyword"
                           }
                       }
                   },
@@ -1521,11 +1521,11 @@ object Mappings {
                                       "search_analyzer": "keyword_analyzer",
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
-                                  },
-                                  "keyword": {
-                                      "type": "keyword"
                                   }
                               }
+                          },
+                         "mixedNisraStart": {
+                           "type": "keyword"
                           },
                           "mixedAltNisra": {
                               "type": "text",
