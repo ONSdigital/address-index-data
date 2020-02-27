@@ -129,12 +129,16 @@ abstract class EsDocument {
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
     val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
-    val paoNumbersAndStreet = List(paoNumbers, normalizeTowns(streetDescriptor)).flatMap(strToOpt).mkString(" ")
+    val paoNumbersAndStreet = List(paoNumbers, capitalizeFirst(normalizeTowns(streetDescriptor))).flatMap(strToOpt).mkString(" ")
     val pao = List(strToOpt(paoText).filter(_ != organisation).map(normalize), strToOpt(paoNumbersAndStreet))
 
     (strToOpt(normalize(organisation)) :: sao ::: pao :::
       strToOpt(normalizeTowns(locality)) :: strToOpt(normalizeTowns(townName)) :: strToOpt(postcodeLocator) :: Nil)
       .flatten.mkString(", ")
+  }
+
+  def capitalizeFirst(text: String): String = {
+    text.charAt(0).toUpper + text.substring(1)
   }
 
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,

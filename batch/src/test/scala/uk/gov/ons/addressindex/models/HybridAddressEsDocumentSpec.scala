@@ -38,8 +38,8 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedPafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedPafRecordIdentifier: Byte = 27.toByte
   val expectedPafAll = "DEPARTMENT CIBO FLAT E COTTAGE 6 1 THROUGHFARE WELSH1 SOME STREET WELSH2 LOCALITY WELSH3 STIXTON WELSH4 LONDON WELSH5 POSTCODE"
-  val expectedPafMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE"
-  val expectedPafWelshMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE"
+  val expectedPafMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE POSTCODE"
+  val expectedPafWelshMixed = "Department, Cibo, Flat E, Cottage, PO BOX 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE POSTCODE"
 
   // Actual Paf values
   val actualPafBuildingNumber: Short = 1.toShort
@@ -110,7 +110,7 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNagLpiLastUpdateDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ"
+  val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ KL87HQ"
   val expectedWelshNagMixed = ""
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
   val expectedNagCountry = "E"
@@ -1098,5 +1098,18 @@ class HybridAddressEsDocumentSpec extends WordSpec with Matchers {
       result shouldBe List("22B Baker Street", "Sixton", "London", "POSTCODE")
 
     }
+
+    "captalize first character of string" in {
+      // Given
+      val inputString = "the Oaks"
+      val outputString = "The Oaks"
+
+      //When
+      val result = HybridAddressEsDocument.capitalizeFirst(inputString)
+
+      // Then
+      result shouldBe outputString
+    }
+
   }
 }
