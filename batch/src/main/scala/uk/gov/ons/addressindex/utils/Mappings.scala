@@ -400,7 +400,12 @@ object Mappings {
                           "postcodeLocator": {
                               "type": "text",
                               "index": "true",
-                              "analyzer": "keyword"
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
                           },
                           "saoEndNumber": {
                               "type": "short",
@@ -1313,7 +1318,12 @@ object Mappings {
                           "postcodeLocator": {
                               "type": "text",
                               "index": "true",
-                              "analyzer": "keyword"
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
                           },
                           "saoStartNumber": {
                               "type": "short",

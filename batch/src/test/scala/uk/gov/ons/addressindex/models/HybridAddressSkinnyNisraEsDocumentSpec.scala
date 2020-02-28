@@ -135,7 +135,6 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
   val expectedPaf: Map[String, Any] = Map(
     "uprn" -> expectedPafUprn,
-    "pafAll" -> expectedPafAll,
     "mixedPaf" -> expectedPafMixed,
     "mixedWelshPaf" -> expectedPafWelshMixed,
     "mixedPafStart" -> expectedPafMixedStart,
