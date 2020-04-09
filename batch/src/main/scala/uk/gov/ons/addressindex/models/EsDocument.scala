@@ -22,7 +22,7 @@ abstract class EsDocument {
                   postTown: String, postcode: String): Seq[String] = {
     val thoroughfares = Seq(dependentThoroughfare, thoroughfare).map(normalize).map(strToOpt)
     val premises = Seq(subBuildingName, buildingName, buildingNumber).map(normalize).map(strToOpt)
-    val poBox = strToOpt(poBoxNumber).map("PO BOX " + _)
+    val poBox = strToOpt(poBoxNumber).map("PO Box " + _)
 
     // merge the first entry in thoroughfare, and the last entry in premises, if they exist
     val premsAndThoroughfare = (premises, thoroughfares) match {
@@ -124,7 +124,7 @@ abstract class EsDocument {
                                   streetDescriptor: String, locality: String, townName: String, postcodeLocator: String
                                  ): String = {
 
-    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else t)
+    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else normalize(t))
     val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
