@@ -124,7 +124,7 @@ abstract class EsDocument {
                                   streetDescriptor: String, locality: String, townName: String, postcodeLocator: String
                                  ): String = {
 
-    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else t)
+    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else normalize(t))
     val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
