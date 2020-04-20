@@ -394,7 +394,10 @@ object Mappings {
                           ]
                       },
                       "edge_ngram_analyzer": {
-                          "filter": ["lowercase", "english_poss_stemmer", "edge_ngram","address_synonym_filter"],
+                          "filter": ["lowercase",
+                           "english_poss_stemmer",
+                           "address_synonym_filter",
+                           "edge_ngram"],
                           "tokenizer": "standard"
                       },
                       "keyword_analyzer": {
@@ -1081,6 +1084,7 @@ object Mappings {
                   "filter": {
                       "address_synonym_filter": {
                           "type": "synonym",
+                          "lenient": "true",
                           "synonyms": ["ADJ, ADJACENT",
                               "ALY => ALLEY, ALY",
                               "ANX, ANNEX, ANNEXE",
@@ -1445,8 +1449,8 @@ object Mappings {
                       "edge_ngram_analyzer": {
                           "filter": ["lowercase",
                               "english_poss_stemmer",
-                              "edge_ngram",
-                              "address_synonym_filter"
+                              "address_synonym_filter",
+                              "edge_ngram"
                           ],
                           "tokenizer": "standard"
                       },
