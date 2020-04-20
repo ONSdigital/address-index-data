@@ -318,7 +318,7 @@ object Mappings {
                               "NPG, NATIONAL PORTRAIT GALLERY",
                               "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
                               "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
-                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ONS, OFFICE FOR NATIONAL STATISTICS",
                               "ORR, OFFICE OF RAIL AND ROAD",
                               "OS, ORDINANCE SURVEY",
                               "OU, OPEN UNIVERSITY",
@@ -394,7 +394,7 @@ object Mappings {
                           ]
                       },
                       "edge_ngram_analyzer": {
-                          "filter": ["lowercase", "english_poss_stemmer", "edge_ngram"],
+                          "filter": ["lowercase", "english_poss_stemmer", "edge_ngram","address_synonym_filter"],
                           "tokenizer": "standard"
                       },
                       "keyword_analyzer": {
@@ -1375,7 +1375,7 @@ object Mappings {
                               "NPG, NATIONAL PORTRAIT GALLERY",
                               "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
                               "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
-                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ONS, OFFICE FOR NATIONAL STATISTICS",
                               "ORR, OFFICE OF RAIL AND ROAD",
                               "OS, ORDINANCE SURVEY",
                               "OU, OPEN UNIVERSITY",
@@ -1445,7 +1445,8 @@ object Mappings {
                       "edge_ngram_analyzer": {
                           "filter": ["lowercase",
                               "english_poss_stemmer",
-                              "edge_ngram"
+                              "edge_ngram",
+                              "address_synonym_filter"
                           ],
                           "tokenizer": "standard"
                       },
