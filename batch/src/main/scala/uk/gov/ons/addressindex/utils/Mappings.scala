@@ -189,7 +189,7 @@ object Mappings {
                               "CO, COMPANY",
                               "PLC, CCC => CO, COMPANY, PLC, CCC",
                               "CORP, CORPORATION",
-                              "INC, INCOMPORATED, CORPORATION",
+                              "INC, INCORPORATED, CORPORATION",
                               "E => EAST, E",
                               "W => WEST, W",
                               "S => SOUTH, S",
@@ -249,7 +249,101 @@ object Mappings {
                               "FARM, FARMHOUSE",
                               "BUSINESS, INDUSTRIAL",
                               "DLR, DOCKLANDS LIGHT RAILWAY",
-                              "POST, DELIVERY"
+                              "POST, DELIVERY",
+                              "AA, AUTOMOBILE ASSOCIATION",
+                              "ABTA, ASSOCIATION OF BRITISH TRAVEL AGENTS",
+                              "ACAS, ADVISORY CONCILIATION AND ARBITRATION SERVICE",
+                              "AHRC, ARTS AND HUMANITIES RESEARCH COUNCIL",
+                              "ASA, ADVERTISING STANDARDS AUTHORITY",
+                              "BA, BRITISH AIRWAYS",
+                              "BAA, BRITISH AIRPORTS AUTHORITY",
+                              "BAE, BRITISH AEROSPACE",
+                              "BAFTA, BRITISH ACADEMY OF FILM AND TELEVISION ARTS",
+                              "BAT, BRITISH AMERICAN TOBACCO",
+                              "BBC, BRITISH BROADCASTING CORPORATION",
+                              "BBFC, BRITISH BOARD OF FILM CLASSIFICATION",
+                              "BBSRC, BIOTECHNOLOGY AND BIOLOGICAL SCIENCES RESEARCH COUNCIL",
+                              "BCC, BRITISH CHAMBERS OF COMMERCE",
+                              "BFI, BRITISH FILM INSTITUTE",
+                              "BHS, BRITISH HOME STORES",
+                              "BMA, BRITISH MEDICAL ASSOCIATION",
+                              "BNFL, BRITISH NUCLEAR FUELS LIMITED",
+                              "BOE, BANK OF ENGLAND",
+                              "BP, BRITISH PETROLEUM",
+                              "BR, BRITISH RAIL",
+                              "BSI, BRITISH STANDARDS INSTITUTION",
+                              "BT, BRITISH TELECOM",
+                              "CAA, CIVIL AVIATION AUTHORITY",
+                              "CAB, CITIZENS ADVICE BUREAU",
+                              "CAMRA, CAMPAIGN FOR REAL ALE",
+                              "CID, CRIMINAL INVESTIGATION DEPARTMENT",
+                              "CMA, COMPETITION AND MARKETS AUTHORITY",
+                              "CPS, CROWN PROSECUTION SERVICE",
+                              "CRB, CRIMINAL RECORDS BUREAU",
+                              "CUP, CAMBRIDGE UNIVERSITY PRESS",
+                              "CWU, COMMUNICATION WORKERS UNION",
+                              "DCMS, DEPARTMENT FOR DIGITAL CULTURE MEDIA AND SPORT",
+                              "DEFRA, DEPARTMENT FOR ENVIRONMENT FOOD AND RURAL AFFAIRS",
+                              "DIT, DEPARTMENT FOR INTERNATIONAL TRADE",
+                              "DVLA, DRIVER AND VEHICLE LICENSING AGENCY",
+                              "DWP, DEPARTMENT OF WORK AND PENSIONS",
+                              "EHRC, EQUALITY AND HUMAN RIGHTS COMMISSION",
+                              "ENO, ENGLISH NATIONAL OPERA",
+                              "EPSRC, ENGINEERING AND PHYSICAL RESEARCH COUNCIL",
+                              "ESRC, ECONOMIC AND SOCIAL RESEARCH COUNCIL",
+                              "FA, THE FOOTBALL ASSOCIATION",
+                              "FCA, FINANCIAL CONDUCT AUTHORITY",
+                              "FCO, FOREIGN AND COMMONWEALTH OFFICE",
+                              "GCHQ, GOVERNMENT COMMUNICATION HEADQUARTERS",
+                              "GSK, GLAXOSMITHKLINE",
+                              "HBOS, HALIFAX BANK OF SCOTLAND",
+                              "HMP, HER MAJESTY PRISON",
+                              "HMRC, HER MAJESTYS REVENUE AND CUSTOMS",
+                              "HMV, HIS MASTERS VOICE",
+                              "HSBC, HONG KONG AND SHANGHAI BANKING CORPORATION",
+                              "HSE, HEALTH AND SAFETY EXECUTIVE",
+                              "IPCC, INDEPENDENT POLICE COMPLAINTS COMMISSION",
+                              "IPPR, INSTITUTE FOR PUBLIC POLICY RESEARCH",
+                              "ITN, INDEPENDENT TELEVISION NEWS",
+                              "ITV, INDEPENDENT TELEVISION",
+                              "LSE, LONDON SCHOOL OF ECONOMICS AND POLITICAL SCIENCE",
+                              "LTA, LAWN TENNIS ASSOCIATION",
+                              "MOD, MINISTRY OF DEFENCE",
+                              "MOJ, MINISTRY OF JUSTICE",
+                              "MORI, MARKET AND OPINION RESEARCH INTERNATIONAL",
+                              "MRC, MEDICAL RESEARCH COUNCIL",
+                              "NCA, NATIONAL CRIME AGENCY",
+                              "NHS, NATIONAL HEALTH SERVICE",
+                              "NIESR, THE NATIONAL INSTITUTE OF ECONOMIC AND SOCIAL RESEARCH",
+                              "NPG, NATIONAL PORTRAIT GALLERY",
+                              "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
+                              "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
+                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ORR, OFFICE OF RAIL AND ROAD",
+                              "OS, ORDINANCE SURVEY",
+                              "OU, OPEN UNIVERSITY",
+                              "OUP, OXFORD UNIVERSITY PRESS",
+                              "PWC, PRICEWATERHOUSECOOPERS",
+                              "RA, ROYAL ACADEMY",
+                              "RAC, THE ROYAL AUTOMOBILE CLUB",
+                              "RADA, ROYAL ACADEMIC OF DRAMATIC ART",
+                              "RAF, ROYAL AIR FORCE",
+                              "RBS, ROYAL BANK OF SCOTLAND",
+                              "RCA, ROYAL COLLEGE OF ART",
+                              "RCN, ROYAL COLLEGE OF NURSING",
+                              "RIBA, ROYAL INSTITUTE OF BRITISH ARCHITECTS",
+                              "RSA, ROYAL SOCIETY FOR THE ENCOURAGEMENT OF ARTS, MANUFACTURES AND COMMERCE",
+                              "RSPB, ROYAL SOCIETY FOR THE PROTECTION OF BIRDS",
+                              "RSPCA, ROYAL SOCIETY FOR THE PREVENTION OF CRUELTY TO ANIMALS",
+                              "RUC, ROYAL ULSTER CONSTABULARY",
+                              "SAS, SPECIAL AIR SERVICE",
+                              "SFO, THE SERIOUS FRAUD OFFICE",
+                              "SOAS, SCHOOL OF ORIENTAL AND AFRICAN STUDIES",
+                              "STFC, SCIENCE AND TECHNOLOGY FACILITIES COUNCIL",
+                              "TCCB, TEST AND COUNTY CRICKET BOARD",
+                              "TFL, TRANSPORT FOR LONDON",
+                              "TUC, TRADES UNION CONGRESS",
+                              "WWF, WORLD WILDLIFE FUND FOR NATURE"
                           ]
                       },
                       "shingle_filter": {
@@ -400,7 +494,12 @@ object Mappings {
                           "postcodeLocator": {
                               "type": "text",
                               "index": "true",
-                              "analyzer": "keyword"
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
                           },
                           "saoEndNumber": {
                               "type": "short",
@@ -462,6 +561,10 @@ object Mappings {
                               "type": "byte",
                               "index": "false"
                           },
+                          "country": {
+                              "type": "text",
+                              "index": "false"
+                          },
                           "usrnMatchIndicator": {
                               "type": "byte",
                               "index": "false"
@@ -511,7 +614,29 @@ object Mappings {
                           },
                           "mixedNag": {
                               "type": "text",
-                              "index": "false"
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshNag": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedNagStart": {
+                              "type": "keyword"
+                          },
+                          "mixedWelshNagStart": {
+                              "type": "keyword"
                           },
                           "secondarySort": {
                               "type": "keyword"
@@ -677,6 +802,12 @@ object Mappings {
                                       "analyzer": "edge_ngram_analyzer"
                                   }
                               }
+                          },
+                          "mixedPafStart": {
+                             "type": "keyword"
+                          },
+                          "mixedWelshPafStart": {
+                            "type": "keyword"
                           }
                       }
                   },
@@ -817,6 +948,16 @@ object Mappings {
                               "index": "true",
                               "analyzer": "keyword"
                           },
+                          "localCouncil": {
+                              "type": "text",
+                              "index": "false",
+                              "analyzer": "keyword"
+                          },
+                          "LGDCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
                           "mixedNisra": {
                               "type": "text",
                               "fields": {
@@ -826,6 +967,9 @@ object Mappings {
                                       "analyzer": "edge_ngram_analyzer"
                                   }
                               }
+                          },
+                          "mixedNisraStart": {
+                           "type": "keyword"
                           },
                           "mixedAltNisra": {
                               "type": "text",
@@ -887,7 +1031,22 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
+                  "censusAddressType": {
+                       "type": "text",
+                       "index": "true",
+                       "analyzer": "keyword"
+                  },
+                  "censusEstabType": {
+                       "type": "text",
+                       "index": "true",
+                       "analyzer": "keyword"
+                  },
                   "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "countryCode": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
@@ -1087,7 +1246,7 @@ object Mappings {
                               "CO, COMPANY",
                               "PLC, CCC => CO, COMPANY, PLC, CCC",
                               "CORP, CORPORATION",
-                              "INC, INCOMPORATED, CORPORATION",
+                              "INC, INCORPORATED, CORPORATION",
                               "E => EAST, E",
                               "W => WEST, W",
                               "S => SOUTH, S",
@@ -1147,7 +1306,101 @@ object Mappings {
                               "FARM, FARMHOUSE",
                               "BUSINESS, INDUSTRIAL",
                               "DLR, DOCKLANDS LIGHT RAILWAY",
-                              "POST, DELIVERY"
+                              "POST, DELIVERY",
+                              "AA, AUTOMOBILE ASSOCIATION",
+                              "ABTA, ASSOCIATION OF BRITISH TRAVEL AGENTS",
+                              "ACAS, ADVISORY CONCILIATION AND ARBITRATION SERVICE",
+                              "AHRC, ARTS AND HUMANITIES RESEARCH COUNCIL",
+                              "ASA, ADVERTISING STANDARDS AUTHORITY",
+                              "BA, BRITISH AIRWAYS",
+                              "BAA, BRITISH AIRPORTS AUTHORITY",
+                              "BAE, BRITISH AEROSPACE",
+                              "BAFTA, BRITISH ACADEMY OF FILM AND TELEVISION ARTS",
+                              "BAT, BRITISH AMERICAN TOBACCO",
+                              "BBC, BRITISH BROADCASTING CORPORATION",
+                              "BBFC, BRITISH BOARD OF FILM CLASSIFICATION",
+                              "BBSRC, BIOTECHNOLOGY AND BIOLOGICAL SCIENCES RESEARCH COUNCIL",
+                              "BCC, BRITISH CHAMBERS OF COMMERCE",
+                              "BFI, BRITISH FILM INSTITUTE",
+                              "BHS, BRITISH HOME STORES",
+                              "BMA, BRITISH MEDICAL ASSOCIATION",
+                              "BNFL, BRITISH NUCLEAR FUELS LIMITED",
+                              "BOE, BANK OF ENGLAND",
+                              "BP, BRITISH PETROLEUM",
+                              "BR, BRITISH RAIL",
+                              "BSI, BRITISH STANDARDS INSTITUTION",
+                              "BT, BRITISH TELECOM",
+                              "CAA, CIVIL AVIATION AUTHORITY",
+                              "CAB, CITIZENS ADVICE BUREAU",
+                              "CAMRA, CAMPAIGN FOR REAL ALE",
+                              "CID, CRIMINAL INVESTIGATION DEPARTMENT",
+                              "CMA, COMPETITION AND MARKETS AUTHORITY",
+                              "CPS, CROWN PROSECUTION SERVICE",
+                              "CRB, CRIMINAL RECORDS BUREAU",
+                              "CUP, CAMBRIDGE UNIVERSITY PRESS",
+                              "CWU, COMMUNICATION WORKERS UNION",
+                              "DCMS, DEPARTMENT FOR DIGITAL CULTURE MEDIA AND SPORT",
+                              "DEFRA, DEPARTMENT FOR ENVIRONMENT FOOD AND RURAL AFFAIRS",
+                              "DIT, DEPARTMENT FOR INTERNATIONAL TRADE",
+                              "DVLA, DRIVER AND VEHICLE LICENSING AGENCY",
+                              "DWP, DEPARTMENT OF WORK AND PENSIONS",
+                              "EHRC, EQUALITY AND HUMAN RIGHTS COMMISSION",
+                              "ENO, ENGLISH NATIONAL OPERA",
+                              "EPSRC, ENGINEERING AND PHYSICAL RESEARCH COUNCIL",
+                              "ESRC, ECONOMIC AND SOCIAL RESEARCH COUNCIL",
+                              "FA, THE FOOTBALL ASSOCIATION",
+                              "FCA, FINANCIAL CONDUCT AUTHORITY",
+                              "FCO, FOREIGN AND COMMONWEALTH OFFICE",
+                              "GCHQ, GOVERNMENT COMMUNICATION HEADQUARTERS",
+                              "GSK, GLAXOSMITHKLINE",
+                              "HBOS, HALIFAX BANK OF SCOTLAND",
+                              "HMP, HER MAJESTY PRISON",
+                              "HMRC, HER MAJESTYS REVENUE AND CUSTOMS",
+                              "HMV, HIS MASTERS VOICE",
+                              "HSBC, HONG KONG AND SHANGHAI BANKING CORPORATION",
+                              "HSE, HEALTH AND SAFETY EXECUTIVE",
+                              "IPCC, INDEPENDENT POLICE COMPLAINTS COMMISSION",
+                              "IPPR, INSTITUTE FOR PUBLIC POLICY RESEARCH",
+                              "ITN, INDEPENDENT TELEVISION NEWS",
+                              "ITV, INDEPENDENT TELEVISION",
+                              "LSE, LONDON SCHOOL OF ECONOMICS AND POLITICAL SCIENCE",
+                              "LTA, LAWN TENNIS ASSOCIATION",
+                              "MOD, MINISTRY OF DEFENCE",
+                              "MOJ, MINISTRY OF JUSTICE",
+                              "MORI, MARKET AND OPINION RESEARCH INTERNATIONAL",
+                              "MRC, MEDICAL RESEARCH COUNCIL",
+                              "NCA, NATIONAL CRIME AGENCY",
+                              "NHS, NATIONAL HEALTH SERVICE",
+                              "NIESR, THE NATIONAL INSTITUTE OF ECONOMIC AND SOCIAL RESEARCH",
+                              "NPG, NATIONAL PORTRAIT GALLERY",
+                              "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
+                              "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
+                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ORR, OFFICE OF RAIL AND ROAD",
+                              "OS, ORDINANCE SURVEY",
+                              "OU, OPEN UNIVERSITY",
+                              "OUP, OXFORD UNIVERSITY PRESS",
+                              "PWC, PRICEWATERHOUSECOOPERS",
+                              "RA, ROYAL ACADEMY",
+                              "RAC, THE ROYAL AUTOMOBILE CLUB",
+                              "RADA, ROYAL ACADEMIC OF DRAMATIC ART",
+                              "RAF, ROYAL AIR FORCE",
+                              "RBS, ROYAL BANK OF SCOTLAND",
+                              "RCA, ROYAL COLLEGE OF ART",
+                              "RCN, ROYAL COLLEGE OF NURSING",
+                              "RIBA, ROYAL INSTITUTE OF BRITISH ARCHITECTS",
+                              "RSA, ROYAL SOCIETY FOR THE ENCOURAGEMENT OF ARTS, MANUFACTURES AND COMMERCE",
+                              "RSPB, ROYAL SOCIETY FOR THE PROTECTION OF BIRDS",
+                              "RSPCA, ROYAL SOCIETY FOR THE PREVENTION OF CRUELTY TO ANIMALS",
+                              "RUC, ROYAL ULSTER CONSTABULARY",
+                              "SAS, SPECIAL AIR SERVICE",
+                              "SFO, THE SERIOUS FRAUD OFFICE",
+                              "SOAS, SCHOOL OF ORIENTAL AND AFRICAN STUDIES",
+                              "STFC, SCIENCE AND TECHNOLOGY FACILITIES COUNCIL",
+                              "TCCB, TEST AND COUNTY CRICKET BOARD",
+                              "TFL, TRANSPORT FOR LONDON",
+                              "TUC, TRADES UNION CONGRESS",
+                              "WWF, WORLD WILDLIFE FUND FOR NATURE"
                           ]
                       },
                       "shingle_filter": {
@@ -1253,13 +1506,22 @@ object Mappings {
                           "postcodeLocator": {
                               "type": "text",
                               "index": "true",
-                              "analyzer": "keyword"
+                              "analyzer": "keyword",
+                              "fields": {
+                                  "keyword": {
+                                      "type": "keyword"
+                                  }
+                              }
                           },
                           "saoStartNumber": {
                               "type": "short",
                               "index": "true"
                           },
                           "language": {
+                              "type": "text",
+                              "index": "false"
+                          },
+                          "country": {
                               "type": "text",
                               "index": "false"
                           },
@@ -1295,20 +1557,31 @@ object Mappings {
                                   }
                               }
                           },
-                          "lpiStartDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
-                          "lpiEndDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
                           "mixedNag": {
                               "type": "text",
-                              "index": "false"
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedWelshNag": {
+                              "type": "text",
+                              "fields": {
+                                  "partial": {
+                                      "search_analyzer": "keyword_analyzer",
+                                      "type": "text",
+                                      "analyzer": "edge_ngram_analyzer"
+                                  }
+                              }
+                          },
+                          "mixedNagStart": {
+                              "type": "keyword"
+                          },
+                          "mixedWelshNagStart": {
+                              "type": "keyword"
                           },
                           "secondarySort": {
                               "type": "keyword"
@@ -1317,17 +1590,6 @@ object Mappings {
                   },
                   "paf": {
                       "properties": {
-                          "endDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true",
-                              "null_value": "2021-03-31T00:00:00Z"
-                          },
-                          "startDate": {
-                              "type": "date",
-                              "format": "strict_date_optional_time||epoch_millis",
-                              "index": "true"
-                          },
                           "uprn": {
                               "type": "long",
                               "index": "false"
@@ -1340,7 +1602,7 @@ object Mappings {
                                       "type": "text",
                                       "analyzer": "edge_ngram_analyzer"
                                   }
-                              }
+                               }
                           },
                           "mixedWelshPaf": {
                               "type": "text",
@@ -1351,6 +1613,12 @@ object Mappings {
                                       "analyzer": "edge_ngram_analyzer"
                                   }
                               }
+                          },
+                           "mixedPafStart": {
+                             "type": "keyword"
+                          },
+                            "mixedWelshPafStart": {
+                              "type": "keyword"
                           }
                       }
                   },
@@ -1434,6 +1702,16 @@ object Mappings {
                               "index": "true",
                               "analyzer": "keyword"
                           },
+                          "localCouncil": {
+                              "type": "text",
+                              "index": "false",
+                              "analyzer": "keyword"
+                          },
+                          "LGDCode": {
+                              "type": "text",
+                              "index": "true",
+                              "analyzer": "keyword"
+                          },
                           "mixedNisra": {
                               "type": "text",
                               "fields": {
@@ -1443,6 +1721,9 @@ object Mappings {
                                       "analyzer": "edge_ngram_analyzer"
                                   }
                               }
+                          },
+                         "mixedNisraStart": {
+                           "type": "keyword"
                           },
                           "mixedAltNisra": {
                               "type": "text",
@@ -1466,7 +1747,22 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
+                  "censusAddressType": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "censusEstabType": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
                   "fromSource": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "countryCode": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"

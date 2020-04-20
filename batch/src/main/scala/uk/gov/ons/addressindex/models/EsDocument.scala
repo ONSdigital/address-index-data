@@ -22,7 +22,7 @@ abstract class EsDocument {
                   postTown: String, postcode: String): Seq[String] = {
     val thoroughfares = Seq(dependentThoroughfare, thoroughfare).map(normalize).map(strToOpt)
     val premises = Seq(subBuildingName, buildingName, buildingNumber).map(normalize).map(strToOpt)
-    val poBox = strToOpt(poBoxNumber).map("PO BOX " + _)
+    val poBox = strToOpt(poBoxNumber).map("PO Box " + _)
 
     // merge the first entry in thoroughfare, and the last entry in premises, if they exist
     val premsAndThoroughfare = (premises, thoroughfares) match {
@@ -124,17 +124,21 @@ abstract class EsDocument {
                                   streetDescriptor: String, locality: String, townName: String, postcodeLocator: String
                                  ): String = {
 
-    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else t)
+    val saoTextNormal = strToOpt(saoText).map(t => if (!t.contains("PO BOX")) normalize(t) else normalize(t))
     val saoNumbers = hyphenateNumbers(saoStartNumber, saoStartSuffix, saoEndNumber, saoEndSuffix).toUpperCase
     val sao = List(strToOpt(normalize(saoNumbers)), saoTextNormal.filter(_ != organisation))
 
     val paoNumbers = hyphenateNumbers(paoStartNumber, paoStartSuffix, paoEndNumber, paoEndSuffix).toUpperCase
-    val paoNumbersAndStreet = List(paoNumbers, normalizeTowns(streetDescriptor)).flatMap(strToOpt).mkString(" ")
+    val paoNumbersAndStreet = List(paoNumbers, capitalizeFirst(normalizeTowns(streetDescriptor))).flatMap(strToOpt).mkString(" ")
     val pao = List(strToOpt(paoText).filter(_ != organisation).map(normalize), strToOpt(paoNumbersAndStreet))
 
     (strToOpt(normalize(organisation)) :: sao ::: pao :::
       strToOpt(normalizeTowns(locality)) :: strToOpt(normalizeTowns(townName)) :: strToOpt(postcodeLocator) :: Nil)
       .flatten.mkString(", ")
+  }
+
+  def capitalizeFirst(text: String): String = {
+    if (text.isEmpty) "" else text.take(1).toUpperCase + text.drop(1)
   }
 
   def concatNag(saoStartNumber: String, saoEndNumber: String, saoEndSuffix: String, saoStartSuffix: String,
@@ -266,5 +270,21 @@ abstract class EsDocument {
     if (toInt(ntok).isDefined) tok.replace(ntok,StringUtils.leftPad(ntok,4,"0")) else tok
     }
     newTokens.mkString(" ")
+  }
+
+  def nisraCouncilNameToCode(cname: String): String = cname match {
+
+    case "ANTRIM AND NEWTONABBEY" => "N09000001"
+    case "BANBRIDGE AND CRAIGAVON" => "N09000002"
+    case "BELFAST" => "N09000003"
+    case "CAUSEWAY COAST AND GLENS" => "N09000004"
+    case "DERRY CITY AND STRABANE" => "N09000005"
+    case "FERMANAGH AND OMAGH" => "N09000006"
+    case "LISBURN AND CASTLEREAGH" => "N09000007"
+    case "MID AND EAST ANTRIM" => "N09000008"
+    case "MID ULSTER" => "N09000009"
+    case "NEWRY, MOURNE AND DOWN" => "N09000010"
+    case "ARDS AND NORTH DOWN" => "N09000011"
+    case _ => "N09000012"
   }
 }

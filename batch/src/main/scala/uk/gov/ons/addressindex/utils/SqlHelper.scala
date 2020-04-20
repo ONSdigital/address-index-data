@@ -91,7 +91,8 @@ object SqlHelper {
         $streetTable.streetClassification,
         $lpiTable.startDate as lpiStartDate,
         $lpiTable.lastUpdateDate as lpiLastUpdateDate,
-        $lpiTable.endDate as lpiEndDate
+        $lpiTable.endDate as lpiEndDate,
+        $blpuTable.country
       FROM $blpuTable
       LEFT JOIN $organisationTable ON $blpuTable.uprn = $organisationTable.uprn
       LEFT JOIN $lpiTable ON $blpuTable.uprn = $lpiTable.uprn
@@ -189,7 +190,8 @@ object SqlHelper {
         functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"),
         functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
         functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
-        functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode")
+        functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode"),
+        functions.regexp_replace(nisra("localCouncil"), "NULL", "").as("localCouncil")
 
       ).filter("addressStatus != 'REJECTED'")
 
@@ -239,6 +241,11 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
 
+    // DataFrame of CrossRefs by uprn
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
     // Construct Hierarchy DataFrame
     val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
@@ -251,6 +258,7 @@ object SqlHelper {
       .select("uprn", "parentUprn")
 
     val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
@@ -262,7 +270,8 @@ object SqlHelper {
         val nisra = Option(row.getAs[Seq[Row]]("nisra")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
         val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
-
+        val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
+        val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputLpis = lpis.map(row => HybridAddressSkinnyNisraEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
@@ -274,6 +283,12 @@ object SqlHelper {
           else
             Some(nisraCodeToABP(nisraClassCode))
         }
+
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
@@ -283,6 +298,8 @@ object SqlHelper {
 
         val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
 
+        val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -290,8 +307,11 @@ object SqlHelper {
           outputPaf,
           outputNisra,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -358,6 +378,12 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
 
+    // DataFrame of CrossRefs by uprn
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+
     // Construct Hierarchy DataFrame
     val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
@@ -370,6 +396,7 @@ object SqlHelper {
       .select("uprn", "parentUprn")
 
     val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
@@ -380,10 +407,16 @@ object SqlHelper {
         val lpis = Option(row.getAs[Seq[Row]]("lpis")).getOrElse(Seq())
         val parentUprn = Option(row.getAs[Long]("parentUprn"))
         val classifications = Option(row.getAs[Seq[Row]]("classification")).getOrElse(Seq())
-
+        val crossRefs = Option(row.getAs[Seq[Row]]("crossRefs")).getOrElse(Seq())
+        val outputCrossRefs = crossRefs.map(row => HybridAddressEsDocument.rowToCrossRef(row))
         val outputLpis = lpis.map(row => HybridAddressSkinnyEsDocument.rowToLpi(row))
         val outputPaf = paf.map(row => HybridAddressSkinnyEsDocument.rowToPaf(row))
         val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
+
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -393,14 +426,19 @@ object SqlHelper {
 
         val fromSource = "EW"
 
+        val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
           outputLpis,
           outputPaf,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -491,6 +529,11 @@ object SqlHelper {
             Some(nisraCodeToABP(nisraClassCode))
         }
 
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
         val nisraPostCode: String = Try(outputNisra.headOption.get("postcode").toString).getOrElse("")
@@ -504,6 +547,8 @@ object SqlHelper {
 
         val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
 
+        val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressNisraEsDocument(
           uprn,
           postCodeIn,
@@ -515,8 +560,11 @@ object SqlHelper {
           outputCrossRefs,
           outputNisra,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
@@ -591,6 +639,11 @@ object SqlHelper {
         val outputRelatives = relatives.map(row => HybridAddressEsDocument.rowToHierarchy(row))
         val classificationCode: Option[String] = classifications.map(row => row.getAs[String]("classificationCode")).headOption
 
+        val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
+        val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
+        val censusAddressType = CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+        val censusEstabType = CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""),isCouncilTax,isNonDomesticRate)
+
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
 
@@ -604,6 +657,8 @@ object SqlHelper {
 
         val fromSource = "EW"
 
+        val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -614,8 +669,11 @@ object SqlHelper {
           outputPaf,
           outputCrossRefs,
           classificationCode,
+          censusAddressType,
+          censusEstabType,
           postCode,
-          fromSource
+          fromSource,
+          countryCode
         )
     }
   }
