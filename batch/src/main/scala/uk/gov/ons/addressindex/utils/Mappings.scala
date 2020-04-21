@@ -318,7 +318,7 @@ object Mappings {
                               "NPG, NATIONAL PORTRAIT GALLERY",
                               "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
                               "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
-                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ONS, OFFICE FOR NATIONAL STATISTICS",
                               "ORR, OFFICE OF RAIL AND ROAD",
                               "OS, ORDINANCE SURVEY",
                               "OU, OPEN UNIVERSITY",
@@ -394,7 +394,10 @@ object Mappings {
                           ]
                       },
                       "edge_ngram_analyzer": {
-                          "filter": ["lowercase", "english_poss_stemmer", "edge_ngram"],
+                          "filter": ["lowercase",
+                           "english_poss_stemmer",
+                           "address_synonym_filter",
+                           "edge_ngram"],
                           "tokenizer": "standard"
                       },
                       "keyword_analyzer": {
@@ -1081,6 +1084,7 @@ object Mappings {
                   "filter": {
                       "address_synonym_filter": {
                           "type": "synonym",
+                          "lenient": "true",
                           "synonyms": ["ADJ, ADJACENT",
                               "ALY => ALLEY, ALY",
                               "ANX, ANNEX, ANNEXE",
@@ -1375,7 +1379,7 @@ object Mappings {
                               "NPG, NATIONAL PORTRAIT GALLERY",
                               "NSPCC, NATIONAL SOCIETY FOR THE PREVENTION OF CRUELTY TO CHILDREN",
                               "OBR, OFFICE FOR BUDGET RESPONSIBILITY",
-                              "ONS, OFFICE OF NATIONAL STATISTICS",
+                              "ONS, OFFICE FOR NATIONAL STATISTICS",
                               "ORR, OFFICE OF RAIL AND ROAD",
                               "OS, ORDINANCE SURVEY",
                               "OU, OPEN UNIVERSITY",
@@ -1445,6 +1449,7 @@ object Mappings {
                       "edge_ngram_analyzer": {
                           "filter": ["lowercase",
                               "english_poss_stemmer",
+                              "address_synonym_filter",
                               "edge_ngram"
                           ],
                           "tokenizer": "standard"
