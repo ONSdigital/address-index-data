@@ -300,6 +300,18 @@ object SqlHelper {
 
         val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
+        val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
+        val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
+        val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
+        val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
+        val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
+        val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
+
+        val bestStreet = nisraStreet.getOrElse(pafStreet.getOrElse(lpiStreet.getOrElse("")))
+        val bestTown = nisraTown.getOrElse(pafTown.getOrElse(lpiTown.getOrElse("")))
+
+        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -311,7 +323,8 @@ object SqlHelper {
           censusEstabType,
           postCode,
           fromSource,
-          countryCode
+          countryCode,
+          postcodeStreetTown
         )
     }
   }
@@ -548,6 +561,17 @@ object SqlHelper {
         val fromSource = if (outputNisra.headOption.nonEmpty) "NI" else "EW"
 
         val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
+        val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
+        val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
+        val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
+        val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
+        val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
+        val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
+
+        val bestStreet = nisraStreet.getOrElse(pafStreet.getOrElse(lpiStreet.getOrElse("")))
+        val bestTown = nisraTown.getOrElse(pafTown.getOrElse(lpiTown.getOrElse("")))
+
+        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -564,7 +588,8 @@ object SqlHelper {
           censusEstabType,
           postCode,
           fromSource,
-          countryCode
+          countryCode,
+          postcodeStreetTown
         )
     }
   }
