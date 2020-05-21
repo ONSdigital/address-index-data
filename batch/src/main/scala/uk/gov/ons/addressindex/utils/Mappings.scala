@@ -194,8 +194,8 @@ object Mappings {
                               "W => WEST, W",
                               "S => SOUTH, S",
                               "N => NORTH, N",
-                              "SAINT => ST, SAINT, SANT",
-                              "SANT => ST, SAINT, SANT",
+                              "SAINT => ST, ST., SAINT, SANT",
+                              "SANT => ST, ST., SAINT, SANT",
                               "0TH, ZEROTH, 0ED, SERO, SEROFED, DIM, DIMFED",
                               "1ST, FIRST, 1AF, CYNTA, CYNTAF, GYNTAF",
                               "2ND, SECOND, 2AIL, AIL, AILFED",
@@ -363,6 +363,14 @@ object Mappings {
                           "token_chars": ["letter", "digit"]
                       }
                   },
+                   "char_filter": {
+                      "single_quote_char_filter": {
+                         "type": "mapping",
+                           "mappings": [
+                            "'=>"
+                           ]
+                     }
+                  },
                   "analyzer": {
                       "upper_keyword": {
                           "tokenizer": "keyword",
@@ -394,6 +402,7 @@ object Mappings {
                           ]
                       },
                       "edge_ngram_analyzer": {
+                          "char_filter" : "single_quote_char_filter",
                           "filter": ["lowercase",
                            "english_poss_stemmer",
                            "address_synonym_filter",
@@ -1255,8 +1264,8 @@ object Mappings {
                               "W => WEST, W",
                               "S => SOUTH, S",
                               "N => NORTH, N",
-                              "SAINT => ST, SAINT, SANT",
-                              "SANT => ST, SAINT, SANT",
+                              "SAINT => ST, ST., SAINT, SANT",
+                              "SANT => ST, ST., SAINT, SANT",
                               "0TH, ZEROTH, 0ED, SERO, SEROFED, DIM, DIMFED",
                               "1ST, FIRST, 1AF, CYNTA, CYNTAF, GYNTAF",
                               "2ND, SECOND, 2AIL, AIL, AILFED",
@@ -1426,6 +1435,14 @@ object Mappings {
                           ]
                       }
                   },
+                  "char_filter": {
+                      "single_quote_char_filter": {
+                         "type": "mapping",
+                           "mappings": [
+                            "'=>"
+                           ]
+                     }
+                  },
                   "analyzer": {
                       "upper_keyword": {
                           "tokenizer": "keyword",
@@ -1447,6 +1464,7 @@ object Mappings {
                           ]
                       },
                       "edge_ngram_analyzer": {
+                          "char_filter" : "single_quote_char_filter",
                           "filter": ["lowercase",
                               "english_poss_stemmer",
                               "address_synonym_filter",
