@@ -11,7 +11,8 @@ case class HybridAddressSkinnyEsDocument(uprn: Long,
                                          censusEstabType: String,
                                          postcode: String,
                                          fromSource: String,
-                                         countryCode: String)
+                                         countryCode: String,
+                                         postcodeStreetTown: String)
 
 object HybridAddressSkinnyEsDocument extends EsDocument {
 
@@ -29,6 +30,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
     "lpiLogicalStatus" -> row.getByte(27),
     "language" -> row.getString(29),
     "streetDescriptor" -> normalize(row.getString(30)),
+    "townName" -> normalizeTowns(row.getString(31)),
     "country" -> row.getString(37),
     "nagAll" -> concatNag(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
@@ -113,6 +115,8 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
 
   def rowToPaf(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(3),
+    "thoroughfare" -> normalize(Option(row.getString(11)).getOrElse("")),
+    "postTown" -> normalizeTowns(Option(row.getString(14)).getOrElse("")),
     "mixedPaf" -> generateFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
