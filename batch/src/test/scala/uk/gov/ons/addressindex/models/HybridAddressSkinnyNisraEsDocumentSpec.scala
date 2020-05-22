@@ -9,6 +9,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
   // Expected Paf Values
   val expectedPafUprn = 1
+  val expectedPafThoroughFare ="Some Street"
+  val expectedPafPostTown = "London"
   val expectedPafEndDate = new java.sql.Date(format.parse("2012-04-25").getTime)
   val expectedPafStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedPafAll = "DEPARTMENT CIBO FLAT E COTTAGE 6 1 THROUGHFARE WELSH1 SOME STREET WELSH2 LOCALITY WELSH3 STIXTON WELSH4 LONDON WELSH5 POSTCODE"
@@ -61,6 +63,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagSaoStartNumber: Short = 6473.toShort
   val expectedNagLpiLogicalStatus: Byte = 1.toByte
   val expectedNagStreetDescriptor = "And Another Street Descriptor"
+  val expectedNagTownName = "Town B"
   val expectedNagLanguage = "ENG"
   val expectedNagAll = "SOMETHING ELSE 6473FF-6623JJ THE BUILDING NAME A TRAINING CENTRE 56HH-7755OP AND ANOTHER STREET DESCRIPTOR LOCALITY XYZ TOWN B KL8 7HQ"
   val expectedNagLpiStartDate = new java.sql.Date(format.parse("2012-04-23").getTime)
@@ -116,6 +119,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
   val expectedNisraBuildingNumber: Null = null
   val expectedNisraPostCode = "AB1 7GH"
+  val expectedNisraThoroughfare = "Thoroughfare Road"
+  val expectedNisraTownName = "Little Town"
   val expectedNisraEasting = 379171.00F
   val expectedNisraNorthing = 412816.00F
   val expectedNisraUprn = 100010977866L
@@ -135,6 +140,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
 
   val expectedPaf: Map[String, Any] = Map(
     "uprn" -> expectedPafUprn,
+    "postTown" -> expectedPafPostTown,
+    "thoroughfare" -> expectedPafThoroughFare,
     "mixedPaf" -> expectedPafMixed,
     "mixedWelshPaf" -> expectedPafWelshMixed,
     "mixedPafStart" -> expectedPafMixedStart,
@@ -154,6 +161,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "saoStartNumber" -> expectedNagSaoStartNumber,
     "lpiLogicalStatus" -> expectedNagLpiLogicalStatus,
     "streetDescriptor" -> expectedNagStreetDescriptor,
+    "townName" -> expectedNagTownName,
     "nagAll" -> expectedNagAll,
     "language" -> expectedNagLanguage,
     "mixedNag" -> expectedNagMixed,
@@ -209,6 +217,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "uprn" -> expectedNisraUprn,
     "location" -> nisraLocation,
     "postcode" -> expectedNisraPostCode,
+    "townName" -> expectedNisraTownName,
+    "thoroughfare" -> expectedNisraThoroughfare,
     "easting" -> expectedNisraEasting,
     "northing" -> expectedNisraNorthing,
     "mixedNisra" -> expectedNisraMixed,

@@ -1067,6 +1067,10 @@ object Mappings {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
+                  },
+                  "postcodeStreetTown": {
+                      "type": "keyword",
+                      "index": "true"
                   }
               }
           }
@@ -1794,6 +1798,10 @@ object Mappings {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
+                  },
+                  "postcodeStreetTown": {
+                      "type": "keyword",
+                      "index": "true"
                   }
               }
           }
