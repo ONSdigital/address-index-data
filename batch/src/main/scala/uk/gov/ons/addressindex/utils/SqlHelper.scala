@@ -310,7 +310,7 @@ object SqlHelper {
         val bestStreet = nisraStreet.getOrElse(pafStreet.getOrElse(lpiStreet.getOrElse("")))
         val bestTown = nisraTown.getOrElse(pafTown.getOrElse(lpiTown.getOrElse("")))
 
-        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
+        val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replaceAll(".","").replaceAll("'","")
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -449,7 +449,7 @@ object SqlHelper {
         val bestStreet = pafStreet.getOrElse(lpiStreet.getOrElse(""))
         val bestTown = pafTown.getOrElse(lpiTown.getOrElse(""))
 
-        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
+        val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replaceAll(".","").replaceAll("'","")
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -583,7 +583,7 @@ object SqlHelper {
         val bestStreet = nisraStreet.getOrElse(pafStreet.getOrElse(lpiStreet.getOrElse("")))
         val bestTown = nisraTown.getOrElse(pafTown.getOrElse(lpiTown.getOrElse("")))
 
-        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
+        val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replaceAll(".","").replaceAll("'","")
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -704,7 +704,7 @@ object SqlHelper {
         val bestStreet = pafStreet.getOrElse(lpiStreet.getOrElse(""))
         val bestTown = pafTown.getOrElse(lpiTown.getOrElse(""))
 
-        val postcodeStreetTown = postCode + "_" + bestStreet + "_" + bestTown
+        val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replaceAll(".","").replaceAll("'","")
 
         HybridAddressEsDocument(
           uprn,

@@ -16,8 +16,8 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedPafAll = "DEPARTMENT CIBO FLAT E COTTAGE 6 1 THROUGHFARE WELSH1 SOME STREET WELSH2 LOCALITY WELSH3 STIXTON WELSH4 LONDON WELSH5 POSTCODE"
   val expectedPafMixed = "Department, Cibo, Flat E, Cottage, PO Box 6, 1 Throughfare, Some Street, Locality, Stixton, London, POSTCODE POSTCODE"
   val expectedPafWelshMixed = "Department, Cibo, Flat E, Cottage, PO Box 6, 1 Welsh1, Welsh2, Welsh3, Welsh4, Welsh5, POSTCODE POSTCODE"
-  val expectedPafMixedStart = "Depart"
-  val expectedPafWelshMixedStart = "Depart"
+  val expectedPafMixedStart = "Department C"
+  val expectedPafWelshMixedStart = "Department C"
 
   // Actual Paf Values
   val actualPafBuildingNumber: Short = 1.toShort
@@ -70,7 +70,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val expectedNagLpiEndDate = new java.sql.Date(format.parse("2018-01-11").getTime)
   val expectedNagMixed = "Something Else, 6473FF-6623JJ, The Building Name, A Training Centre, 56HH-7755OP And Another Street Descriptor, Locality Xyz, Town B, KL8 7HQ KL87HQ"
   val expectedWelshNagMixed = ""
-  val expectedMixedNagStart = "Someth"
+  val expectedMixedNagStart = "Something El"
   val expectedMixedWelshNagStart = ""
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
   val expectedNagCountry = "E"
