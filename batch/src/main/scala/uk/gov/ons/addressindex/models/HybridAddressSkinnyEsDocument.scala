@@ -92,7 +92,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
       row.getString(1) + " " + row.getString(1).replace(" ","")
-    )).take(6).replaceAll(",","").replaceAll("'",""),
+    )).replaceAll(",","").replaceAll("'","").take(12),
     "mixedWelshNagStart" -> (if (row.getString(29) == "ENG") "" else generateFormattedNagAddress(
       if (row.isNullAt(21)) "" else row.getShort(21).toString,
       row.getString(22),
@@ -109,7 +109,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
       row.getString(1) + " " + row.getString(1).replace(" ","")
-    )).take(6).replaceAll(",","").replaceAll("'",""),
+    )).replaceAll(",","").replaceAll("'","").take(12),
     "secondarySort" -> addLeadingZeros(row.getString(15) + " " + (if (row.isNullAt(21)) "" else row.getShort(21).toString) + row.getString(22) + " " + row.getString(11) + " " + row.getString(20)).replaceAll(" +", " ")
   )
 
@@ -158,7 +158,7 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalize(Option(row.getString(13)).getOrElse("")),
       normalizeTowns(Option(row.getString(14)).getOrElse("")),
       Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
-    ).take(6).replaceAll(",","").replaceAll("'",""),
+    ).replaceAll(",","").replaceAll("'","").take(12),
     "mixedWelshPafStart" -> generateWelshFormattedPafAddress(
       Option(row.getString(23)).getOrElse(""),
       if (row.isNullAt(9)) "" else row.getShort(9).toString,
@@ -172,6 +172,6 @@ object HybridAddressSkinnyEsDocument extends EsDocument {
       normalize(Option(row.getString(21)).getOrElse(Option(row.getString(13)).getOrElse(""))),
       normalizeTowns(Option(row.getString(22)).getOrElse(Option(row.getString(14)).getOrElse(""))),
       Option(row.getString(15)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("").replace(" ","")
-    ).take(6).replaceAll(",","").replaceAll("'","")
+    ).replaceAll(",","").replaceAll("'","").take(12)
   )
 }
