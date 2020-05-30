@@ -307,8 +307,19 @@ object SqlHelper {
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
 
-        val bestStreet = nisraStreet.getOrElse(lpiStreet.getOrElse(pafStreet.getOrElse("")))
-        val bestTown = nisraTown.getOrElse(lpiTown.getOrElse(pafTown.getOrElse("")))
+        val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
+        val pafStart: Option[String] = outputPaf.headOption.flatMap(_.get("mixedPafStart").map(_.toString))
+        val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
+
+        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
+            else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
+            else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
+            else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
+            else "(" + lpiStart.getOrElse("") + ")"
+
+        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
+            else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+            else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
 
@@ -586,8 +597,19 @@ object SqlHelper {
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
 
-        val bestStreet = nisraStreet.getOrElse(lpiStreet.getOrElse(pafStreet.getOrElse("")))
-        val bestTown = nisraTown.getOrElse(lpiTown.getOrElse(pafTown.getOrElse("")))
+        val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
+        val pafStart: Option[String] = outputPaf.headOption.flatMap(_.get("mixedPafStart").map(_.toString))
+        val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
+
+        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
+            else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
+            else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
+            else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
+            else "(" + lpiStart.getOrElse("") + ")"
+
+        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
+            else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+            else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
 
