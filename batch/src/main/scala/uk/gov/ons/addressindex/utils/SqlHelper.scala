@@ -201,6 +201,58 @@ object SqlHelper {
     if (historical) historicalDF else nonHistoricalDF
   }
 
+  private val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+    .groupBy("uprn")
+    .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+  private val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+    .groupBy("uprn")
+    .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+  private val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+    .groupBy("primaryUprn")
+    .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+  private val hierarchyJoined = hierarchyDF
+    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+    .select("uprn", "parentUprn")
+
+  private val hierarchyJoinedWithRelatives = hierarchyDF
+    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+    .select("uprn", "parentUprn", "relatives")
+
+  private def createPafGrouped(paf: DataFrame, nag: DataFrame, historical: Boolean) : DataFrame =
+    if (historical) paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+    else paf.join(nag, Seq("uprn"), joinType = "leftsemi")
+      .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
+        "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
+        "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
+        "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
+        "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
+      .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
+
+  private def createPafNagGrouped(nag: DataFrame, pafGrouped: DataFrame) : DataFrame =
+    nag.groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+      .join(pafGrouped, Seq("uprn"), "left_outer")
+
+  private def createNisraGrouped(nisra: DataFrame, historical: Boolean) =
+    nisraData(nisra, historical)
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("*")).as("nisra"))
+
+  private def createPafNagHierGrouped(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
+    .join(crossRefGrouped, Seq("uprn"), "left_outer")
+    .join(hierarchyJoined, Seq("uprn"), "left_outer")
+    .join(classificationsGrouped, Seq("uprn"), "left_outer")
+
+  private def createPafNagHierGroupedWithRelatives(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
+    .join(crossRefGrouped, Seq("uprn"), "left_outer")
+    .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+    .join(classificationsGrouped, Seq("uprn"), "left_outer")
+
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
@@ -208,59 +260,16 @@ object SqlHelper {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
-    val pafGrouped =
-    if (historical) {
-      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    } else {
-      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
-          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
-          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
-          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
-          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
-        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    }
+    val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of nisra by uprn
-    val nisraGrouped = nisraData(nisra, historical)
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("nisra"))
+    val nisraGrouped = createNisraGrouped(nisra, historical)
 
-    // DataFrame of lpis by uprn
-    val nagGrouped = nag
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
-
-    // DataFrame of paf and lpis by uprn
-    val pafNagGrouped = nagGrouped
-      .join(pafGrouped, Seq("uprn"), "left_outer")
+    // DataFrame of paf and lpis by uprn joined with nisra
+    val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    // DataFrame of Classifications by uprn
-    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-    // DataFrame of CrossRefs by uprn
-    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
-
-    // Construct Hierarchy DataFrame
-    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-      .groupBy("primaryUprn")
-      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn")
-
-    val pafNagHierGrouped = pafNagGrouped
-      .join(crossRefGrouped, Seq("uprn"), "left_outer")
-      .join(hierarchyJoined, Seq("uprn"), "left_outer")
-      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -312,14 +321,14 @@ object SqlHelper {
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
 
         val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-            else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-            else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-            else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
-            else "(" + lpiStart.getOrElse("") + ")"
+        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
+        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
+        else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
+        else "(" + lpiStart.getOrElse("") + ")"
 
         val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-            else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
-            else pafTown.getOrElse("")
+        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
 
@@ -340,34 +349,6 @@ object SqlHelper {
     }
   }
 
-  def nisraCodeToABP(ncode: String): String = ncode match {
-
-    case "DO_DETACHED" => "RD02"
-    case "DO_SEMI" => "RD03"
-    case "ND_RETAIL" => "CR"
-    case "NON_POSTAL" => "O"
-    case "DO_TERRACE" => "RD04"
-    case "ND_ENTERTAINMENT" => "CL"
-    case "ND_HOSPITALITY" => "CH"
-    case "ND_SPORTING" => "CL06"
-    case "DO_APART" => "RD06"
-    case "ND_INDUSTRY" => "CI"
-    case "ND_EDUCATION" => "CE"
-    case "ND_RELIGIOUS" => "ZW"
-    case "ND_COMM_OTHER" => "C"
-    case "ND_OTHER" =>   "C"
-    case "ND_AGRICULTURE" => "CA"
-    case "DO_OTHER" => "RD"
-    case "ND_OFFICE" => "CO"
-    case "ND_HEALTH" => "CM"
-    case "ND_LEGAL" => "CC02"
-    case "ND_CULTURE" => "CL04"
-    case "ND_ENTS_OTHER" => "CL"
-    case "ND_CULTURE_OTHER" => "CL04"
-    case "ND_INDUST_OTHER" => "CI"
-    case _ => "O"
-  }
-
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
@@ -375,54 +356,12 @@ object SqlHelper {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
-    val pafGrouped =
-    if (historical) {
-      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    } else {
-      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
-          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
-          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
-          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
-          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
-        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    }
-
-    // DataFrame of lpis by uprn
-    val nagGrouped = nag
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+    val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of paf and lpis by uprn
-    val pafNagGrouped = nagGrouped
-      .join(pafGrouped, Seq("uprn"), "left_outer")
+    val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    // DataFrame of Classifications by uprn
-    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-    // DataFrame of CrossRefs by uprn
-    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
-
-
-    // Construct Hierarchy DataFrame
-    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-      .groupBy("primaryUprn")
-      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn")
-
-    val pafNagHierGrouped = pafNagGrouped
-      .join(crossRefGrouped, Seq("uprn"), "left_outer")
-      .join(hierarchyJoined, Seq("uprn"), "left_outer")
-      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -491,59 +430,16 @@ object SqlHelper {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
-    val pafGrouped =
-    if (historical) {
-      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    } else {
-      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
-          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
-          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
-          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
-          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
-        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    }
+    val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of nisra by uprn
-    val nisraGrouped = nisraData(nisra, historical)
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("nisra"))
-
-    // DataFrame of lpis by uprn
-    val nagGrouped = nag
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+    val nisraGrouped = createNisraGrouped(nisra, historical)
 
     // DataFrame of paf and lpis by uprn
-    val pafNagGrouped = nagGrouped
-      .join(pafGrouped, Seq("uprn"), "left_outer")
+    val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    // DataFrame of CrossRefs by uprn
-    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
-
-    // DataFrame of Classifications by uprn
-    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-    // Construct Hierarchy DataFrame
-    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-      .groupBy("primaryUprn")
-      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn", "relatives")
-
-    val pafNagCrossHierGrouped = pafNagGrouped
-      .join(crossRefGrouped, Seq("uprn"), "left_outer")
-      .join(hierarchyJoined, Seq("uprn"), "left_outer")
-      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -602,14 +498,14 @@ object SqlHelper {
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
 
         val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-            else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-            else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-            else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
-            else "(" + lpiStart.getOrElse("") + ")"
+        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
+        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
+        else if (!nisraStart.getOrElse("").isEmpty) "(" + lpiStart.getOrElse("") + ")"
+        else "(" + lpiStart.getOrElse("") + ")"
 
         val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-            else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
-            else pafTown.getOrElse("")
+        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
 
@@ -641,52 +537,12 @@ object SqlHelper {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
-    val pafGrouped =
-    if (historical) {
-      paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    } else {
-      paf.join(nag, Seq("uprn"), joinType = "leftsemi")
-        .select("recordIdentifier", "changeType", "proOrder", "uprn", "udprn", "organisationName", "departmentName",
-          "subBuildingName", "buildingName", "buildingNumber", "dependentThoroughfare", "thoroughfare",
-          "doubleDependentLocality", "dependentLocality", "postTown", "postcode", "postcodeType", "deliveryPointSuffix",
-          "welshDependentThoroughfare", "welshThoroughfare", "welshDoubleDependentLocality", "welshDependentLocality",
-          "welshPostTown", "poBoxNumber", "processDate", "startDate", "endDate", "lastUpdateDate", "entryDate")
-        .groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
-    }
-
-    // DataFrame of lpis by uprn
-    val nagGrouped = nag
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("*")).as("lpis"))
+    val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of paf and lpis by uprn
-    val pafNagGrouped = nagGrouped.join(pafGrouped, Seq("uprn"), "left_outer")
+    val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    // DataFrame of CrossRefs by uprn
-    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
-
-    // DataFrame of Classifications by uprn
-    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-      .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-    // Construct Hierarchy DataFrame
-    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-      .groupBy("primaryUprn")
-      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn", "relatives")
-
-    val pafNagCrossHierGrouped = pafNagGrouped
-      .join(crossRefGrouped, Seq("uprn"), "left_outer")
-      .join(hierarchyJoined, Seq("uprn"), "left_outer")
-      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -731,11 +587,11 @@ object SqlHelper {
         val pafStart: Option[String] = outputPaf.headOption.flatMap(_.get("mixedPafStart").map(_.toString))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-            else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-            else "(" + lpiStart.getOrElse("") + ")"
+        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
+        else "(" + lpiStart.getOrElse("") + ")"
 
         val bestTown: String = if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
-            else pafTown.getOrElse("")
+        else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
 
@@ -759,4 +615,31 @@ object SqlHelper {
     }
   }
 
+  private def nisraCodeToABP(ncode: String): String = ncode match {
+
+    case "DO_DETACHED" => "RD02"
+    case "DO_SEMI" => "RD03"
+    case "ND_RETAIL" => "CR"
+    case "NON_POSTAL" => "O"
+    case "DO_TERRACE" => "RD04"
+    case "ND_ENTERTAINMENT" => "CL"
+    case "ND_HOSPITALITY" => "CH"
+    case "ND_SPORTING" => "CL06"
+    case "DO_APART" => "RD06"
+    case "ND_INDUSTRY" => "CI"
+    case "ND_EDUCATION" => "CE"
+    case "ND_RELIGIOUS" => "ZW"
+    case "ND_COMM_OTHER" => "C"
+    case "ND_OTHER" =>   "C"
+    case "ND_AGRICULTURE" => "CA"
+    case "DO_OTHER" => "RD"
+    case "ND_OFFICE" => "CO"
+    case "ND_HEALTH" => "CM"
+    case "ND_LEGAL" => "CC02"
+    case "ND_CULTURE" => "CL04"
+    case "ND_ENTS_OTHER" => "CL"
+    case "ND_CULTURE_OTHER" => "CL04"
+    case "ND_INDUST_OTHER" => "CI"
+    case _ => "O"
+  }
 }
