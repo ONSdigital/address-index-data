@@ -17,8 +17,8 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 * Java 8 
 * SBT 0.13.16 (http://www.scala-sbt.org/)
 * Scala 2.12.4
-* Apache Spark 2.2
-* Elasticsearch 5.6.7
+* Apache Spark 2.3.2
+* Elasticsearch 7.3.1
 
 ### Development Setup (IntelliJ)
 
