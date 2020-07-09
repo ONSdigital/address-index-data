@@ -10,7 +10,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "2.4.0" % "provided",
   "org.apache.spark" %% "spark-sql" % "2.4.0" % "provided",
   "org.apache.spark" %% "spark-hive" % "2.4.0" % "provided",
-  "commons-httpclient" %% "commons-httpclient" % "3.1",
+  "commons-httpclient" % "commons-httpclient" % "3.1",
   "com.databricks" %% "spark-csv" % "1.5.0",
   "com.typesafe" % "config" % "1.3.3",
   "org.elasticsearch" %% "elasticsearch-spark-20" % "7.3.1"  excludeAll ExclusionRule(organization = "javax.servlet"),
