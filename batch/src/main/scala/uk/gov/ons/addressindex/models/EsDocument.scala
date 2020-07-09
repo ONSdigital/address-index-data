@@ -7,8 +7,14 @@ import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
 import scala.io.{BufferedSource, Source}
 import scala.util.Try
 import scala.util.matching.Regex
+import scala.io.Codec
+import java.nio.charset.CodingErrorAction
 
 abstract class EsDocument {
+
+  implicit val codec = Codec("UTF-8")
+  codec.onMalformedInput(CodingErrorAction.REPLACE)
+  codec.onUnmappableCharacter(CodingErrorAction.REPLACE)
 
   def rowToLpi(row: Row): Map[String, Any]
 
