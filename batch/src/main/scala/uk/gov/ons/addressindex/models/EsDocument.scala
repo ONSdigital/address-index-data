@@ -252,7 +252,7 @@ abstract class EsDocument {
     val currentDirectory = new java.io.File(".").getCanonicalPath
     // `Source.fromFile` needs an absolute path to the file, and current directory depends on where sbt was lauched
     // `getResource` may return null, that's why we wrap it into an `Option`
-    Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile(currentDirectory + path))
+    Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile((currentDirectory + path),"UTF-8"))
   }
 
   def toShort(s: String): Option[Short] = {
