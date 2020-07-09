@@ -7,8 +7,14 @@ import uk.gov.ons.addressindex.utils.StringUtil.strToOpt
 import scala.io.{BufferedSource, Source}
 import scala.util.Try
 import scala.util.matching.Regex
+import scala.io.Codec
+import java.nio.charset.CodingErrorAction
 
 abstract class EsDocument {
+
+  implicit val codec = Codec("UTF-8")
+  codec.onMalformedInput(CodingErrorAction.REPLACE)
+  codec.onUnmappableCharacter(CodingErrorAction.REPLACE)
 
   def rowToLpi(row: Row): Map[String, Any]
 
@@ -252,7 +258,7 @@ abstract class EsDocument {
     val currentDirectory = new java.io.File(".").getCanonicalPath
     // `Source.fromFile` needs an absolute path to the file, and current directory depends on where sbt was lauched
     // `getResource` may return null, that's why we wrap it into an `Option`
-    Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile((currentDirectory + path),"UTF-8"))
+    Option(getClass.getResource(path)).map(Source.fromURL).getOrElse(Source.fromFile(currentDirectory + path))
   }
 
   def toShort(s: String): Option[Short] = {
