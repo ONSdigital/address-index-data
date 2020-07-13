@@ -581,16 +581,27 @@ object SqlHelper {
         val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
+        val lpiStreetEng: Option[String] = chooseMostRecentNag(outputLpis,"ENG").headOption.flatMap(_.get("streetDescriptor").map(_.toString))
         val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
         val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
+        val lpiTownEng: Option[String] = chooseMostRecentNag(outputLpis,"ENG").headOption.flatMap(_.get("townName").map(_.toString))
+        val lpiLocality: Option[String] = outputLpis.headOption.flatMap(_.get("locality").map(_.toString))
+        val lpiLocalityEng: Option[String] = chooseMostRecentNag(outputLpis,"ENG").headOption.flatMap(_.get("locality").map(_.toString))
         val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
-        val pafStart: Option[String] = outputPaf.headOption.flatMap(_.get("mixedPafStart").map(_.toString))
+        val pafDepend = outputPaf.headOption.flatMap(_.get("dependentLocality").map(_.toString))
+
+        val lpiStartEng: Option[String] = chooseMostRecentNag(outputLpis,"ENG").headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
+        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
         else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
+        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
+        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
+        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
+        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
@@ -642,4 +653,22 @@ object SqlHelper {
     case "ND_INDUST_OTHER" => "CI"
     case _ => "O"
   }
+
+  /**
+    * Gets the right (most often - the most recent) address from an array of NAG addresses
+    *
+    * @param addresses list of Nag addresses
+    * @return the NAG address that corresponds to the returned address
+    */
+  def chooseMostRecentNag(addresses: Seq[Map[String, Any]], language: String): Option[Map[String, Any]] = {
+    addresses.filter(_.getOrElse("language","ENG") == language)
+      .sortBy(_.getOrElse("lpiLogicalStatus","1") match {
+        case "1" => 1
+        case "6" => 2
+        case "8" => 3
+        case _ => 4
+      })
+      .headOption
+  }
+
 }
