@@ -391,7 +391,7 @@ object SqlHelper {
 
         val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = chooseMostRecentNag(outputLpis,"ENG")
+        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
         val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
@@ -593,7 +593,7 @@ object SqlHelper {
 
         val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = chooseMostRecentNag(outputLpis,"ENG")
+        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
         val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
@@ -670,21 +670,5 @@ object SqlHelper {
     case _ => "O"
   }
 
-  /**
-    * Gets the right (most often - the most recent) address from an array of NAG addresses
-    *
-    * @param addresses list of Nag addresses
-    * @return the NAG address that corresponds to the returned address
-    */
-  def chooseMostRecentNag(addresses: Seq[Map[String, Any]], language: String): Option[Map[String, Any]] = {
-    addresses.filter(_.getOrElse("language","ENG") == language)
-      .sortBy(_.getOrElse("lpiLogicalStatus","1") match {
-        case "1" => 1
-        case "6" => 2
-        case "8" => 3
-        case _ => 4
-      })
-      .headOption
-  }
 
 }
