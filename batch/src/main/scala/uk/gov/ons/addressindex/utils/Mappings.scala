@@ -1802,6 +1802,10 @@ object Mappings {
                   "postcodeStreetTown": {
                       "type": "keyword",
                       "index": "true"
+                  },
+                  "postTown": {
+                      "type": "keyword",
+                      "index": "true"
                   }
               }
           }

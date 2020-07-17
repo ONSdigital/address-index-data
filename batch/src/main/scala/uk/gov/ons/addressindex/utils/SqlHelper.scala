@@ -419,6 +419,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
+        val postTown = pafTown.getOrElse(null)
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -431,7 +432,8 @@ object SqlHelper {
           postCode,
           fromSource,
           countryCode,
-          postcodeStreetTown
+          postcodeStreetTown,
+          postTown
         )
     }
   }
