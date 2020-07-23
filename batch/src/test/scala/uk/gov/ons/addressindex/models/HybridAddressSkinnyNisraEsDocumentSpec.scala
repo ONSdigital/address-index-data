@@ -74,6 +74,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedMixedWelshNagStart = ""
   val expectedNagSecondarySort = "A TRAINING CENTRE 6473FF SOMETHING ELSE THE BUILDING NAME"
   val expectedNagCountry = "E"
+  val expectedNagLocality = "Locality Xyz"
 
   // Actual Nag values
   val actualNagOrganisation = "SOMETHING ELSE"
@@ -169,7 +170,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "mixedNagStart" -> expectedMixedNagStart,
     "mixedWelshNagStart" -> expectedMixedWelshNagStart,
     "secondarySort" -> expectedNagSecondarySort,
-    "country" -> expectedNagCountry
+    "country" -> expectedNagCountry,
+    "locality" -> expectedNagLocality
   )
 
     // NISRA actual

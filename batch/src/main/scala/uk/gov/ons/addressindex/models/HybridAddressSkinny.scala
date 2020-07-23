@@ -19,6 +19,7 @@ trait HybridAddressSkinny {
     "lpiLogicalStatus" -> row.getByte(27),
     "language" -> row.getString(29),
     "streetDescriptor" -> normalize(row.getString(30)),
+    "locality" -> normalizeTowns(row.getString(32)),
     "townName" -> normalizeTowns(row.getString(31)),
     "country" -> row.getString(37),
     "nagAll" -> concatNag(
