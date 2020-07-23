@@ -309,23 +309,23 @@ object SqlHelper {
 
         val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
+        val englishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
         val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
-        val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
+        val lpiStreetEng: Option[String] = englishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
         val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
         val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
-        val lpiTownEng: Option[String] = EnglishNag.map(_.get("townName").map(_.toString).getOrElse(""))
+        val lpiTownEng: Option[String] = englishNag.map(_.get("townName").map(_.toString).getOrElse(""))
         val lpiLocality: Option[String] = outputLpis.headOption.flatMap(_.get("locality").map(_.toString))
-        val lpiLocalityEng: Option[String] = EnglishNag.map(_.get("locality").map(_.toString).getOrElse(""))
+        val lpiLocalityEng: Option[String] = englishNag.map(_.get("locality").map(_.toString).getOrElse(""))
         val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
         val pafDepend = outputPaf.headOption.flatMap(_.get("dependentLocality").map(_.toString))
 
-        val lpiStartEng: Option[String] = EnglishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
+        val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
         else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
@@ -406,19 +406,19 @@ object SqlHelper {
 
         val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
+        val englishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
-        val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
+        val lpiStreetEng: Option[String] = englishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
         val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
         val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
-        val lpiTownEng: Option[String] = EnglishNag.map(_.get("townName").map(_.toString).getOrElse(""))
+        val lpiTownEng: Option[String] = englishNag.map(_.get("townName").map(_.toString).getOrElse(""))
         val lpiLocality: Option[String] = outputLpis.headOption.flatMap(_.get("locality").map(_.toString))
-        val lpiLocalityEng: Option[String] = EnglishNag.map(_.get("locality").map(_.toString).getOrElse(""))
+        val lpiLocalityEng: Option[String] = englishNag.map(_.get("locality").map(_.toString).getOrElse(""))
         val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
         val pafDepend = outputPaf.headOption.flatMap(_.get("dependentLocality").map(_.toString))
 
-        val lpiStartEng: Option[String] = EnglishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
+        val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
         else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
@@ -516,23 +516,23 @@ object SqlHelper {
 
         val countryCode = if (outputNisra.headOption.nonEmpty) "N" else outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
+        val englishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
         val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
-        val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
+        val lpiStreetEng: Option[String] = englishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
         val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
         val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
-        val lpiTownEng: Option[String] = EnglishNag.map(_.get("townName").map(_.toString).getOrElse(""))
+        val lpiTownEng: Option[String] = englishNag.map(_.get("townName").map(_.toString).getOrElse(""))
         val lpiLocality: Option[String] = outputLpis.headOption.flatMap(_.get("locality").map(_.toString))
-        val lpiLocalityEng: Option[String] = EnglishNag.map(_.get("locality").map(_.toString).getOrElse(""))
+        val lpiLocalityEng: Option[String] = englishNag.map(_.get("locality").map(_.toString).getOrElse(""))
         val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
         val pafDepend = outputPaf.headOption.flatMap(_.get("dependentLocality").map(_.toString))
 
-        val lpiStartEng: Option[String] = EnglishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
+        val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
         else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
@@ -625,19 +625,19 @@ object SqlHelper {
 
         val countryCode = outputLpis.headOption.flatMap(_.get("country").map(_.toString)).getOrElse("E")
 
-        val EnglishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
+        val englishNag = outputLpis.find(_.getOrElse("language", "ENG") == "ENG")
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
-        val lpiStreetEng: Option[String] = EnglishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
+        val lpiStreetEng: Option[String] = englishNag.map(_.get("streetDescriptor").map(_.toString).getOrElse(""))
         val pafStreet: Option[String] = outputPaf.headOption.flatMap(_.get("thoroughfare").map(_.toString))
         val lpiTown: Option[String] = outputLpis.headOption.flatMap(_.get("townName").map(_.toString))
-        val lpiTownEng: Option[String] = EnglishNag.map(_.get("townName").map(_.toString).getOrElse(""))
+        val lpiTownEng: Option[String] = englishNag.map(_.get("townName").map(_.toString).getOrElse(""))
         val lpiLocality: Option[String] = outputLpis.headOption.flatMap(_.get("locality").map(_.toString))
-        val lpiLocalityEng: Option[String] = EnglishNag.map(_.get("locality").map(_.toString).getOrElse(""))
+        val lpiLocalityEng: Option[String] = englishNag.map(_.get("locality").map(_.toString).getOrElse(""))
         val pafTown: Option[String] = outputPaf.headOption.flatMap(_.get("postTown").map(_.toString))
         val pafDepend = outputPaf.headOption.flatMap(_.get("dependentLocality").map(_.toString))
 
-        val lpiStartEng: Option[String] = EnglishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
+        val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
         val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
         else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
