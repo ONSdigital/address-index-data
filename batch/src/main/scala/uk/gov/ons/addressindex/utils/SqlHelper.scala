@@ -285,7 +285,7 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
 
-        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val nisraClassCode: String = outputLpis.headOption.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")
         val classificationCode: Option[String] = {
           if (nisraClassCode == "")
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
@@ -488,7 +488,7 @@ object SqlHelper {
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
 
-        val nisraClassCode: String = Try(outputNisra.headOption.get("classificationCode").toString).getOrElse("")
+        val nisraClassCode: String = outputLpis.headOption.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")
         val classificationCode: Option[String] = {
           if (nisraClassCode == "")
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
