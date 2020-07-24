@@ -290,7 +290,7 @@ object SqlHelper {
           if (nisraClassCode == "")
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            Some(nisraCodeToABP(nisraClassCode))
+            if (nisraClassCode.isEmpty) Some("O") else Some(nisraCodeToABP(nisraClassCode))
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
@@ -493,7 +493,7 @@ object SqlHelper {
           if (nisraClassCode == "")
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            Some(nisraCodeToABP(nisraClassCode))
+            if (nisraClassCode.isEmpty) Some("O") else Some(nisraCodeToABP(nisraClassCode))
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
