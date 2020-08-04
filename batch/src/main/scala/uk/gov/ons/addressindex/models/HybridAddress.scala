@@ -55,8 +55,7 @@ trait HybridAddress {
       row.getString(31), row.getString(32), row.getString(1)
     ),
     "mixedNag" -> (if (row.getString(29) != "ENG") "" else generateNagAddress(row)),
-    "mixedWelshNag" -> (if (row.getString(29) == "ENG") "" else generateNagAddress(row))
-      .replaceAll(",","").replaceAll("'","").take(12),
+    "mixedWelshNag" -> (if (row.getString(29) == "ENG") "" else generateNagAddress(row)),
     "mixedNagStart" -> (if (row.getString(29) != "ENG") "" else generateNagAddress(row))
       .replaceAll(",","").replaceAll("'","").take(12),
     "mixedWelshNagStart" -> (if (row.getString(29) == "ENG") "" else generateNagAddress(row))
