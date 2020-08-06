@@ -285,12 +285,39 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
 
-        val nisraClassCode: String = Try(outputNisra.headOption.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
+        val testNisra = outputNisra.find(_.getOrElse("classificationCode", "") != "")
+        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
         val classificationCode: Option[String] = {
-          if (nisraClassCode == "")
+          if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            Some(nisraCodeToABP(nisraClassCode))
+            nisraClassCode match {
+              case null => None
+              case "DO_DETACHED" => Some("RD02")
+              case "DO_SEMI" => Some("RD03")
+              case "ND_RETAIL" => Some("CR")
+              case "NON_POSTAL" => Some("O")
+              case "DO_TERRACE" => Some("RD04")
+              case "ND_ENTERTAINMENT" => Some("CL")
+              case "ND_HOSPITALITY" => Some("CH")
+              case "ND_SPORTING" => Some("CL06")
+              case "DO_APART" => Some("RD06")
+              case "ND_INDUSTRY" => Some("CI")
+              case "ND_EDUCATION" => Some("CE")
+              case "ND_RELIGIOUS" => Some("ZW")
+              case "ND_COMM_OTHER" => Some("C")
+              case "ND_OTHER" => Some("C")
+              case "ND_AGRICULTURE" => Some("CA")
+              case "DO_OTHER" => Some("RD")
+              case "ND_OFFICE" => Some("CO")
+              case "ND_HEALTH" => Some("CM")
+              case "ND_LEGAL" => Some("CC02")
+              case "ND_CULTURE" => Some("CL04")
+              case "ND_ENTS_OTHER" => Some("CL")
+              case "ND_CULTURE_OTHER" => Some("CL04")
+              case "ND_INDUST_OTHER" => Some("CI")
+              case _ => Some("O")
+            }
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
@@ -344,7 +371,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(null)
+        val postTown = pafTown.orNull
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -434,7 +461,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(null)
+        val postTown = pafTown.orNull
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -488,12 +515,39 @@ object SqlHelper {
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
 
-        val nisraClassCode: String = Try(outputNisra.headOption.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
+        val testNisra = outputNisra.find(_.getOrElse("classificationCode", "") != "")
+        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
         val classificationCode: Option[String] = {
-          if (nisraClassCode == "")
+          if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            Some(nisraCodeToABP(nisraClassCode))
+            nisraClassCode match {
+              case null => None
+              case "DO_DETACHED" => Some("RD02")
+              case "DO_SEMI" => Some("RD03")
+              case "ND_RETAIL" => Some("CR")
+              case "NON_POSTAL" => Some("O")
+              case "DO_TERRACE" => Some("RD04")
+              case "ND_ENTERTAINMENT" => Some("CL")
+              case "ND_HOSPITALITY" => Some("CH")
+              case "ND_SPORTING" => Some("CL06")
+              case "DO_APART" => Some("RD06")
+              case "ND_INDUSTRY" => Some("CI")
+              case "ND_EDUCATION" => Some("CE")
+              case "ND_RELIGIOUS" => Some("ZW")
+              case "ND_COMM_OTHER" => Some("C")
+              case "ND_OTHER" => Some("C")
+              case "ND_AGRICULTURE" => Some("CA")
+              case "DO_OTHER" => Some("RD")
+              case "ND_OFFICE" => Some("CO")
+              case "ND_HEALTH" => Some("CM")
+              case "ND_LEGAL" => Some("CC02")
+              case "ND_CULTURE" => Some("CL04")
+              case "ND_ENTS_OTHER" => Some("CL")
+              case "ND_CULTURE_OTHER" => Some("CL04")
+              case "ND_INDUST_OTHER" => Some("CI")
+              case _ => Some("O")
+            }
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
@@ -551,7 +605,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(null)
+        val postTown = pafTown.orNull
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -653,7 +707,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(null)
+        val postTown = pafTown.orNull
 
         HybridAddressEsDocument(
           uprn,
@@ -676,6 +730,7 @@ object SqlHelper {
     }
   }
 
+  // function moved into calling code due to strange Spark glitch
   private def nisraCodeToABP(ncode: String): String = ncode match {
 
     case "DO_DETACHED" => "RD02"
