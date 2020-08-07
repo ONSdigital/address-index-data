@@ -17,8 +17,8 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 * Java 8 
 * SBT 0.13.16 (http://www.scala-sbt.org/)
 * Scala 2.12.4
-* Apache Spark 2.2
-* Elasticsearch 5.6.7
+* Apache Spark 2.3.2
+* Elasticsearch 7.3.1
 
 ### Development Setup (IntelliJ)
 
@@ -71,9 +71,9 @@ Before you can run tests on this project if using Windows you must
   
   * Install the 64-bit version of winutils.exe https://github.com/steveloughran/winutils/raw/master/hadoop-2.6.0/bin/winutils.exe
   * save it on your local system in a bin directory e.g. c:\hadoop\bin
-  * create environment variables HADOOP_HOME = c:\hadoop and hadoop.home.dir = c:\hadoop\bin
-  * Update Path to add %HADOOP_HOME%\bin
-  * Make temp directory writeable, on command line: winutils chmod 777 C:\tmp\hive (or other location of hive directory)
+  * create environment variables ```HADOOP_HOME = c:\hadoop and hadoop.home.dir = c:\hadoop\bin```
+  * Update Path to add ```%HADOOP_HOME%\bin```
+  * Make temp directory writeable, on command line: ```winutils chmod 777 C:\tmp\hive``` (or other location of hive directory)
   * Now in IntelliJ you can mark the test directory (right-click, Mark Directory as, Test Resources Root).
 
 Then next time you right-click the green arrow "Run ScalaTests" should be shown.

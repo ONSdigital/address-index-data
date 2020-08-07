@@ -106,6 +106,7 @@ object AddressIndexFileReader {
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
+      .option("mode", "PERMISSIVE")
       .load(resolveAbsolutePath(path))
 
   private def readTxt(path: String, schema: StructType): DataFrame =
@@ -114,6 +115,7 @@ object AddressIndexFileReader {
       .schema(schema)
       .option("header", "true")
       .option("delimiter", "|")
+      .option("mode", "PERMISSIVE")
       .load(resolveAbsolutePath(path))
 
   private def resolveAbsolutePath(path: String) = {
