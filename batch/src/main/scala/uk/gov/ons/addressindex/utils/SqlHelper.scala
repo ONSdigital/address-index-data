@@ -191,8 +191,55 @@ object SqlHelper {
         functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
         functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
         functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode"),
-        functions.regexp_replace(nisra("localCouncil"), "NULL", "").as("localCouncil")
-
+        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(nisra("county"), "NULL", "").as("county"),
+        functions.regexp_replace(nisra("localCustodianCode"), "NULL", "").as("localCustodianCode"),
+        functions.regexp_replace(nisra("blpuState"), "NULL", "").as("blpuState"),
+        functions.regexp_replace(nisra("logicalStatus"), "NULL", "").as("logicalStatus"),
+        functions.regexp_replace(nisra("udprn"), "NULL", "").as("udprn"),
+        functions.regexp_replace(nisra("postTown"), "NULL", "").as("postTown"),
+        functions.regexp_replace(nisra("addressType"), "NULL", "").as("addressType"),
+        functions.regexp_replace(nisra("estabType"), "NULL", "").as("estabType"),
+        functions.regexp_replace(nisra("oa11"), "NULL", "").as("oa11"),
+        functions.regexp_replace(nisra("lsoa11"), "NULL", "").as("lsoa11"),
+        functions.regexp_replace(nisra("msoa11"), "NULL", "").as("msoa11"),
+        functions.regexp_replace(nisra("lad"), "NULL", "").as("lad"),
+        functions.regexp_replace(nisra("oa11"), "NULL", "").as("oa11"),
+        functions.regexp_replace(nisra("region"), "NULL", "").as("region"),
+        functions.regexp_replace(nisra("recordIdentifier"), "NULL", "").as("recordIdentifier"),
+        functions.regexp_replace(nisra("parentUprn"), "NULL", "").as("parentUprn"),
+        functions.regexp_replace(nisra("usrn"), "NULL", "").as("usrn"),
+        functions.regexp_replace(nisra("xCoordinate"), "NULL", "").as("xCoordinate"),
+        functions.regexp_replace(nisra("yCoordinate"), "NULL", "").as("yCoordinate"),
+        functions.regexp_replace(nisra("primaryUprn"), "NULL", "").as("primaryUprn"),
+        functions.regexp_replace(nisra("secondaryUprn"), "NULL", "").as("secondaryUprn"),
+        functions.regexp_replace(nisra("thisLayer"), "NULL", "").as("thisLayer"),
+        functions.regexp_replace(nisra("layers"), "NULL", "").as("layers"),
+        functions.regexp_replace(nisra("nodeType"), "NULL", "").as("nodeType"),
+        functions.regexp_replace(nisra("latitude"), "NULL", "").as("latitude"),
+        functions.regexp_replace(nisra("longitude"), "NULL", "").as("longitude"),
+        functions.regexp_replace(nisra("addressLine1"), "NULL", "").as("addressLine1"),
+        functions.regexp_replace(nisra("addressLine2"), "NULL", "").as("addressLine2"),
+        functions.regexp_replace(nisra("addressLine3"), "NULL", "").as("addressLine3"),
+        functions.regexp_replace(nisra("tempCoords"), "NULL", "").as("tempCoords"),
+        functions.regexp_replace(nisra("WARD2014"), "NULL", "").as("WARD2014"),
+        functions.regexp_replace(nisra("SOA2001"), "NULL", "").as("SOA2001"),
+        functions.regexp_replace(nisra("WARD1992"), "NULL", "").as("WARD1992"),
+        functions.regexp_replace(nisra("LGD1992"), "NULL", "").as("LGD1992"),
+        functions.regexp_replace(nisra("AA1998"), "NULL", "").as("AA1998"),
+        functions.regexp_replace(nisra("AA2008"), "NULL", "").as("AA2008"),
+        functions.regexp_replace(nisra("LGD1984"), "NULL", "").as("LGD1984"),
+        functions.regexp_replace(nisra("WARD1984"), "NULL", "").as("WARD1984"),
+        functions.regexp_replace(nisra("ED1991_MAP"), "NULL", "").as("ED1991_MAP"),
+        functions.regexp_replace(nisra("ED1991"), "NULL", "").as("ED1991"),
+        functions.regexp_replace(nisra("settlement"), "NULL", "").as("settlement"),
+        functions.regexp_replace(nisra("settlementband"), "NULL", "").as("settlementband"),
+        functions.regexp_replace(nisra("NRA_CODE"), "NULL", "").as("NRA_CODE"),
+        functions.regexp_replace(nisra("TTWA2007"), "NULL", "").as("TTWA2007"),
+        functions.regexp_replace(nisra("address1YearAgo"), "NULL", "").as("address1YearAgo"),
+        functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
+        functions.regexp_replace(nisra("classification"), "NULL", "").as("classification"),
+        functions.regexp_replace(nisra("complete"), "NULL", "").as("complete")
       ).filter("addressStatus != 'REJECTED'")
 
     val nonHistoricalDF =
@@ -285,8 +332,8 @@ object SqlHelper {
         val outputPaf = paf.map(row => HybridAddressSkinnyNisraEsDocument.rowToPaf(row))
         val outputNisra = nisra.map(row => HybridAddressSkinnyNisraEsDocument.rowToNisra(row))
 
-        val testNisra = outputNisra.find(_.getOrElse("classificationCode", "") != "")
-        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
+        val testNisra = outputNisra.find(_.getOrElse("classification", "") != "")
+        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classification").map(_.toString)).getOrElse("")).getOrElse("")
         val classificationCode: Option[String] = {
           if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
@@ -515,8 +562,8 @@ object SqlHelper {
         val outputRelatives = relatives.map(row => HybridAddressNisraEsDocument.rowToHierarchy(row))
         val outputNisra = nisra.map(row => HybridAddressNisraEsDocument.rowToNisra(row))
 
-        val testNisra = outputNisra.find(_.getOrElse("classificationCode", "") != "")
-        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classificationCode").map(_.toString)).getOrElse("")).getOrElse("")
+        val testNisra = outputNisra.find(_.getOrElse("classification", "") != "")
+        val nisraClassCode: String = Try(testNisra.flatMap(_.get("classification").map(_.toString)).getOrElse("")).getOrElse("")
         val classificationCode: Option[String] = {
           if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption

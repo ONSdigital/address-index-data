@@ -303,14 +303,14 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readNisraTXT().collect()
 
       //Then
-      result.length shouldBe 6
+      result.length shouldBe 160
 
       val line = result(3)
-      line.getString(4) shouldBe "MILEWATER TERRACE" // ORGANISATION_NAME
-      line.getString(11) shouldBe  "185356870" // UPRN
-      line.getString(15) shouldBe "DO_TERRACE" // CLASSIFICATION
-      line.getString(23) shouldBe "15/04/2009" // CREATION_DATE
-      line.getString(27) shouldBe "54.6924356" // LAT
+      line.getString(4) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
+      line.getLong(12) shouldBe  185842572 // UPRN
+      line.getString(72) shouldBe "ND_ENTERTAINMENT" // CLASSIFICATION
+      line.getString(36) shouldBe "2008-07-07" // CREATION_DATE
+      line.getFloat(39) shouldBe 54.75717f // LAT
     }
 
     "extract epoch from the file path" in {

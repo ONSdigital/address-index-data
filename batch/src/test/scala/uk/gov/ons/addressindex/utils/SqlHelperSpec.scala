@@ -537,7 +537,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 10
+      result.length shouldBe 164
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -552,9 +552,9 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       val secondResult = result(9)
       secondResult.uprn shouldBe 100010971565L
-      secondResult.classificationCode shouldBe Some("RD")
-      secondResult.postcodeOut shouldBe "PO15"
-      secondResult.postcodeIn shouldBe "5RZ"
+      secondResult.classificationCode shouldBe Some("CE")
+      secondResult.postcodeOut shouldBe "BT20"
+      secondResult.postcodeIn shouldBe "3JW"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
       secondResult.crossRefs.length shouldBe 6
@@ -658,7 +658,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 8
+      result.length shouldBe 163
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -814,7 +814,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 10
+      result.length shouldBe 164
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -825,7 +825,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.nisra shouldBe empty
 
       val secondResult = result(9)
-      secondResult.uprn shouldBe 100010971565L
+      secondResult.uprn shouldBe 185196556L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
@@ -870,7 +870,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 8
+      result.length shouldBe 163
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -881,7 +881,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.nisra shouldBe empty
 
       val secondResult = result(7)
-      secondResult.uprn shouldBe 100010971565L
+      secondResult.uprn shouldBe 185196556L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 2
@@ -906,11 +906,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 6
+      nisraDF.length shouldBe 160
 
       val firstLine = nisraDF(0)
    //   firstLine.getLong(0) shouldBe 185113434L // UPRN
-      firstLine.getLong(0) shouldBe 185329706L
+      firstLine.getLong(0) shouldBe 185036142L
       firstLine.getString(15) shouldBe null // ORGANISATION_NAME
       firstLine.getString(16) shouldBe "WINDMILL ROAD" // THOROUGHFARE
 
@@ -929,10 +929,10 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra, historical = false).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 5
+      nisraDF.length shouldBe 160
 
       val firstLine = nisraDF(0)
-      firstLine.getLong(0) shouldBe 185329706L // UPRN
+      firstLine.getLong(0) shouldBe 185036142L // UPRN
       firstLine.getString(15) shouldBe null // ORGANISATION_NAME
       firstLine.getString(16) shouldBe "WINDMILL ROAD" // THOROUGHFARE
 
