@@ -303,7 +303,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readNisraTXT().collect()
 
       //Then
-      result.length shouldBe 160
+      result.length shouldBe 24
 
       val line = result(3)
       line.getString(4) shouldBe "URBALREAGH ROAD" // THOROUGHFARE

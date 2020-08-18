@@ -31,6 +31,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument with HybridAddressS
       "addressStatus" -> row.getString(30),
       "paoStartNumber" -> toShort(row.getString(4)).orNull,
       "saoStartNumber" -> toShort(row.getString(9)).orNull,
+      "classification" -> row.getString(54),
       "classificationCode" -> row.getString(31),
       "thoroughfare" -> normalize(Option(row.getString(16)).getOrElse("")),
       "townName" -> normalize(Option(row.getString(21)).getOrElse("")),
@@ -40,8 +41,7 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument with HybridAddressS
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(22),
       "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(15)).getOrElse("")).replaceAll(" +", " "),
-      "localCouncil" -> row.getString(32),
-      "LGDCode" -> nisraCouncilNameToCode(row.getString(32))
+      "localCustodianCode" -> Option(row.getString(34)).getOrElse("")
     )
   }
 

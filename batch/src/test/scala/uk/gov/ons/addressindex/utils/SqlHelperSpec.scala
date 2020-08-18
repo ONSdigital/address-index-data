@@ -537,7 +537,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 164
+      result.length shouldBe 28
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -550,11 +550,11 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(9)
+      val secondResult = result(25)
       secondResult.uprn shouldBe 100010971565L
-      secondResult.classificationCode shouldBe Some("CE")
-      secondResult.postcodeOut shouldBe "BT20"
-      secondResult.postcodeIn shouldBe "3JW"
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.postcodeOut shouldBe "PO15"
+      secondResult.postcodeIn shouldBe "5RZ"
       secondResult.parentUprn shouldBe 0L
       secondResult.relatives.length shouldBe 0
       secondResult.crossRefs.length shouldBe 6
@@ -573,13 +573,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf.head("recordIdentifier") shouldBe 27
 
-      val thirdResult = result(7)
-      thirdResult.uprn shouldBe 185778040L
+      val thirdResult = result(26)
+      thirdResult.uprn shouldBe 9101185488259L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("creationDate").toString shouldBe "2006-06-02"
+      thirdResult.nisra.head("creationDate").toString shouldBe "2009-04-15"
     }
 
     "aggregate information from paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
@@ -658,7 +658,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 163
+      result.length shouldBe 20
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -671,7 +671,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(7)
+      val secondResult = result(17)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
@@ -693,13 +693,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf.head("recordIdentifier") shouldBe 27
 
-      val thirdResult = result(4)
-      thirdResult.uprn shouldBe 185472578L
+      val thirdResult = result(18)
+      thirdResult.uprn shouldBe 9101185488259L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("postcode") shouldBe "BT45 7PF"
+      thirdResult.nisra.head("postcode") shouldBe "BT47 3QT"
     }
 
 
@@ -814,7 +814,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 164
+      result.length shouldBe 28
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -824,20 +824,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
 
-      val secondResult = result(9)
-      secondResult.uprn shouldBe 185196556L
+      val secondResult = result(25)
+      secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
 
-      val thirdResult = result(5)
-      thirdResult.uprn shouldBe 185472578L
+      val thirdResult = result(26)
+      thirdResult.uprn shouldBe 9101185488259L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("postcode") shouldBe "BT45 7PF"
+      thirdResult.nisra.head("postcode") shouldBe "BT47 3QT"
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
@@ -870,7 +870,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 163
+      result.length shouldBe 20
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -880,21 +880,21 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
 
-      val secondResult = result(7)
-      secondResult.uprn shouldBe 185196556L
+      val secondResult = result(17)
+      secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
       secondResult.nisra shouldBe empty
 
-      val thirdResult = result(4)
-      thirdResult.uprn shouldBe 185472578L
+      val thirdResult = result(18)
+      thirdResult.uprn shouldBe 9101185488259L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("postcode") shouldBe "BT45 7PF"
+      thirdResult.nisra.head("postcode") shouldBe "BT47 3QT"
     }
 
     "create NISRA DataFrame" in {
@@ -906,18 +906,19 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 160
+      nisraDF.length shouldBe 24
 
-      val firstLine = nisraDF(0)
-   //   firstLine.getLong(0) shouldBe 185113434L // UPRN
-      firstLine.getLong(0) shouldBe 185036142L
+      val firstLine = nisraDF(11)
+      firstLine.getLong(0) shouldBe 185806009 // UPRN
       firstLine.getString(15) shouldBe null // ORGANISATION_NAME
-      firstLine.getString(16) shouldBe "WINDMILL ROAD" // THOROUGHFARE
+      firstLine.getString(16) shouldBe "BALLYQUIN ROAD" // THOROUGHFARE
+      firstLine.getString(53) shouldBe "Old" // ADDRESS_1_YEAR_AGO
 
-      val secondLine = nisraDF(4)
-      secondLine.getLong(0) shouldBe 185778040 // UPRN
+      val secondLine = nisraDF(15)
+      secondLine.getLong(0) shouldBe 185843544L // UPRN
       secondLine.getString(15) shouldBe null // ORGANISATION_NAME
-      secondLine.getString(16) shouldBe "WILLIAM STREET" // THOROUGHFARE
+      secondLine.getString(16) shouldBe "DUNLUCE ROAD" // THOROUGHFARE
+      secondLine.getString(53) shouldBe "Both" // ADDRESS_1_YEAR_AGO
     }
 
     "create NISRA non-historical DataFrame" in {
@@ -929,17 +930,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra, historical = false).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 160
 
-      val firstLine = nisraDF(0)
-      firstLine.getLong(0) shouldBe 185036142L // UPRN
+      nisraDF.length shouldBe 17
+
+      val firstLine = nisraDF(11)
+      firstLine.getLong(0) shouldBe 185865489 // UPRN
       firstLine.getString(15) shouldBe null // ORGANISATION_NAME
-      firstLine.getString(16) shouldBe "WINDMILL ROAD" // THOROUGHFARE
+      firstLine.getString(16) shouldBe "HAMILTON ROAD" // THOROUGHFARE
+      firstLine.getString(53) shouldBe "Both" // ADDRESS_1_YEAR_AGO
 
-      val secondLine = nisraDF(3)
-      secondLine.getLong(0) shouldBe 185618821 // UPRN
-      secondLine.getString(15) shouldBe "LURGAN E CIG CO" // ORGANISATION_NAME
-      secondLine.getString(16) shouldBe "WILLIAM STREET" // THOROUGHFARE
+      val secondLine = nisraDF(15)
+      secondLine.getLong(0) shouldBe 9101185488259L // UPRN
+      secondLine.getString(15) shouldBe "Ashlea Primary School" // ORGANISATION_NAME
+      secondLine.getString(16) shouldBe "STEVENSON PARK" // THOROUGHFARE
+      secondLine.getString(53) shouldBe "Both" // ADDRESS_1_YEAR_AGO
     }
   }
 }

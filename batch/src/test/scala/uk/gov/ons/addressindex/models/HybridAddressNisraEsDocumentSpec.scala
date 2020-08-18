@@ -210,14 +210,34 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraLocality = "A LOCALITY XYZ"
   val actualNisraTownland = "BIG TOWNLAND"
   val actualNisraTown = "LITTLE TOWN"
+  val actualNisraCounty = "A COUNTY"
   val actualNisraPostCode = "AB1 7GH"
-  val actualNisraEasting = 379171.00F
-  val actualNisraNorthing = 412816.00F
+  val actualNisraPostTown = "A POST TOWN"
+  val actualNisraAddressLine1 = "ADDRESS LINE 1"
+  val actualNisraAddressLine2 = "ADDRESS LINE 2"
+  val actualNisraAddressLine3 = "ADDRESS LINE 3"
+  val actualNisraRegion = "N92000002"
+  val actualNisraLad = "N09000004"
+  val actualNisraXCoordinate = 379171.00F
+  val actualNisraYCoordinate = 412816.00F
+  val actualNisraTempCoords = "Y"
   val actualNisraUprn = 100010977866L
-  val actualNisraUdprn = "12345"
+  val actualNisraUdprn = 12345
+  val actualNisraUsrn = 12345
   val actualNisraAddressStatus = "APPROVED"
+  val actualNisraAddressType = "HH"
+  val actualNisraEstabType = "HOUSEHOLD"
+  val actualNisraRecordIdentifier: Byte = 27.toByte
+  val actualNisraParentUprn = 999910971564L
+  val actualNisraPrimaryUprn = 999911111111L
+  val actualNisraSecondaryUprn = "NA"
+  val actualNisraThisLayer = 1
+  val actualNisraLayers = 1
+  val actualNisraNodeType = "SINGLETON"
   val actualNisraBuildingStatus = "WONKY"
-  val actualNisraClassificationCode = "DO_APART"
+  val actualNisraAddress1YearAgo = "ADDRESS 1 YEAR AGO"
+  val actualNisraClassificationCode = "RD06"
+  val actualNisraClassification = "DO_APART"
   val actualNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Thoroughfare Road, Off Here, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A, An Alternative Name, Off Here, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
   val actualNisraBuildingNumMixed = "1 Thoroughfare Road, A Locality Xyz, Big Townland, Little Town, AB1 7GH"
@@ -238,7 +258,11 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraSaoEndNumber = ""
   val actualNisraSaoEndSuffix = ""
   val actualNisraLocalCouncil = "BELFAST"
+  val actualNisraLocalCustodianCode = "N09000002"
   val actualNisraLGDCode = "N09000003"
+  val actualNisraBlpuCode: Byte = 1.toByte
+  val actualNisraLogicalStatus: Byte = 1.toByte
+
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
@@ -1063,10 +1087,10 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraDependentThoroughfare,
           actualNisraLocality,
           actualNisraUdprn,
-          actualNisraTown,
+          actualNisraPostTown,
           actualNisraPostCode,
-          actualNisraEasting,
-          actualNisraNorthing,
+          actualNisraXCoordinate,
+          actualNisraYCoordinate,
           nagLocation,
           actualNisraCreationDate,
           actualNisraCommencementDate,
@@ -1074,8 +1098,30 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraBuildingStatus,
           actualNisraAddressStatus,
           actualNisraClassificationCode,
-          actualNisraLocalCouncil,
-          actualNisraLGDCode
+          actualNisraTownland,
+          actualNisraCounty,
+          actualNisraLocalCustodianCode,
+          actualNisraBlpuCode,
+          actualNisraLogicalStatus,
+          actualNisraAddressType,
+          actualNisraEstabType,
+          actualNisraLad,
+          actualNisraRegion,
+          actualNisraRecordIdentifier,
+          actualNisraParentUprn,
+          actualNisraUsrn,
+          actualNisraPrimaryUprn,
+          actualNisraSecondaryUprn,
+          actualNisraThisLayer,
+          actualNisraLayers,
+          actualNisraNodeType,
+          actualNisraAddressLine1,
+          actualNisraAddressLine2,
+          actualNisraAddressLine3,
+          actualNisraTempCoords,
+          actualNisraAddress1YearAgo,
+          actualNisraClassification,
+          actualNisraTown
         )
 
         // When

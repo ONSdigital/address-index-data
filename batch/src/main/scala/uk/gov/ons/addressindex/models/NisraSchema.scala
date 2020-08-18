@@ -31,7 +31,7 @@ object NisraSchema {
     StructField("msoa11", StringType),
     StructField("lad", StringType),
     StructField("region", StringType),
-    StructField("recordIdentifier", StringType),
+    StructField("recordIdentifier", ByteType),
     StructField("parentUprn", LongType),
     StructField("usrn", IntegerType),
     StructField("xCoordinate", FloatType),
