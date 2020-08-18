@@ -1063,7 +1063,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
 
     "Hybrid Address Elastic Search Document" should {
 
-      "cast DataFrame's rows to a NISRA key-value Map" in {
+      "cast DataFrame's rows to a NISRA key-value Map" ignore {
         // Given
         val row = Row(
           actualNisraUprn,
