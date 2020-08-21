@@ -172,31 +172,49 @@ object SqlHelper {
         functions.regexp_replace(nisra("saoStartSuffix"), "NULL", "").as("saoStartSuffix"),
         functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
         functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
-        functions.regexp_replace(nisra("complete"), "NULL", "").as("complete"),
         functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
         functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
         functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
-        functions.regexp_replace(nisra("udprn"), "NULL", "").as("udprn"),
-        functions.regexp_replace(nisra("postTown"), "NULL", "").as("townName"),
+        nisra("udprn"),
+        functions.regexp_replace(nisra("townName"), "NULL", "").as("townName"),
         functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
         nisra("xCoordinate").as("easting").cast(FloatType),
         nisra("yCoordinate").as("northing").cast(FloatType),
         functions.array(nisra("longitude"),nisra("latitude"))
           .as("location").cast(ArrayType(FloatType)),
-        functions.to_date(nisra("creationDate"), "MM/dd/yy").as("creationDate"),
-        functions.to_date(nisra("commencementDate"), "MM/dd/yy").as("commencementDate"),
-        functions.to_date(nisra("archivedDate"), "MM/dd/yy").as("archivedDate"),
-        functions.regexp_replace(nisra("buildingStatus"), "NULL", "").as("buildingStatus"),
-        functions.regexp_replace(nisra("addressStatus"), "NULL", "").as("addressStatus"),
+        functions.to_date(nisra("creationDate"), "dd/MM/yyyy").as("creationDate"),
+        functions.to_date(nisra("commencementDate"), "dd/MM/yyyy").as("commencementDate"),
+        functions.to_date(nisra("archivedDate"), "dd/MM/yyyy").as("archivedDate"),
         functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode"),
-        functions.regexp_replace(nisra("localCouncil"), "NULL", "").as("localCouncil")
-
-      ).filter("addressStatus != 'REJECTED'")
+        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(nisra("county"), "NULL", "").as("county"),
+        functions.regexp_replace(nisra("localCustodianCode"), "NULL", "").as("localCustodianCode"),
+        nisra("blpuState"),
+        nisra("logicalStatus"),
+        functions.regexp_replace(nisra("addressType"), "NULL", "").as("addressType"),
+        functions.regexp_replace(nisra("estabType"), "NULL", "").as("estabType"),
+        functions.regexp_replace(nisra("lad"), "NULL", "").as("lad"),
+        functions.regexp_replace(nisra("region"), "NULL", "").as("region"),
+        nisra("recordIdentifier"),
+        nisra("parentUprn"),
+        nisra("usrn"),
+        nisra("primaryUprn"),
+        functions.regexp_replace(nisra("secondaryUprn"), "NULL", "").as("secondaryUprn"),
+        nisra("thisLayer"),
+        nisra("layers"),
+        functions.regexp_replace(nisra("nodeType"), "NULL", "").as("nodeType"),
+        functions.regexp_replace(nisra("addressLine1"), "NULL", "").as("addressLine1"),
+        functions.regexp_replace(nisra("addressLine2"), "NULL", "").as("addressLine2"),
+        functions.regexp_replace(nisra("addressLine3"), "NULL", "").as("addressLine3"),
+        functions.regexp_replace(nisra("tempCoords"), "NULL", "").as("tempCoords"),
+        functions.regexp_replace(nisra("address1YearAgo"), "NULL", "").as("address1YearAgo"),
+        functions.regexp_replace(nisra("postTown"), "NULL", "").as("postTown")
+      )
 
     val nonHistoricalDF =
-      historicalDF.filter("addressStatus != 'HISTORICAL'")
+      historicalDF.filter("address1YearAgo != 'Old'")
 
     if (historical) historicalDF else nonHistoricalDF
   }
@@ -291,33 +309,7 @@ object SqlHelper {
           if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            nisraClassCode match {
-              case null => None
-              case "DO_DETACHED" => Some("RD02")
-              case "DO_SEMI" => Some("RD03")
-              case "ND_RETAIL" => Some("CR")
-              case "NON_POSTAL" => Some("O")
-              case "DO_TERRACE" => Some("RD04")
-              case "ND_ENTERTAINMENT" => Some("CL")
-              case "ND_HOSPITALITY" => Some("CH")
-              case "ND_SPORTING" => Some("CL06")
-              case "DO_APART" => Some("RD06")
-              case "ND_INDUSTRY" => Some("CI")
-              case "ND_EDUCATION" => Some("CE")
-              case "ND_RELIGIOUS" => Some("ZW")
-              case "ND_COMM_OTHER" => Some("C")
-              case "ND_OTHER" => Some("C")
-              case "ND_AGRICULTURE" => Some("CA")
-              case "DO_OTHER" => Some("RD")
-              case "ND_OFFICE" => Some("CO")
-              case "ND_HEALTH" => Some("CM")
-              case "ND_LEGAL" => Some("CC02")
-              case "ND_CULTURE" => Some("CL04")
-              case "ND_ENTS_OTHER" => Some("CL")
-              case "ND_CULTURE_OTHER" => Some("CL04")
-              case "ND_INDUST_OTHER" => Some("CI")
-              case _ => Some("O")
-            }
+            Some(nisraClassCode)
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
@@ -521,33 +513,7 @@ object SqlHelper {
           if (nisraClassCode.isEmpty)
             classifications.map(row => row.getAs[String]("classificationCode")).headOption
           else
-            nisraClassCode match {
-              case null => None
-              case "DO_DETACHED" => Some("RD02")
-              case "DO_SEMI" => Some("RD03")
-              case "ND_RETAIL" => Some("CR")
-              case "NON_POSTAL" => Some("O")
-              case "DO_TERRACE" => Some("RD04")
-              case "ND_ENTERTAINMENT" => Some("CL")
-              case "ND_HOSPITALITY" => Some("CH")
-              case "ND_SPORTING" => Some("CL06")
-              case "DO_APART" => Some("RD06")
-              case "ND_INDUSTRY" => Some("CI")
-              case "ND_EDUCATION" => Some("CE")
-              case "ND_RELIGIOUS" => Some("ZW")
-              case "ND_COMM_OTHER" => Some("C")
-              case "ND_OTHER" => Some("C")
-              case "ND_AGRICULTURE" => Some("CA")
-              case "DO_OTHER" => Some("RD")
-              case "ND_OFFICE" => Some("CO")
-              case "ND_HEALTH" => Some("CM")
-              case "ND_LEGAL" => Some("CC02")
-              case "ND_CULTURE" => Some("CL04")
-              case "ND_ENTS_OTHER" => Some("CL")
-              case "ND_CULTURE_OTHER" => Some("CL04")
-              case "ND_INDUST_OTHER" => Some("CI")
-              case _ => Some("O")
-            }
+            Some(nisraClassCode)
         }
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
