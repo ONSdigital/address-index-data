@@ -184,9 +184,9 @@ object SqlHelper {
         nisra("yCoordinate").as("northing").cast(FloatType),
         functions.array(nisra("longitude"),nisra("latitude"))
           .as("location").cast(ArrayType(FloatType)),
-        functions.to_date(nisra("creationDate"), "dd/MM/yyyy").as("creationDate"),
-        functions.to_date(nisra("commencementDate"), "dd/MM/yyyy").as("commencementDate"),
-        functions.to_date(nisra("archivedDate"), "dd/MM/yyyy").as("archivedDate"),
+        functions.to_date(nisra("creationDate"), "yyyy/MM/dd").as("creationDate"),
+        functions.to_date(nisra("commencementDate"), "yyyy/MM/dd").as("commencementDate"),
+        functions.to_date(nisra("archivedDate"), "yyyy/MM/dd").as("archivedDate"),
         functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode"),
         functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
         functions.regexp_replace(nisra("county"), "NULL", "").as("county"),
