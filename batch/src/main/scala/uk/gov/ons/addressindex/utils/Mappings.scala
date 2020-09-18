@@ -937,7 +937,11 @@ object Mappings {
                           "classificationCode": {
                               "type": "text",
                               "index": "true",
-                              "analyzer": "keyword"
+                              "analyzer": "keyword",
+                              "index_prefixes": {
+                                 "min_chars" : 1,
+                                 "max_chars" : 6
+                              }
                           },
                           "creationDate": {
                               "type": "date",
@@ -1776,7 +1780,11 @@ object Mappings {
                   "classificationCode": {
                       "type": "text",
                       "index": "true",
-                      "analyzer": "keyword"
+                      "analyzer": "keyword",
+                      "index_prefixes": {
+                         "min_chars" : 1,
+                         "max_chars" : 6
+                      }
                   },
                   "censusAddressType": {
                       "type": "text",
