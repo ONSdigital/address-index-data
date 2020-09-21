@@ -155,68 +155,65 @@ object SqlHelper {
     )
   }
 
-  def nisraData(nisra: DataFrame, historical: Boolean = true): DataFrame = {
+  def nisraData(nisra: DataFrame, nisraAddress1YearAgo: Boolean = false): DataFrame = {
 
-    val historicalDF =
-      nisra.select(nisra("uprn").cast(LongType),
-        functions.regexp_replace(nisra("subBuildingName"), "NULL", "").as("subBuildingName"),
-        functions.regexp_replace(nisra("buildingName"), "NULL", "").as("buildingName"),
-        functions.regexp_replace(nisra("buildingNumber"), "NULL", "").as("buildingNumber"),
-        functions.regexp_replace(nisra("paoStartNumber"), "NULL", "").as("paoStartNumber"),
-        functions.regexp_replace(nisra("paoEndNumber"), "NULL", "").as("paoEndNumber"),
-        functions.regexp_replace(nisra("paoStartSuffix"), "NULL", "").as("paoStartSuffix"),
-        functions.regexp_replace(nisra("paoEndSuffix"), "NULL", "").as("paoEndSuffix"),
-        functions.regexp_replace(nisra("paoText"), "NULL", "").as("paoText"),
-        functions.regexp_replace(nisra("saoStartNumber"), "NULL", "").as("saoStartNumber"),
-        functions.regexp_replace(nisra("saoEndNumber"), "NULL", "").as("saoEndNumber"),
-        functions.regexp_replace(nisra("saoStartSuffix"), "NULL", "").as("saoStartSuffix"),
-        functions.regexp_replace(nisra("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
-        functions.regexp_replace(nisra("saoText"), "NULL", "").as("saoText"),
-        functions.regexp_replace(nisra("organisationName"), "NULL", "").as("organisationName"),
-        functions.regexp_replace(nisra("thoroughfare"), "NULL", "").as("thoroughfare"),
-        functions.regexp_replace(nisra("altThoroughfare"), "NULL", "").as("altThoroughfare"),
-        functions.regexp_replace(nisra("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
-        functions.regexp_replace(nisra("locality"), "NULL", "").as("locality"),
-        nisra("udprn"),
-        functions.regexp_replace(nisra("townName"), "NULL", "").as("townName"),
-        functions.regexp_replace(nisra("postcode"), "NULL", "").as("postcode"),
-        nisra("xCoordinate").as("easting").cast(FloatType),
-        nisra("yCoordinate").as("northing").cast(FloatType),
-        functions.array(nisra("longitude"),nisra("latitude"))
+    val filteredNisraDF = if (nisraAddress1YearAgo) nisra.filter("address1YearAgo != 'New'")
+                          else nisra.filter("address1YearAgo != 'Old'")
+
+    filteredNisraDF.select(filteredNisraDF("uprn").cast(LongType),
+        functions.regexp_replace(filteredNisraDF("subBuildingName"), "NULL", "").as("subBuildingName"),
+        functions.regexp_replace(filteredNisraDF("buildingName"), "NULL", "").as("buildingName"),
+        functions.regexp_replace(filteredNisraDF("buildingNumber"), "NULL", "").as("buildingNumber"),
+        functions.regexp_replace(filteredNisraDF("paoStartNumber"), "NULL", "").as("paoStartNumber"),
+        functions.regexp_replace(filteredNisraDF("paoEndNumber"), "NULL", "").as("paoEndNumber"),
+        functions.regexp_replace(filteredNisraDF("paoStartSuffix"), "NULL", "").as("paoStartSuffix"),
+        functions.regexp_replace(filteredNisraDF("paoEndSuffix"), "NULL", "").as("paoEndSuffix"),
+        functions.regexp_replace(filteredNisraDF("paoText"), "NULL", "").as("paoText"),
+        functions.regexp_replace(filteredNisraDF("saoStartNumber"), "NULL", "").as("saoStartNumber"),
+        functions.regexp_replace(filteredNisraDF("saoEndNumber"), "NULL", "").as("saoEndNumber"),
+        functions.regexp_replace(filteredNisraDF("saoStartSuffix"), "NULL", "").as("saoStartSuffix"),
+        functions.regexp_replace(filteredNisraDF("saoEndSuffix"), "NULL", "").as("saoEndSuffix"),
+        functions.regexp_replace(filteredNisraDF("saoText"), "NULL", "").as("saoText"),
+        functions.regexp_replace(filteredNisraDF("organisationName"), "NULL", "").as("organisationName"),
+        functions.regexp_replace(filteredNisraDF("thoroughfare"), "NULL", "").as("thoroughfare"),
+        functions.regexp_replace(filteredNisraDF("altThoroughfare"), "NULL", "").as("altThoroughfare"),
+        functions.regexp_replace(filteredNisraDF("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
+        functions.regexp_replace(filteredNisraDF("locality"), "NULL", "").as("locality"),
+        filteredNisraDF("udprn"),
+        functions.regexp_replace(filteredNisraDF("townName"), "NULL", "").as("townName"),
+        functions.regexp_replace(filteredNisraDF("postcode"), "NULL", "").as("postcode"),
+        filteredNisraDF("xCoordinate").as("easting").cast(FloatType),
+        filteredNisraDF("yCoordinate").as("northing").cast(FloatType),
+        functions.array(filteredNisraDF("longitude"),filteredNisraDF("latitude"))
           .as("location").cast(ArrayType(FloatType)),
-        functions.to_date(nisra("creationDate"), "yyyy-MM-dd").as("creationDate"),
-        functions.to_date(nisra("commencementDate"), "yyyy-MM-dd").as("commencementDate"),
-        functions.to_date(nisra("archivedDate"), "yyyy-MM-dd").as("archivedDate"),
-        functions.regexp_replace(nisra("classificationCode"), "NULL", "").as("classificationCode"),
-        functions.regexp_replace(nisra("townland"), "NULL", "").as("townland"),
-        functions.regexp_replace(nisra("county"), "NULL", "").as("county"),
-        functions.regexp_replace(nisra("localCustodianCode"), "NULL", "").as("localCustodianCode"),
-        nisra("blpuState"),
-        nisra("logicalStatus"),
-        functions.regexp_replace(nisra("addressType"), "NULL", "").as("addressType"),
-        functions.regexp_replace(nisra("estabType"), "NULL", "").as("estabType"),
-        functions.regexp_replace(nisra("lad"), "NULL", "").as("lad"),
-        functions.regexp_replace(nisra("region"), "NULL", "").as("region"),
-        nisra("recordIdentifier"),
-        nisra("parentUprn"),
-        nisra("usrn"),
-        nisra("primaryUprn"),
-        functions.regexp_replace(nisra("secondaryUprn"), "NULL", "").as("secondaryUprn"),
-        nisra("thisLayer"),
-        nisra("layers"),
-        functions.regexp_replace(nisra("nodeType"), "NULL", "").as("nodeType"),
-        functions.regexp_replace(nisra("addressLine1"), "NULL", "").as("addressLine1"),
-        functions.regexp_replace(nisra("addressLine2"), "NULL", "").as("addressLine2"),
-        functions.regexp_replace(nisra("addressLine3"), "NULL", "").as("addressLine3"),
-        functions.regexp_replace(nisra("tempCoords"), "NULL", "").as("tempCoords"),
-        functions.regexp_replace(nisra("address1YearAgo"), "NULL", "").as("address1YearAgo"),
-        functions.regexp_replace(nisra("postTown"), "NULL", "").as("postTown")
+        functions.to_date(filteredNisraDF("creationDate"), "yyyy-MM-dd").as("creationDate"),
+        functions.to_date(filteredNisraDF("commencementDate"), "yyyy-MM-dd").as("commencementDate"),
+        functions.to_date(filteredNisraDF("archivedDate"), "yyyy-MM-dd").as("archivedDate"),
+        functions.regexp_replace(filteredNisraDF("classificationCode"), "NULL", "").as("classificationCode"),
+        functions.regexp_replace(filteredNisraDF("townland"), "NULL", "").as("townland"),
+        functions.regexp_replace(filteredNisraDF("county"), "NULL", "").as("county"),
+        functions.regexp_replace(filteredNisraDF("localCustodianCode"), "NULL", "").as("localCustodianCode"),
+        filteredNisraDF("blpuState"),
+        filteredNisraDF("logicalStatus"),
+        functions.regexp_replace(filteredNisraDF("addressType"), "NULL", "").as("addressType"),
+        functions.regexp_replace(filteredNisraDF("estabType"), "NULL", "").as("estabType"),
+        functions.regexp_replace(filteredNisraDF("lad"), "NULL", "").as("lad"),
+        functions.regexp_replace(filteredNisraDF("region"), "NULL", "").as("region"),
+        filteredNisraDF("recordIdentifier"),
+        filteredNisraDF("parentUprn"),
+        filteredNisraDF("usrn"),
+        filteredNisraDF("primaryUprn"),
+        functions.regexp_replace(filteredNisraDF("secondaryUprn"), "NULL", "").as("secondaryUprn"),
+        filteredNisraDF("thisLayer"),
+        filteredNisraDF("layers"),
+        functions.regexp_replace(filteredNisraDF("nodeType"), "NULL", "").as("nodeType"),
+        functions.regexp_replace(filteredNisraDF("addressLine1"), "NULL", "").as("addressLine1"),
+        functions.regexp_replace(filteredNisraDF("addressLine2"), "NULL", "").as("addressLine2"),
+        functions.regexp_replace(filteredNisraDF("addressLine3"), "NULL", "").as("addressLine3"),
+        functions.regexp_replace(filteredNisraDF("tempCoords"), "NULL", "").as("tempCoords"),
+        functions.regexp_replace(filteredNisraDF("address1YearAgo"), "NULL", "").as("address1YearAgo"),
+        functions.regexp_replace(filteredNisraDF("postTown"), "NULL", "").as("postTown")
       )
-
-    val nonHistoricalDF =
-      historicalDF.filter("address1YearAgo != 'Old'")
-
-    if (historical) historicalDF else nonHistoricalDF
   }
 
   private val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
@@ -256,8 +253,8 @@ object SqlHelper {
       .agg(functions.collect_list(functions.struct("*")).as("lpis"))
       .join(pafGrouped, Seq("uprn"), "left_outer")
 
-  private def createNisraGrouped(nisra: DataFrame, historical: Boolean) =
-    nisraData(nisra, historical)
+  private def createNisraGrouped(nisra: DataFrame, nisraAddress1YearAgo: Boolean) =
+    nisraData(nisra, nisraAddress1YearAgo)
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("*")).as("nisra"))
 
@@ -274,14 +271,14 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyNisraEsDocument] = {
+  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of nisra by uprn
-    val nisraGrouped = createNisraGrouped(nisra, historical)
+    val nisraGrouped = createNisraGrouped(nisra, nisraAddress1YearAgo)
 
     // DataFrame of paf and lpis by uprn joined with nisra
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
@@ -396,7 +393,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressSkinnyEsDocument] = {
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -485,14 +482,14 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true): RDD[HybridAddressNisraEsDocument] = {
+  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of nisra by uprn
-    val nisraGrouped = createNisraGrouped(nisra, historical)
+    val nisraGrouped = createNisraGrouped(nisra, nisraAddress1YearAgo)
 
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)

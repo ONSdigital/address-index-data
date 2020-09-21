@@ -534,10 +534,10 @@ class SqlHelperSpec extends WordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 27
+      result.length shouldBe 24
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -550,7 +550,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(26)
+      val secondResult = result(23)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
@@ -810,10 +810,10 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
 
       // Then
-      result.length shouldBe 27
+      result.length shouldBe 24
 
       val firstResult = result(0)
       firstResult.uprn shouldBe 2L
@@ -823,20 +823,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
 
-      val secondResult = result(26)
-      secondResult.uprn shouldBe 100010971565L
-      secondResult.classificationCode shouldBe Some("RD")
-      secondResult.parentUprn shouldBe 0L
-      secondResult.lpi.size shouldBe 3
-      secondResult.paf.size shouldBe 1
-
-      val thirdResult = result(25)
+      val thirdResult = result(22)
       thirdResult.uprn shouldBe 380592411
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
       thirdResult.nisra.head("postcode") shouldBe "BT42 3GA"
+
+      val secondResult = result(23)
+      secondResult.uprn shouldBe 100010971565L
+      secondResult.classificationCode shouldBe Some("RD")
+      secondResult.parentUprn shouldBe 0L
+      secondResult.lpi.size shouldBe 3
+      secondResult.paf.size shouldBe 1
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
@@ -896,7 +896,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       thirdResult.nisra.head("postcode") shouldBe "BT20 3JW"
     }
 
-    "create NISRA DataFrame" in {
+    "create a NISRA DataFrame without addresses from 1 year ago" in {
 
       // Given
       val nisra = AddressIndexFileReader.readNisraTXT()
@@ -905,42 +905,70 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nisraDF = SqlHelper.nisraData(nisra).sort("uprn").collect()
 
       // Then
-      nisraDF.length shouldBe 23
-
-      val firstLine = nisraDF(11)
-      firstLine.getLong(0) shouldBe 376740211 // UPRN
-      firstLine.getString(14) shouldBe null // ORGANISATION_NAME
-      firstLine.getString(15) shouldBe "SLIGO LINE" // THOROUGHFARE
-      firstLine.getString(50) shouldBe "Old" // ADDRESS_1_YEAR_AGO
-
-      val secondLine = nisraDF(15)
-      secondLine.getString(14) shouldBe null // ORGANISATION_NAME
-      secondLine.getString(15) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
-      secondLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
-    }
-
-    "create NISRA non-historical DataFrame" in {
-
-      // Given
-      val nisra = AddressIndexFileReader.readNisraTXT()
-
-      // When
-      val nisraDF = SqlHelper.nisraData(nisra, historical = false).sort("uprn").collect()
-
-      // Then
       nisraDF.length shouldBe 15
 
-      val firstLine = nisraDF(11)
-      firstLine.getLong(0) shouldBe 376893908 // UPRN
-      firstLine.getString(14) shouldBe null // ORGANISATION_NAME
-      firstLine.getString(15) shouldBe "HAMILTON ROAD" // THOROUGHFARE
-      firstLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
+      val firstLine = nisraDF(4)
+      firstLine.getLong(0) shouldBe 376490334 // UPRN
+      firstLine.getString(14) shouldBe "Fivemiletown College" // ORGANISATION_NAME
+      firstLine.getString(15) shouldBe "COLEBROOK ROAD" // THOROUGHFARE
+      firstLine.getString(50) shouldBe "New" // ADDRESS_1_YEAR_AGO
 
       val secondLine = nisraDF(14)
       secondLine.getLong(0) shouldBe 380592411L // UPRN
       secondLine.getString(14) shouldBe "Castletower School" // ORGANISATION_NAME
       secondLine.getString(15) shouldBe "LARNE ROAD LINK" // THOROUGHFARE
       secondLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
+    }
+
+    "create a NISRA DataFrame with addresses from 1 year ago" in {
+
+      // Given
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      // When
+      val nisraDF = SqlHelper.nisraData(nisra, nisraAddress1YearAgo = true).sort("uprn").collect()
+
+      // Then
+      nisraDF.length shouldBe 20
+
+      val firstLine = nisraDF(9)
+      firstLine.getLong(0) shouldBe 376740211 // UPRN
+      firstLine.getString(14) shouldBe null // ORGANISATION_NAME
+      firstLine.getString(15) shouldBe "SLIGO LINE" // THOROUGHFARE
+      firstLine.getString(50) shouldBe "Old" // ADDRESS_1_YEAR_AGO
+
+      val secondLine = nisraDF(13)
+      secondLine.getString(14) shouldBe null // ORGANISATION_NAME
+      secondLine.getString(15) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
+      secondLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
+    }
+
+    "return only New and Both records when addresses from 1 year ago are excluded from the request" in {
+
+      // Given
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      // When
+      val nisraDF = SqlHelper.nisraData(nisra)
+        .filter("address1YearAgo == 'Old'")
+        .collect()
+
+      // Then
+      nisraDF.length shouldBe 0
+    }
+
+    "return only Old and Both records when addresses from 1 year ago are included in the request" in {
+
+      // Given
+      val nisra = AddressIndexFileReader.readNisraTXT()
+
+      // When
+      val nisraDF = SqlHelper.nisraData(nisra, nisraAddress1YearAgo = true)
+        .filter("address1YearAgo == 'New'")
+        .collect()
+
+      // Then
+      nisraDF.length shouldBe 0
     }
   }
 }
