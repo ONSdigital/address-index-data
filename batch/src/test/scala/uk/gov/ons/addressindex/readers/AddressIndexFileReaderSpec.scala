@@ -309,7 +309,7 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       line.getString(4) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
       line.getLong(12) shouldBe  376847438 // UPRN
       line.getString(16) shouldBe "CC11" // CLASSIFICATION_CODE
-      line.getString(36) shouldBe "2008/07/07" // CREATION_DATE
+      line.getString(36) shouldBe "2008-07-07" // CREATION_DATE
       line.getFloat(39) shouldBe 54.75717f // LAT
     }
 
