@@ -204,14 +204,14 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraTempCoords = "Y"
   val expectedNisraUsrn = 12345
   val expectedNisraAddressType = "HH"
-  val expectedNisraEstabType = "HOUSEHOLD"
+  val expectedNisraEstabType = "Household"
   val expectedNisraRecordIdentifier: Byte = 27.toByte
   val expectedNisraParentUprn = 999910971564L
   val expectedNisraPrimaryUprn = 999911111111L
   val expectedNisraSecondaryUprn = "NA"
   val expectedNisraThisLayer = 1
   val expectedNisraLayers = 1
-  val expectedNisraNodeType = "SINGLETON"
+  val expectedNisraNodeType = "Singleton"
   val expectedNisraAddress1YearAgo = "Address 1 Year Ago"
   val expectedNisraLocalCustodianCode = "N09000002"
   val expectedNisraBlpuCode: Byte = 1.toByte
