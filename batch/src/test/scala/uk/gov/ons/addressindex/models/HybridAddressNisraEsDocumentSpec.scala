@@ -2,6 +2,7 @@ package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
 import org.scalatest.{Matchers, WordSpec}
+import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.{addLeadingZeros, buildingNameExtra, normalize, toShort}
 
 class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
 
@@ -174,8 +175,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraNorthing = 412816.00F
   val expectedNisraUprn = 100010977866L
   val expectedNisraUdprn = 12345
-  val expectedNisraAddressStatus = "APPROVED"
-  val expectedNisraBuildingStatus = "WONKY"
   val expectedNisraClassificationCode = "DO_APART"
   val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Thoroughfare Road, Off Here, A Locality Xyz, Little Town, AB1 7GH AB17GH"
   val expectedNisraMixedStart = "An Organisat"
@@ -184,7 +183,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
-  val expectedNisraComplete = "1"
   val expectedNisraPaoText = "The Building Name"
   val expectedNisraPaoStartNumber = 1
   val expectedNisraPaoStartSuffix = "A"
@@ -193,11 +191,31 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraSaoText = "The Sub Building Name"
   val expectedNisraSaoStartNumber: Null = null
   val expectedNisraSaoStartSuffix = ""
+  val expectedNisraCounty = "A County"
+  val expectedNisraPostTown = "A Post Town"
+  val expectedNisraAddressLine1 = "Address Line 1"
+  val expectedNisraAddressLine2 = "Address Line 2"
+  val expectedNisraAddressLine3 = "Address Line 3"
   val expectedNisraSaoEndNumber: Null = null
   val expectedNisraSaoEndSuffix = ""
   val expectedNisraSecondarySort = "THE BUILDING NAME THE SUB BUILDING NAME AN ORGANISATION"
-  val expectedNisraLocalCouncil = "BELFAST"
-  val expectedNisraLGDCode = "N09000003"
+  val expectedNisraRegion = "N92000002"
+  val expectedNisraLad = "N09000004"
+  val expectedNisraTempCoords = "Y"
+  val expectedNisraUsrn = 12345
+  val expectedNisraAddressType = "HH"
+  val expectedNisraEstabType = "Household"
+  val expectedNisraRecordIdentifier: Byte = 27.toByte
+  val expectedNisraParentUprn = 999910971564L
+  val expectedNisraPrimaryUprn = 999911111111L
+  val expectedNisraSecondaryUprn = "NA"
+  val expectedNisraThisLayer = 1
+  val expectedNisraLayers = 1
+  val expectedNisraNodeType = "Singleton"
+  val expectedNisraAddress1YearAgo = "Address 1 Year Ago"
+  val expectedNisraLocalCustodianCode = "N09000002"
+  val expectedNisraBlpuCode: Byte = 1.toByte
+  val expectedNisraLogicalStatus: Byte = 1.toByte
 
   // NISRA actual
   val actualNisraOrganisation = "AN ORGANISATION"
@@ -211,10 +229,8 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraTownland = "BIG TOWNLAND"
   val actualNisraTown = "LITTLE TOWN"
   val actualNisraPostCode = "AB1 7GH"
-  val actualNisraEasting = 379171.00F
-  val actualNisraNorthing = 412816.00F
   val actualNisraUprn = 100010977866L
-  val actualNisraUdprn = "12345"
+  val actualNisraUdprn = 12345
   val actualNisraAddressStatus = "APPROVED"
   val actualNisraBuildingStatus = "WONKY"
   val actualNisraClassificationCode = "DO_APART"
@@ -237,8 +253,31 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraSaoStartSuffix = ""
   val actualNisraSaoEndNumber = ""
   val actualNisraSaoEndSuffix = ""
-  val actualNisraLocalCouncil = "BELFAST"
-  val actualNisraLGDCode = "N09000003"
+  val actualNisraCounty = "A COUNTY"
+  val actualNisraPostTown = "A POST TOWN"
+  val actualNisraAddressLine1 = "ADDRESS LINE 1"
+  val actualNisraAddressLine2 = "ADDRESS LINE 2"
+  val actualNisraAddressLine3 = "ADDRESS LINE 3"
+  val actualNisraRegion = "N92000002"
+  val actualNisraLad = "N09000004"
+  val actualNisraXCoordinate = 379171.00F
+  val actualNisraYCoordinate = 412816.00F
+  val actualNisraTempCoords = "Y"
+  val actualNisraUsrn = 12345
+  val actualNisraAddressType = "HH"
+  val actualNisraEstabType = "HOUSEHOLD"
+  val actualNisraRecordIdentifier: Byte = 27.toByte
+  val actualNisraParentUprn = 999910971564L
+  val actualNisraPrimaryUprn = 999911111111L
+  val actualNisraSecondaryUprn = "NA"
+  val actualNisraThisLayer = 1
+  val actualNisraLayers = 1
+  val actualNisraNodeType = "SINGLETON"
+  val actualNisraAddress1YearAgo = "ADDRESS 1 YEAR AGO"
+  val actualNisraLocalCustodianCode = "N09000002"
+  val actualNisraBlpuCode: Byte = 1.toByte
+  val actualNisraLogicalStatus: Byte = 1.toByte
+
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
@@ -335,8 +374,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "creationDate" -> expectedNisraCreationDate,
     "commencementDate" -> expectedNisraCommencementDate,
     "archivedDate" -> expectedNisraArchivedDate,
-    "buildingStatus" -> expectedNisraBuildingStatus,
-    "addressStatus" -> expectedNisraAddressStatus,
     "classificationCode" -> expectedNisraClassificationCode,
     "mixedNisra" -> expectedNisraMixed,
     "mixedNisraStart" -> expectedNisraMixedStart,
@@ -352,7 +389,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "udprn" -> expectedNisraUdprn,
     "townName" -> expectedNisraTown,
     "postcode" -> expectedNisraPostCode,
-    "complete" -> expectedNisraComplete,
     "paoText" -> expectedNisraPaoText,
     "paoStartNumber" -> expectedNisraPaoStartNumber,
     "paoStartSuffix" -> expectedNisraPaoStartSuffix,
@@ -364,8 +400,29 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "saoEndNumber" -> expectedNisraSaoEndNumber,
     "saoEndSuffix" -> expectedNisraSaoEndSuffix,
     "secondarySort" -> expectedNisraSecondarySort,
-    "localCouncil" -> expectedNisraLocalCouncil,
-    "LGDCode" -> expectedNisraLGDCode
+    "townland" -> expectedNisraTownland,
+    "county" -> expectedNisraCounty,
+    "localCustodianCode" -> expectedNisraLocalCustodianCode,
+    "blpuState" -> expectedNisraBlpuCode,
+    "logicalStatus" -> expectedNisraLogicalStatus,
+    "addressType" -> expectedNisraAddressType,
+    "estabType" -> expectedNisraEstabType,
+    "lad" -> expectedNisraLad,
+    "region" -> expectedNisraRegion,
+    "recordIdentifier" -> expectedNisraRecordIdentifier,
+    "parentUprn" -> expectedNisraParentUprn,
+    "usrn" -> expectedNisraUsrn,
+    "primaryUprn" -> expectedNisraPrimaryUprn,
+    "secondaryUprn" -> expectedNisraSecondaryUprn,
+    "thisLayer" ->  expectedNisraThisLayer,
+    "layers" -> expectedNisraLayers,
+    "nodeType" -> expectedNisraNodeType,
+    "addressLine1" -> expectedNisraAddressLine1,
+    "addressLine2" -> expectedNisraAddressLine2,
+    "addressLine3" -> expectedNisraAddressLine3,
+    "tempCoords" -> expectedNisraTempCoords,
+    "address1YearAgo" -> expectedNisraAddress1YearAgo,
+    "postTown" -> expectedNisraPostTown
   )
 
   "Hybrid Address Elastic Search Document" should {
@@ -1056,7 +1113,6 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraSaoStartSuffix,
           actualNisraSaoEndSuffix,
           actualNisraSaoText,
-          actualNisraComplete,
           actualNisraOrganisation,
           actualNisraThoroughfare,
           actualNisraAltThoroughfare,
@@ -1065,17 +1121,36 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraUdprn,
           actualNisraTown,
           actualNisraPostCode,
-          actualNisraEasting,
-          actualNisraNorthing,
+          actualNisraXCoordinate,
+          actualNisraYCoordinate,
           nagLocation,
           actualNisraCreationDate,
           actualNisraCommencementDate,
           actualNisraArchivedDate,
-          actualNisraBuildingStatus,
-          actualNisraAddressStatus,
           actualNisraClassificationCode,
-          actualNisraLocalCouncil,
-          actualNisraLGDCode
+          actualNisraTownland,
+          actualNisraCounty,
+          actualNisraLocalCustodianCode,
+          actualNisraBlpuCode,
+          actualNisraLogicalStatus,
+          actualNisraAddressType,
+          actualNisraEstabType,
+          actualNisraLad,
+          actualNisraRegion,
+          actualNisraRecordIdentifier,
+          actualNisraParentUprn,
+          actualNisraUsrn,
+          actualNisraPrimaryUprn,
+          actualNisraSecondaryUprn,
+          actualNisraThisLayer,
+          actualNisraLayers,
+          actualNisraNodeType,
+          actualNisraAddressLine1,
+          actualNisraAddressLine2,
+          actualNisraAddressLine3,
+          actualNisraTempCoords,
+          actualNisraAddress1YearAgo,
+          actualNisraPostTown
         )
 
         // When
