@@ -3,6 +3,7 @@ package uk.gov.ons.addressindex.utils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.{ArrayType, FloatType, LongType}
+import org.apache.spark.sql.functions.{col, when}
 import uk.gov.ons.addressindex.models.{HybridAddressEsDocument, HybridAddressNisraEsDocument, HybridAddressSkinnyEsDocument, HybridAddressSkinnyNisraEsDocument}
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
@@ -226,7 +227,10 @@ object SqlHelper {
 
   private val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
-  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+  private val hierarchyDFhacked = hierarchyDF.withColumn("thisLayer", when(col("thisLayer").equalTo(6), 1)
+    .otherwise(col("thisLayer")))
+
+  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDFhacked)
     .groupBy("primaryUprn")
     .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 

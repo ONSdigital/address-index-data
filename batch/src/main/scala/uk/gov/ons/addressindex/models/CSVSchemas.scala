@@ -224,11 +224,18 @@ object CSVSchemas {
     * hierarchy CSV file schema
     */
   val hierarchyFileSchema = StructType(Seq(
+    //    StructField("uprn", LongType, nullable = false),
+    //    StructField("primaryUprn", LongType, nullable = false),
+    //    StructField("secondaryUprn", LongType, nullable = true),
+    //    StructField("layers", IntegerType, nullable = false),
+    //    StructField("thisLayer", IntegerType, nullable = false),
+    //    StructField("parentUprn", LongType, nullable = true)
     StructField("uprn", LongType, nullable = false),
+    StructField("parentUprn", LongType, nullable = true),
     StructField("primaryUprn", LongType, nullable = false),
     StructField("secondaryUprn", LongType, nullable = true),
-    StructField("layers", IntegerType, nullable = false),
     StructField("thisLayer", IntegerType, nullable = false),
-    StructField("parentUprn", LongType, nullable = true)
+    StructField("layers", IntegerType, nullable = false),
+    StructField("nodeType", StringType, nullable = false)
   ))
 }
