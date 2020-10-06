@@ -227,10 +227,10 @@ object SqlHelper {
 
   private val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
 
-  private val hierarchyDFhacked = hierarchyDF.withColumn("thisLayer", when(col("thisLayer").equalTo(6), 1)
-    .otherwise(col("thisLayer")))
-
-  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDFhacked)
+//  private val hierarchyDFhacked = hierarchyDF.withColumn("thisLayer", when(col("thisLayer").equalTo(6), 1)
+//    .otherwise(col("thisLayer")))
+//  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDFhacked)
+  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
     .groupBy("primaryUprn")
     .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
