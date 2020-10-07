@@ -230,8 +230,8 @@ object CSVSchemas {
         StructField("layers", IntegerType, nullable = false),
         StructField("thisLayer", IntegerType, nullable = false),
         StructField("parentUprn", LongType, nullable = true),
-        StructField("addressType", LongType, nullable = true),
-        StructField("estabType", LongType, nullable = true)
+        StructField("addressType", StringType, nullable = true),
+        StructField("estabType", StringType, nullable = true)
 //    StructField("uprn", LongType, nullable = false),
 //    StructField("parentUprn", LongType, nullable = true),
 //    StructField("primaryUprn", LongType, nullable = false),
