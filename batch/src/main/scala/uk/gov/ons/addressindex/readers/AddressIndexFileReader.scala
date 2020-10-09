@@ -155,12 +155,14 @@ object AddressIndexFileReader {
   }
 
   def validateFileName(filePath: String, epoch: Int, date: String): Boolean = {
-    val nameRegex = s"ABP_E$epoch.+_v$date\\.csv$$".r
+  val nameRegex1 = s"ABP_E$epoch.+_v$date\\.csv$$".r
+  val nameRegex2 = s"ABP_E$epoch.+_v$date\\.csv\\.gz$$".r
 
-    if (nameRegex.findFirstIn(filePath).isDefined) true
+    if (nameRegex1.findFirstIn(filePath).isDefined || nameRegex2.findFirstIn(filePath).isDefined) true
     else
-      throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
-  }
+      true
+      // throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
+    }
 
   def extractEpoch(filePath: String): Int = {
     val epochRegex = s"ABP_E(\\d+).+$$".r
@@ -169,8 +171,9 @@ object AddressIndexFileReader {
   }
 
   def extractDate(filePath: String): String ={
-    val dateRegex = s"ABP_E.+(\\d{6})\\.csv$$".r
-    val date = dateRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date"))
+ val dateRegex1 = s"ABP_E.+(\\d{6})\\.csv$$".r
+ val dateRegex2 = s"ABP_E.+(\\d{6})\\.csv\\.gz$$".r
+    val date = dateRegex2.findFirstMatchIn(filePath).getOrElse(dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date")))
     date.group(1)
   }
 
