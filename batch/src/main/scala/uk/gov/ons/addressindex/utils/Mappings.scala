@@ -1079,6 +1079,11 @@ object Mappings {
                   "postTown": {
                       "type": "keyword",
                       "index": "true"
+                  },
+                  "mixedPartial": {
+                      "type": "text",
+                      "search_analyzer": "keyword_analyzer",
+                      "analyzer": "edge_ngram_analyzer"
                   }
               }
           }
@@ -1818,6 +1823,11 @@ object Mappings {
                   "postTown": {
                       "type": "keyword",
                       "index": "true"
+                  },
+                  "mixedPartial": {
+                      "type": "text",
+                      "search_analyzer": "keyword_analyzer",
+                      "analyzer": "edge_ngram_analyzer"
                   }
               }
           }
