@@ -754,7 +754,7 @@ object SqlHelper {
     case _ => "O"
   }
 
-  private def createMixedPartial(outputLpis: Seq[Map[String, Any]],
+  def createMixedPartial(outputLpis: Seq[Map[String, Any]],
                                  outputPaf: Seq[Map[String, Any]],
                                  outputNisra: Seq[Map[String, Any]] = Seq.empty): String = {
 
