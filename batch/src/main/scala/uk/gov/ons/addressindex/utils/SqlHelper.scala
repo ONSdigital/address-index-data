@@ -388,7 +388,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          createMixedPartial(outputLpis, outputPaf, outputNisra)
         )
     }
   }
@@ -479,7 +480,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          createMixedPartial(outputLpis, outputPaf)
         )
     }
   }
@@ -614,7 +616,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          createMixedPartial(outputLpis, outputPaf, outputNisra)
         )
     }
   }
@@ -716,7 +719,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          createMixedPartial(outputLpis, outputPaf)
         )
     }
   }
@@ -750,5 +754,15 @@ object SqlHelper {
     case _ => "O"
   }
 
+  private def createMixedPartial(outputLpis: Seq[Map[String, Any]],
+                                 outputPaf: Seq[Map[String, Any]],
+                                 outputNisra: Seq[Map[String, Any]] = Seq.empty): String = {
+
+    val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
+
+    val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
+
+    mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+  }
 
 }
