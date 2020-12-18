@@ -375,6 +375,10 @@ object SqlHelper {
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
         val postTown = pafTown.orNull
 
+        val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
+        val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
+        val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -388,7 +392,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          mixedPartialTokens
         )
     }
   }
@@ -467,6 +472,10 @@ object SqlHelper {
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
         val postTown = pafTown.orNull
 
+        val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf")
+        val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
+        val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -479,7 +488,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          mixedPartialTokens
         )
     }
   }
@@ -597,6 +607,10 @@ object SqlHelper {
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
         val postTown = pafTown.orNull
 
+        val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
+        val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
+        val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+
         HybridAddressNisraEsDocument(
           uprn,
           postCodeIn,
@@ -614,7 +628,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          mixedPartialTokens
         )
     }
   }
@@ -700,6 +715,10 @@ object SqlHelper {
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
         val postTown = pafTown.orNull
 
+        val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf")
+        val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
+        val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -716,7 +735,8 @@ object SqlHelper {
           fromSource,
           countryCode,
           postcodeStreetTown,
-          postTown
+          postTown,
+          mixedPartialTokens
         )
     }
   }
@@ -749,6 +769,5 @@ object SqlHelper {
     case "ND_INDUST_OTHER" => "CI"
     case _ => "O"
   }
-
 
 }

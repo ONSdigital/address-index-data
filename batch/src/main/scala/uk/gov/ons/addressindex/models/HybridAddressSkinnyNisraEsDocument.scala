@@ -14,7 +14,8 @@ case class HybridAddressSkinnyNisraEsDocument(uprn: Long,
                                               fromSource: String,
                                               countryCode: String,
                                               postcodeStreetTown: String,
-                                              postTown: String)
+                                              postTown: String,
+                                              mixedPartial: String)
 
 object HybridAddressSkinnyNisraEsDocument extends EsDocument with HybridAddressSkinny with NisraAddress {
 
