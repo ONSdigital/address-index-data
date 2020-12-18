@@ -269,6 +269,17 @@ object SqlHelper {
     .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
     .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
+  private def createMixedPartial(outputLpis: Seq[Map[String, Any]],
+                         outputPaf: Seq[Map[String, Any]],
+                         outputNisra: Seq[Map[String, Any]] = Seq.empty): String = {
+
+    val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
+
+    val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
+
+    mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+  }
+
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
@@ -752,17 +763,6 @@ object SqlHelper {
     case "ND_CULTURE_OTHER" => "CL04"
     case "ND_INDUST_OTHER" => "CI"
     case _ => "O"
-  }
-
-  def createMixedPartial(outputLpis: Seq[Map[String, Any]],
-                                 outputPaf: Seq[Map[String, Any]],
-                                 outputNisra: Seq[Map[String, Any]] = Seq.empty): String = {
-
-    val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
-
-    val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
-
-    mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
   }
 
 }
