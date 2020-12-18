@@ -342,6 +342,7 @@ object SqlHelper {
 
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
+        val nisraPostTown: Option[String] = Try(outputNisra.headOption.get("postTown").toString).toOption
         val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
@@ -373,7 +374,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.orNull
+        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
@@ -574,6 +575,7 @@ object SqlHelper {
 
         val nisraStreet: Option[String] = Try(outputNisra.headOption.get("thoroughfare").toString).toOption
         val nisraTown: Option[String] = Try(outputNisra.headOption.get("townName").toString).toOption
+        val nisraPostTown: Option[String] = Try(outputNisra.headOption.get("postTown").toString).toOption
         val nisraStart: Option[String] = outputNisra.headOption.flatMap(_.get("mixedNisraStart").map(_.toString))
 
         val lpiStreet: Option[String] = outputLpis.headOption.flatMap(_.get("streetDescriptor").map(_.toString))
@@ -605,7 +607,7 @@ object SqlHelper {
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.orNull
+        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )

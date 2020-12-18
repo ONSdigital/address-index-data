@@ -45,7 +45,8 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument with HybridAddressS
       "estabType" -> normalize(Option(row.getString(35)).getOrElse("")).trim,
       "addressLine1" -> normalize(Option(row.getString(46)).getOrElse("")),
       "addressLine2" -> normalize(Option(row.getString(47)).getOrElse("")),
-      "addressLine3" -> normalize(Option(row.getString(48)).getOrElse(""))
+      "addressLine3" -> normalize(Option(row.getString(48)).getOrElse("")),
+      "postTown" -> normalize(Option(row.getString(51)).getOrElse(""))
     )
   }
 
