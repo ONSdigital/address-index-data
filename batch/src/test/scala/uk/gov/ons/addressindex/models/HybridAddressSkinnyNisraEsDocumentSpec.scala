@@ -140,6 +140,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraAddressLine3 = "Address Line 3"
   val expectedNisraEstabType = "Household"
   val expectedNisraAddressType = "HH"
+  val expectedNisraPostTown = "Do_apart"
   // used by both expected and actual to avoid assertion error
   val nagLocation = Array(-2.3162985F, 4.00F)
 
@@ -263,7 +264,8 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
     "addressLine2" -> expectedNisraAddressLine2,
      "addressLine3" -> expectedNisraAddressLine3,
     "estabType" -> expectedNisraEstabType,
-    "addressType" -> expectedNisraAddressType
+    "addressType" -> expectedNisraAddressType,
+    "postTown" -> expectedNisraPostTown
   )
 
   "Hybrid Address Elastic Search Document" should {
