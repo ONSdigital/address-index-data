@@ -6,7 +6,7 @@ import uk.gov.ons.addressindex.models.HybridAddressSkinnyNisraEsDocument.{normal
 trait NisraAddress {
 
   def generateFormattedNisraAddresses(organisationName: String, subBuildingName: String, buildingName: String, buildingNumber: String, thoroughfare: String,
-                                      altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String,
+                                      altThoroughfare: String, dependentThoroughfare: String, locality: String, townland: String, townName: String, postTown: String,
                                       postcode: String) : Array[String] = {
 
     val trimmedSubBuildingName = normalize(subBuildingName)
@@ -19,6 +19,8 @@ trait NisraAddress {
     val buildingNameWithStreetDescription = s"${trimmedBuildingName.toUpperCase} $trimmedThoroughfare"
     val commalessNumberAndStreetPart = if (startsWithNumber.findFirstIn(trimmedBuildingName).isDefined) buildingNameWithStreetDescription else buildingNumberWithStreetDescription
 
+    val postTownExtra = if (postTown.equals(townName)) "" else postTown
+
     Array(
       Seq(normalize(organisationName),
         trimmedSubBuildingName,
@@ -28,6 +30,7 @@ trait NisraAddress {
         normalizeTowns(locality),
         normalizeTowns(townland),
         normalizeTowns(townName),
+        normalizeTowns(postTownExtra),
         postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", "),
       if (!altThoroughfare.isEmpty)
         Seq(normalize(organisationName),
@@ -39,6 +42,7 @@ trait NisraAddress {
           normalizeTowns(locality),
           normalizeTowns(townland),
           normalizeTowns(townName),
+          normalizeTowns(postTownExtra),
           postcode.toUpperCase).map(_.trim).filter(_.nonEmpty).mkString(", ") else "",
       Seq(organisationName,
         subBuildingName,
@@ -50,6 +54,7 @@ trait NisraAddress {
         locality,
         townland,
         townName,
+        postTownExtra,
         postcode).map(_.trim).filter(_.nonEmpty).mkString(" ")
     )
   }
@@ -65,6 +70,7 @@ trait NisraAddress {
       Option(row.getString(18)).getOrElse(""),
       "",
       Option(row.getString(20)).getOrElse(""),
+      Option(row.getString(51)).getOrElse(""),
       Option(row.getString(21)).getOrElse("") + " " + Option(row.getString(21)).getOrElse("").replace(" ","")
     )
 
