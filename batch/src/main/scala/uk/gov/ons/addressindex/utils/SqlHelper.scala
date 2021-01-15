@@ -26,9 +26,12 @@ object SqlHelper {
             SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuWithHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
-              WHERE NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
+              WHERE c.classificationCode !='DUMMY' AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuWithHistory b
+                   LEFT JOIN $classificationTable c ON b.uprn = c.uprn
+              WHERE c.classificationCode !='DUMMY' """)
         SparkProvider.registerTempTable(blpuWithHistoryDF, "blpu")
       } else {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
@@ -37,9 +40,12 @@ object SqlHelper {
             SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
-              WHERE b.logicalStatus != 8 AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
+              WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuNoHistory b
+                   LEFT JOIN $classificationTable c ON b.uprn = c.uprn
+              WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' """)
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
