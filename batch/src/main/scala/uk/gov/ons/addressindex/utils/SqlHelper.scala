@@ -379,6 +379,7 @@ object SqlHelper {
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+        val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -394,7 +395,7 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokens
+          mixedPartialTokensExtraDedup
         )
     }
   }
@@ -476,6 +477,7 @@ object SqlHelper {
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf")
         val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+        val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -490,7 +492,7 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokens
+          mixedPartialTokensExtraDedup
         )
     }
   }
@@ -612,6 +614,7 @@ object SqlHelper {
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+        val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -631,7 +634,7 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokens
+          mixedPartialTokensExtraDedup
         )
     }
   }
@@ -720,6 +723,7 @@ object SqlHelper {
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf")
         val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
+        val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         HybridAddressEsDocument(
           uprn,
@@ -738,7 +742,7 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokens
+          mixedPartialTokensExtraDedup
         )
     }
   }
