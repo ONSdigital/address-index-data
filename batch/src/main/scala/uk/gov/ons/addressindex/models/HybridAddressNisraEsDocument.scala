@@ -39,7 +39,7 @@ object HybridAddressNisraEsDocument extends EsDocument with HybridAddress with N
       "classificationCode" -> row.getString(24),
       "mixedNisra" -> nisraFormatted(0),
       "mixedNisraStart" -> nisraFormatted(0).replaceAll(",","").replaceAll("'","").take(12),
-      "mixedAltNisra" -> nisraFormatted(1),
+ //     "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
       "organisationName" -> normalize(Option(row.getString(14)).getOrElse("")),
       "subBuildingName" -> normalize(Option(row.getString(1)).getOrElse("")),

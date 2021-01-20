@@ -579,7 +579,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       thirdResult.lpi shouldBe empty
       thirdResult.paf shouldBe empty
       thirdResult.nisra.size shouldBe 1
-      thirdResult.nisra.head("creationDate").toString shouldBe "2011-06-16"
+    //  thirdResult.nisra.head("creationDate").toString shouldBe "2011-06-16"
     }
 
     "aggregate information from paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
@@ -911,13 +911,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getLong(0) shouldBe 376490334 // UPRN
       firstLine.getString(14) shouldBe "Fivemiletown College" // ORGANISATION_NAME
       firstLine.getString(15) shouldBe "COLEBROOK ROAD" // THOROUGHFARE
-      firstLine.getString(50) shouldBe "New" // ADDRESS_1_YEAR_AGO
+      firstLine.getString(44) shouldBe "New" // ADDRESS_1_YEAR_AGO
 
       val secondLine = nisraDF(14)
       secondLine.getLong(0) shouldBe 380592411L // UPRN
       secondLine.getString(14) shouldBe "Castletower School" // ORGANISATION_NAME
       secondLine.getString(15) shouldBe "LARNE ROAD LINK" // THOROUGHFARE
-      secondLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
+      secondLine.getString(44) shouldBe "Both" // ADDRESS_1_YEAR_AGO
     }
 
     "create a NISRA DataFrame with addresses from 1 year ago" in {
@@ -935,12 +935,12 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstLine.getLong(0) shouldBe 376740211 // UPRN
       firstLine.getString(14) shouldBe null // ORGANISATION_NAME
       firstLine.getString(15) shouldBe "SLIGO LINE" // THOROUGHFARE
-      firstLine.getString(50) shouldBe "Old" // ADDRESS_1_YEAR_AGO
+      firstLine.getString(44) shouldBe "Old" // ADDRESS_1_YEAR_AGO
 
       val secondLine = nisraDF(13)
       secondLine.getString(14) shouldBe null // ORGANISATION_NAME
       secondLine.getString(15) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
-      secondLine.getString(50) shouldBe "Both" // ADDRESS_1_YEAR_AGO
+      secondLine.getString(44) shouldBe "Both" // ADDRESS_1_YEAR_AGO
     }
 
     "return only New and Both records when addresses from 1 year ago are excluded from the request" in {

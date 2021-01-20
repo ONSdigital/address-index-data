@@ -179,7 +179,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraMixed = "An Organisation, The Sub Building Name, The Building Name, 1A Thoroughfare Road, Off Here, A Locality Xyz, Little Town, Big Town, AB1 7GH AB17GH"
   val expectedNisraMixedStart = "An Organisat"
   val expectedNisraAltMixed = "An Organisation, The Sub Building Name, The Building Name, 1A, An Alternative Name, Off Here, A Locality Xyz, Little Town, Big Town, AB1 7GH AB17GH"
-  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A THOROUGHFARE ROAD OFF HERE AN ALTERNATIVE NAME A LOCALITY XYZ LITTLE TOWN BIG TOWN AB1 7GH AB17GH"
+  val expectedNisraAll = "AN ORGANISATION THE SUB BUILDING NAME THE BUILDING NAME 1A THOROUGHFARE ROAD OFF HERE A LOCALITY XYZ LITTLE TOWN BIG TOWN AB1 7GH AB17GH"
   val expectedNisraCreationDate = new java.sql.Date(format.parse("2012-04-23").getTime)
   val expectedNisraCommencementDate = new java.sql.Date(format.parse("2012-04-24").getTime)
   val expectedNisraArchivedDate = new java.sql.Date(format.parse("2018-01-11").getTime)
@@ -371,19 +371,19 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "easting" -> expectedNisraEasting,
     "northing" -> expectedNisraNorthing,
     "location" -> nagLocation,
-    "creationDate" -> expectedNisraCreationDate,
-    "commencementDate" -> expectedNisraCommencementDate,
-    "archivedDate" -> expectedNisraArchivedDate,
+ //   "creationDate" -> expectedNisraCreationDate,
+ //   "commencementDate" -> expectedNisraCommencementDate,
+ //   "archivedDate" -> expectedNisraArchivedDate,
     "classificationCode" -> expectedNisraClassificationCode,
     "mixedNisra" -> expectedNisraMixed,
     "mixedNisraStart" -> expectedNisraMixedStart,
-    "mixedAltNisra" -> expectedNisraAltMixed,
+//    "mixedAltNisra" -> expectedNisraAltMixed,
     "nisraAll" -> expectedNisraAll,
     "organisationName" -> expectedNisraOrganisation,
     "subBuildingName" -> expectedNisraSubBuildingName,
     "buildingName" -> expectedNisraBuildingName,
     "thoroughfare" -> expectedNisraThoroughfare,
-    "altThoroughfare" -> expectedNisraAltThoroughfare,
+  //  "altThoroughfare" -> expectedNisraAltThoroughfare,
     "dependentThoroughfare" -> expectedNisraDependentThoroughfare,
     "locality" -> expectedNisraLocality,
     "udprn" -> expectedNisraUdprn,
@@ -400,7 +400,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "saoEndNumber" -> expectedNisraSaoEndNumber,
     "saoEndSuffix" -> expectedNisraSaoEndSuffix,
     "secondarySort" -> expectedNisraSecondarySort,
-    "townland" -> expectedNisraTownland,
+ //   "townland" -> expectedNisraTownland,
     "county" -> expectedNisraCounty,
     "localCustodianCode" -> expectedNisraLocalCustodianCode,
     "blpuState" -> expectedNisraBlpuCode,
@@ -420,7 +420,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
     "addressLine1" -> expectedNisraAddressLine1,
     "addressLine2" -> expectedNisraAddressLine2,
     "addressLine3" -> expectedNisraAddressLine3,
-    "tempCoords" -> expectedNisraTempCoords,
+ //   "tempCoords" -> expectedNisraTempCoords,
     "address1YearAgo" -> expectedNisraAddress1YearAgo,
     "postTown" -> expectedNisraPostTown
   )
@@ -1115,7 +1115,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraSaoText,
           actualNisraOrganisation,
           actualNisraThoroughfare,
-          actualNisraAltThoroughfare,
+   //       actualNisraAltThoroughfare,
           actualNisraDependentThoroughfare,
           actualNisraLocality,
           actualNisraUdprn,
@@ -1124,11 +1124,11 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraXCoordinate,
           actualNisraYCoordinate,
           nagLocation,
-          actualNisraCreationDate,
-          actualNisraCommencementDate,
-          actualNisraArchivedDate,
+   //       actualNisraCreationDate,
+   //       actualNisraCommencementDate,
+  //        actualNisraArchivedDate,
           actualNisraClassificationCode,
-          actualNisraTownland,
+    //     actualNisraTownland,
           actualNisraCounty,
           actualNisraLocalCustodianCode,
           actualNisraBlpuCode,
@@ -1148,7 +1148,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
           actualNisraAddressLine1,
           actualNisraAddressLine2,
           actualNisraAddressLine3,
-          actualNisraTempCoords,
+   //       actualNisraTempCoords,
           actualNisraAddress1YearAgo,
           actualNisraPostTown
         )
