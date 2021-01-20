@@ -4,7 +4,7 @@ resolvers ++= Seq(
   "conjars" at "https://conjars.org/repo"
 )
 
-val localTarget: Boolean = false
+val localTarget: Boolean = true
 // set to true when testing locally, false for deployment to Cloudera
 // reload all sbt projects to clear ivy cache
 

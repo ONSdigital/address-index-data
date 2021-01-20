@@ -65,13 +65,13 @@ trait NisraAddress {
       Option(row.getString(2)).getOrElse(""),
       Option(row.getString(3)).getOrElse(""),
       Option(row.getString(15)).getOrElse(""),
+      "",
       Option(row.getString(16)).getOrElse(""),
       Option(row.getString(17)).getOrElse(""),
-      Option(row.getString(18)).getOrElse(""),
       "",
-      Option(row.getString(20)).getOrElse(""),
-      Option(row.getString(51)).getOrElse(""),
-      Option(row.getString(21)).getOrElse("") + " " + Option(row.getString(21)).getOrElse("").replace(" ","")
+      Option(row.getString(19)).getOrElse(""),
+      Option(row.getString(45)).getOrElse(""),
+      Option(row.getString(20)).getOrElse("") + " " + Option(row.getString(20)).getOrElse("").replace(" ","")
     )
 
 }
