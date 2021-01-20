@@ -30,8 +30,8 @@ object HybridAddressNisraEsDocument extends EsDocument with HybridAddress with N
     Map(
       "uprn" -> row.getLong(0),
       "buildingNumber" -> toShort(row.getString(3)).orNull,
-      "easting" -> row.getFloat(21),
-      "northing" -> row.getFloat(22),
+      "easting" -> (if (row.isNullAt(21)) 0F else row.getFloat(21)),
+      "northing" -> (if (row.isNullAt(22)) 0F else row.getFloat(22)),
       "location" -> row.get(23),
   //    "creationDate" -> row.getDate(25),
    //   "commencementDate" -> row.getDate(26),
