@@ -37,9 +37,13 @@ object SqlHelper {
             SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
-              WHERE b.logicalStatus != 8 AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
+              WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+  //          SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuNoHistory b WHERE b.logicalStatus != 8""")
+            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+              FROM $blpuNoHistory b
+                   LEFT OUTER JOIN $classificationTable c ON b.uprn = c.uprn
+              WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' """)
         SparkProvider.registerTempTable(blpuNoHistoryDF, "blpu")
       }
     val organisationTable = SparkProvider.registerTempTable(organisation, "organisation")
@@ -177,7 +181,7 @@ object SqlHelper {
         functions.regexp_replace(filteredNisraDF("saoText"), "NULL", "").as("saoText"),
         functions.regexp_replace(filteredNisraDF("organisationName"), "NULL", "").as("organisationName"),
         functions.regexp_replace(filteredNisraDF("thoroughfare"), "NULL", "").as("thoroughfare"),
-        functions.regexp_replace(filteredNisraDF("altThoroughfare"), "NULL", "").as("altThoroughfare"),
+//        functions.regexp_replace(filteredNisraDF("altThoroughfare"), "NULL", "").as("altThoroughfare"),
         functions.regexp_replace(filteredNisraDF("dependentThoroughfare"), "NULL", "").as("dependentThoroughfare"),
         functions.regexp_replace(filteredNisraDF("locality"), "NULL", "").as("locality"),
         filteredNisraDF("udprn"),
@@ -187,11 +191,11 @@ object SqlHelper {
         filteredNisraDF("yCoordinate").as("northing").cast(FloatType),
         functions.array(filteredNisraDF("longitude"),filteredNisraDF("latitude"))
           .as("location").cast(ArrayType(FloatType)),
-        functions.to_date(filteredNisraDF("creationDate"), "yyyy-MM-dd").as("creationDate"),
-        functions.to_date(filteredNisraDF("commencementDate"), "yyyy-MM-dd").as("commencementDate"),
-        functions.to_date(filteredNisraDF("archivedDate"), "yyyy-MM-dd").as("archivedDate"),
+    //    functions.to_date(filteredNisraDF("creationDate"), "yyyy-MM-dd").as("creationDate"),
+    //    functions.to_date(filteredNisraDF("commencementDate"), "yyyy-MM-dd").as("commencementDate"),
+    //    functions.to_date(filteredNisraDF("archivedDate"), "yyyy-MM-dd").as("archivedDate"),
         functions.regexp_replace(filteredNisraDF("classificationCode"), "NULL", "").as("classificationCode"),
-        functions.regexp_replace(filteredNisraDF("townland"), "NULL", "").as("townland"),
+   //     functions.regexp_replace(filteredNisraDF("townland"), "NULL", "").as("townland"),
         functions.regexp_replace(filteredNisraDF("county"), "NULL", "").as("county"),
         functions.regexp_replace(filteredNisraDF("localCustodianCode"), "NULL", "").as("localCustodianCode"),
         filteredNisraDF("blpuState"),
@@ -211,7 +215,7 @@ object SqlHelper {
         functions.regexp_replace(filteredNisraDF("addressLine1"), "NULL", "").as("addressLine1"),
         functions.regexp_replace(filteredNisraDF("addressLine2"), "NULL", "").as("addressLine2"),
         functions.regexp_replace(filteredNisraDF("addressLine3"), "NULL", "").as("addressLine3"),
-        functions.regexp_replace(filteredNisraDF("tempCoords"), "NULL", "").as("tempCoords"),
+    //    functions.regexp_replace(filteredNisraDF("tempCoords"), "NULL", "").as("tempCoords"),
         functions.regexp_replace(filteredNisraDF("address1YearAgo"), "NULL", "").as("address1YearAgo"),
         functions.regexp_replace(filteredNisraDF("postTown"), "NULL", "").as("postTown")
       )
