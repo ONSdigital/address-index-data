@@ -444,22 +444,6 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
       result(2) shouldBe expectedAll
     }
 
-    "create NISRA with expected formatted address (Alt Thoroughfare)" in {
-
-      // Also tests nisraAll
-      // When
-      val result = HybridAddressSkinnyNisraEsDocument.generateFormattedNisraAddresses(actualNisraOrganisation, actualNisraSubBuildingName,
-        actualNisraBuildingName, actualNisraBuildingNumber, actualNisraThoroughfare, actualNisraAltThoroughfare, actualNisraDependentThoroughfare, actualNisraLocality,
-        "", actualNisraTown, actualNisraPostTown, actualNisraPostCode + " " + actualNisraPostCode.replaceAll(" ",""))
-
-      val expected = expectedNisraAltMixed
-      val expectedAll = expectedNisraAll
-
-      // Then
-      result(1) shouldBe expected
-      result(2) shouldBe expectedAll
-    }
-
     "create NISRA with expected formatted address (number and thoroughfare)" in {
 
       // When
