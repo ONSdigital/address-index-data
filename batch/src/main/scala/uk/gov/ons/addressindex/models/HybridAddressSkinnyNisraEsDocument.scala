@@ -36,7 +36,6 @@ object HybridAddressSkinnyNisraEsDocument extends EsDocument with HybridAddressS
       "townName" -> normalize(Option(row.getString(19)).getOrElse("")),
       "mixedNisra" -> nisraFormatted(0),
       "mixedNisraStart" -> nisraFormatted(0).replaceAll(",","").replaceAll("'","").take(12),
-  //    "mixedAltNisra" -> nisraFormatted(1),
       "nisraAll" -> nisraFormatted(2),
       "postcode" -> row.getString(20),
       "secondarySort" -> addLeadingZeros(Option(row.getString(8)).getOrElse("") + " " + Option(row.getString(9)).getOrElse("") + Option(row.getString(11)).getOrElse("") + " " + Option(row.getString(13)).getOrElse("") + " " + Option(row.getString(14)).getOrElse("")).replaceAll(" +", " "),
