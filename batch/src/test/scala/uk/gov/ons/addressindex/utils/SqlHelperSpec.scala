@@ -83,7 +83,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false).sort("uprn").collect()
 
       // Then
-//      result.length shouldBe 6
       result.length shouldBe 3
 
       val firstLine = result(0)
@@ -156,7 +155,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondLine.getString(32) shouldBe "LOCALITY XYZ" // LOCALITY
     }
 
-    "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address without historical data" ignore {
+    "join blpu, organisation, lpi, street and street_descriptor for English and Welsh address without historical data" in {
 
       // Given
       val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -170,16 +169,15 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false).orderBy("uprn", "locality").collect()
 
       // Then
- //     result.length shouldBe 6
       result.length shouldBe 3
 
-      val firstLine = result(4)
+      val firstLine = result(1)
 
       firstLine.getLong(0) shouldBe 100010971565L // UPRN
       firstLine.getInt(13) shouldBe 9402538 // USRN
       firstLine.getString(32) shouldBe "FSDF DSFSDF DSF" // LOCALITY
 
-      val secondLine = result(5)
+      val secondLine = result(2)
 
       secondLine.getLong(0) shouldBe 100010971565L // UPRN
       secondLine.getInt(13) shouldBe 9402538 // USRN
@@ -360,7 +358,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.paf.head("recordIdentifier") shouldBe 27
     }
 
-    "aggregate information from paf and nag to construct a single table containing grouped documents without historical data" ignore {
+    "aggregate information from paf and nag to construct a single table containing grouped documents without historical data" in {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
@@ -434,7 +432,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
 
       // Then
- //     result.length shouldBe 3
       result.length shouldBe 2
 
       val firstResult = result(0)
@@ -448,7 +445,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(2)
+      val secondResult = result(1)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
@@ -585,7 +582,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
     //  thirdResult.nisra.head("creationDate").toString shouldBe "2011-06-16"
     }
 
-    "aggregate information from paf, nag and nisra to construct a single table containing grouped documents without historical data" ignore {
+    "aggregate information from paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
@@ -661,7 +658,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
- //     result.length shouldBe 18
       result.length shouldBe 17
 
       val firstResult = result(0)
@@ -675,7 +671,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(17)
+      val secondResult = result(16)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.postcodeOut shouldBe "PO15"
@@ -697,7 +693,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       secondResult.paf.head("recordIdentifier") shouldBe 27
 
-      val thirdResult = result(2)
+      val thirdResult = result(1)
       thirdResult.uprn shouldBe 375537613
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
@@ -746,7 +742,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
     }
 
-    "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" ignore {
+    "aggregate information from skinny paf and nag to construct a single table containing grouped documents without historical data" in {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
@@ -775,7 +771,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
 
       // Then
-   //   result.length shouldBe 3
       result.length shouldBe 2
 
       val firstResult = result(0)
@@ -785,7 +780,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
 
-      val secondResult = result(2)
+      val secondResult = result(1)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
@@ -844,7 +839,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.paf.size shouldBe 1
     }
 
-    "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" ignore {
+    "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
@@ -874,7 +869,6 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
-   //   result.length shouldBe 18
       result.length shouldBe 17
 
       val firstResult = result(0)
@@ -885,7 +879,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
 
-      val secondResult = result(17)
+      val secondResult = result(16)
       secondResult.uprn shouldBe 100010971565L
       secondResult.classificationCode shouldBe Some("RD")
       secondResult.parentUprn shouldBe 0L
@@ -893,7 +887,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.paf.size shouldBe 1
       secondResult.nisra shouldBe empty
 
-      val thirdResult = result(2)
+      val thirdResult = result(1)
       thirdResult.uprn shouldBe 375537613L
       thirdResult.parentUprn shouldBe 0L
       thirdResult.lpi shouldBe empty
