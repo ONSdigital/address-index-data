@@ -17,8 +17,8 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 * Java 8 
 * SBT 0.13.16 (http://www.scala-sbt.org/)
 * Scala 2.12.4
-* Apache Spark 2.3.2
-* Elasticsearch 7.3.1
+* Apache Spark 2.4.0
+* Elasticsearch 7.9.3
 
 ### Development Setup (IntelliJ)
 
@@ -31,18 +31,19 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 ### Running
 
 To package the project in a runnable fat-jar:
+In `build.sbt` set the variable `localTarget` to `true` (if set to `false` the output will be a thin jar intended to run on Cloudera).
 From the root of the project
 
 ```shell
 sbt clean assembly
 ```
 
-The resulting jar will be located in `batch/target/scala-2.10/ons-ai-batch-assembly-version.jar`
+The resulting jar will be located in `batch/target/scala-2.11/ons-ai-batch-assembly-version.jar`
 
 To run the jar:
 
 ```shell
-java -Dconfig.file=application.conf -jar batch/target/scala-2.10/ons-ai-batch-assembly-version.jar
+java -Dconfig.file=application.conf -jar batch/target/scala-2.11/ons-ai-batch-assembly-version.jar
 ```
 The target Elasticsearch index can be on a local ES deployment or an external server (configurable)
 The `application.conf` file may contain:
@@ -56,14 +57,16 @@ These will override the default configuration. The location and names of the inp
 Note that these input files are extracted from AddressBase and subject to some pre-processing.
 
 The job can also be run from inside IntelliJ. 
-In this case you can run the Main class directly but need to remove lines 40-118 and replace them with:
+In this case you can run the Main class directly but need to comment out lines 48-59 and uncomment the lines that follow:
 ```
 val indexName = generateIndexName(historical=true, skinny=true, nisra=true)
 val url = s"http://$nodes:$port/$indexName"
 postMapping(indexName, skinny=true)
-saveHybridAddresses(historical=true, skinny=true, nisra=true)
+saveHybridAddresses(historical=true, skinny=true, nisra=true, nisraAddress1YearAgo = false)
 ```
-where the first boolean is for a historic index, second for a skinny index and third to include Northern Ireland extract 
+where the first boolean is for a historic index, second for a skinny index and third to include Northern Ireland extract.
+The 1yearago one is for the 2021 Census only. Note that you can also hard-code the index name, and you also need to ensure
+that the variable `localTarget` is set to true in `build.sbt`
 
 ## Running Tests
 
