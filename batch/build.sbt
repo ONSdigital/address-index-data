@@ -5,7 +5,8 @@ resolvers ++= Seq(
 )
 
 val localTarget: Boolean = false
-// set to true when testing locally, false for deployment to Cloudera
+// set to true when testing locally (or to build a fat jar)
+// false for deployment to Cloudera with a thin jar
 // reload all sbt projects to clear ivy cache
 
 val localDeps = Seq(
