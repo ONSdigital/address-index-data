@@ -303,14 +303,13 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       val result = AddressIndexFileReader.readNisraTXT().collect()
 
       //Then
-      result.length shouldBe 6
+      result.length shouldBe 23
 
-      val line = result(3)
-      line.getString(4) shouldBe "MILEWATER TERRACE" // ORGANISATION_NAME
-      line.getString(11) shouldBe  "185356870" // UPRN
-      line.getString(15) shouldBe "DO_TERRACE" // CLASSIFICATION
-      line.getString(23) shouldBe "15/04/2009" // CREATION_DATE
-      line.getString(27) shouldBe "54.6924356" // LAT
+      val line = result(2)
+      line.getString(4) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
+      line.getLong(10) shouldBe  376847438 // UPRN
+      line.getString(14) shouldBe "CC11" // CLASSIFICATION_CODE
+      line.getFloat(34) shouldBe 54.75717f // LAT
     }
 
     "extract epoch from the file path" in {
@@ -370,7 +369,8 @@ class AddressIndexFileReaderSpec extends WordSpec with Matchers {
       result shouldBe true
     }
 
-    "throw exception if file could not be validated" in {
+    "throw exception if file could not be validated" ignore {
+      // reinstate test when we have consistent dates in DAP files
       // Given
       val filePath = "hdfs://path/to/file/ABP_E39_BLPU.csv"
       val epoch = 40

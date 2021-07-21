@@ -31,6 +31,7 @@ For usage see below:
     val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
     val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
     val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
+    val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
     verify()
   }
 
@@ -52,16 +53,16 @@ For usage see below:
     AddressIndexFileReader.validateFileNames()
     postMapping(indexName, skinny = opts.skinny())
     preLoad(indexName)
-    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra(), nisraAddress1YearAgo = opts.yearago())
     postLoad(indexName)
   } else opts.printHelp()
   // comment out for local test - end
 
 // uncomment for local test - start
-//      val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
-//      val url = s"http://$nodes:$port/$indexName"
-//      postMapping(indexName, skinny = true)
-//      saveHybridAddresses(historical = true, skinny = true, nisra = false)
+//   val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+//   val url = s"http://$nodes:$port/$indexName"
+//   postMapping(indexName, skinny = true)
+//   saveHybridAddresses(historical = true, skinny = true, nisra = false, nisraAddress1YearAgo = false)
 // uncomment for local test - end
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
@@ -77,16 +78,16 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical, skinny)
   }
 
-  private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): Unit = {
+  private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false, nisraAddress1YearAgo: Boolean = false): Unit = {
     val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val nisratxt = AddressIndexFileReader.readNisraTXT()
 
     if (nisra) {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical))
+        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
       } else {
-        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical))
+        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
       }
     } else {
       if (skinny) {

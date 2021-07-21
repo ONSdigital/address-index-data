@@ -7,7 +7,7 @@ trait HybridAddressSkinny {
 
   def rowToLpi(row: Row): Map[String, Any] = Map(
     "uprn" -> row.getLong(0),
-    "postcodeLocator" -> row.getString(1),
+    "postcodeLocator" -> row.getString(1).trim,
     "addressBasePostal" -> row.getString(2),
     "location" -> row.get(3),
     "easting" -> row.getFloat(4),
@@ -30,7 +30,7 @@ trait HybridAddressSkinny {
       row.getString(17),
       if (row.isNullAt(18)) "" else row.getShort(18).toString,
       row.getString(19), row.getString(15), row.getString(30), row.getString(31),
-      row.getString(32), row.getString(1)
+      row.getString(32), row.getString(1).trim
     ),
     "mixedNag" -> (if (row.getString(29) != "ENG") "" else generateNagAddress(row)),
     "mixedWelshNag" -> (if (row.getString(29) == "ENG") "" else generateNagAddress(row)),
@@ -119,7 +119,7 @@ trait HybridAddressSkinny {
       normalize(row.getString(30)),
       normalize(row.getString(32)),
       normalizeTowns(row.getString(31)),
-      row.getString(1) + " " + row.getString(1).replace(" ","")
+      row.getString(1).trim + " " + row.getString(1).replace(" ","")
     )
 
 }

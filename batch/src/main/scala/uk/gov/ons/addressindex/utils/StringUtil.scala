@@ -8,4 +8,7 @@ object StringUtil {
     if (trimmed.isEmpty) None else Some(trimmed)
   }
 
+  // apply title casing to words in the string
+  def applyTitleCasing(input: String): String = input.trim.toLowerCase.split(" ").map(_.capitalize).mkString(" ")
+
 }
