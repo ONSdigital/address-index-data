@@ -1,8 +1,9 @@
 package uk.gov.ons.addressindex.utils
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class AuthUtilSpec extends WordSpec with Matchers {
+class AuthUtilSpec extends AnyWordSpec with Matchers {
 
  val expectedAuthString = "aGFja21lOnBsZWFzZQ=="
 

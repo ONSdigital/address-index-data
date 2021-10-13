@@ -1,8 +1,9 @@
 package uk.gov.ons.addressindex.readers
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class AddressIndexFileReaderSpec extends WordSpec with Matchers {
+class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
   /*

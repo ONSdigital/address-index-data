@@ -8,6 +8,26 @@ import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper, AuthUtil}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
+class Conf extends ScallopConf {
+  banner(
+    """
+Hybrid indexer. All options are mutually exclusive.
+
+Example: java -jar ons-ai-batch.jar --mapping --hybrid
+
+For usage see below:
+  """)
+
+  val hybrid: ScallopOption[Boolean] = opt("hybrid", noshort = true, descr = "Index hybrid PAF & NAG including historical data")
+  val hybridNoHist: ScallopOption[Boolean] = opt("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
+  val mapping: ScallopOption[Boolean] = opt("mapping", noshort = true, descr = "Creates mapping for the index")
+  val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
+  val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
+  val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
+  val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
+  verify()
+}
+
 /**
   * Main executed file
   */
@@ -15,39 +35,21 @@ object Main extends App {
 
   val config = ConfigFactory.load()
 
-  val opts = new ScallopConf(args) {
-    banner(
-      """
-Hybrid indexer. All options are mutually exclusive.
-
-Example: java -jar ons-ai-batch.jar --mapping --hybrid
-
-For usage see below:
-      """)
-
-    val hybrid: ScallopOption[Boolean] = opt("hybrid", noshort = true, descr = "Index hybrid PAF & NAG including historical data")
-    val hybridNoHist: ScallopOption[Boolean] = opt("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
-    val mapping: ScallopOption[Boolean] = opt("mapping", noshort = true, descr = "Creates mapping for the index")
-    val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
-    val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
-    val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
-    val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
-    verify()
-  }
+  val opts = new Conf()
 
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
 
- // username and password should be set in the local application.conf
- // this file is not checked into Git (application_full.conf on Spark server)
+  // username and password should be set in the local application.conf
+  // this file is not checked into Git (application_full.conf on Spark server)
   val username = config.getString("addressindex.elasticsearch.user")
   val password = config.getString("addressindex.elasticsearch.pass")
   val authHeader = s"Basic ${AuthUtil.encodeCredentials(username, password)}"
 
- //  each run of this application has a unique index name
- // comment out for local test - start
-    val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
-    val url = s"http://$nodes:$port/$indexName"
+  //  each run of this application has a unique index name
+  // comment out for local test - start
+  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+  val url = s"http://$nodes:$port/$indexName"
 
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
@@ -58,12 +60,12 @@ For usage see below:
   } else opts.printHelp()
   // comment out for local test - end
 
-// uncomment for local test - start
-//   val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
-//   val url = s"http://$nodes:$port/$indexName"
-//   postMapping(indexName, skinny = true)
-//   saveHybridAddresses(historical = true, skinny = true, nisra = false, nisraAddress1YearAgo = false)
-// uncomment for local test - end
+  // uncomment for local test - start
+  //   val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+  //   val url = s"http://$nodes:$port/$indexName"
+  //   postMapping(indexName, skinny = true)
+  //   saveHybridAddresses(historical = true, skinny = true, nisra = false, nisraAddress1YearAgo = false)
+  // uncomment for local test - end
 
   private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
     AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)

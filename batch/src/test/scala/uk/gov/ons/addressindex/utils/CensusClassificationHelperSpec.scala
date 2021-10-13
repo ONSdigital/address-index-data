@@ -1,8 +1,9 @@
 package uk.gov.ons.addressindex.utils
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class CensusClassificationHelperSpec extends WordSpec with Matchers {
+class CensusClassificationHelperSpec extends AnyWordSpec with Matchers {
 
     val expectedEstabType1= "Hotel"
     val expectedEstabType2 = "Household"

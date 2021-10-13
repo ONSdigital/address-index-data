@@ -24,12 +24,12 @@ val clouderaDeps = Seq(
 
 val otherDeps = Seq(
   "com.databricks" %% "spark-csv" % "1.5.0",
-  "com.typesafe" % "config" % "1.3.3",
-  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.3.1"  excludeAll ExclusionRule(organization = "javax.servlet"),
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-  "org.rogach" %% "scallop" % "3.1.5",
-  "org.scalaj" %% "scalaj-http" % "2.4.1",
-  "com.crealytics" %% "spark-excel" % "0.10.2"
+  "com.typesafe" % "config" % "1.4.1",
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.3.1" excludeAll ExclusionRule(organization = "javax.servlet"),
+  "org.rogach" %% "scallop" % "4.0.3",
+  "org.scalaj" %% "scalaj-http" % "2.4.2",
+  "com.crealytics" %% "spark-excel" % "0.10.2",
+  "org.scalatest" %% "scalatest" % "3.2.9" % Test
 )
 
 if (localTarget) libraryDependencies ++= Seq(
