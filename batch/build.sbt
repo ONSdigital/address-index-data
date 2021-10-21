@@ -10,25 +10,25 @@ val localTarget: Boolean = false
 // reload all sbt projects to clear ivy cache
 
 val localDeps = Seq(
-  "org.apache.spark" %% "spark-core" % "2.4.0",
-  "org.apache.spark" %% "spark-sql" % "2.4.0",
-  "org.apache.spark" %% "spark-hive" % "2.4.0"
+  "org.apache.spark" %% "spark-core" % "3.1.2",
+  "org.apache.spark" %% "spark-sql" % "3.1.2",
+  "org.apache.spark" %% "spark-hive" % "3.1.2"
 )
 
 val clouderaDeps = Seq(
-  "org.apache.spark" %% "spark-core" % "2.4.0" % "provided",
-  "org.apache.spark" %% "spark-sql" % "2.4.0" % "provided",
-  "org.apache.spark" %% "spark-hive" % "2.4.0" % "provided",
-  "commons-httpclient" % "commons-httpclient" % "3.1"
+  "org.apache.spark" %% "spark-core" % "3.1.2" % "provided",
+  "org.apache.spark" %% "spark-sql" % "3.1.2" % "provided",
+  "org.apache.spark" %% "spark-hive" % "3.1.2" % "provided",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.13"
 )
 
 val otherDeps = Seq(
-  "com.databricks" %% "spark-csv" % "1.5.0",
+  // "com.databricks" %% "spark-csv" % "1.5.0",
   "com.typesafe" % "config" % "1.4.1",
-  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.3.1" excludeAll ExclusionRule(organization = "javax.servlet"),
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.15.0" excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.rogach" %% "scallop" % "4.0.3",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
-  "com.crealytics" %% "spark-excel" % "0.10.2",
+  "com.crealytics" %% "spark-excel" % "0.14.0",
   "org.scalatest" %% "scalatest" % "3.2.9" % Test
 )
 
@@ -41,6 +41,6 @@ else libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value
 ) ++ clouderaDeps ++ otherDeps
 
-dependencyOverrides += "commons-codec" % "commons-codec" % "1.11"
+dependencyOverrides += "commons-codec" % "commons-codec" % "1.15"
 
 scalacOptions ++= List("-unchecked", "-Xlint")
