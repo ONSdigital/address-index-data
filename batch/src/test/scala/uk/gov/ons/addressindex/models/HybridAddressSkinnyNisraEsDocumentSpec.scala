@@ -1,9 +1,10 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
+class HybridAddressSkinnyNisraEsDocumentSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
@@ -116,7 +117,7 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNagCountry = "E"
 
   // NISRA location (shared field to avoid test failure)
-  val nisraLocation = Array(-2.3162985F, 4.00F)
+  val nisraLocation: Array[Float] = Array(-2.3162985F, 4.00F)
 
   val expectedNisraBuildingNumber: Null = null
   val expectedNisraPostCode = "AB1 7GH"
@@ -141,8 +142,9 @@ class HybridAddressSkinnyNisraEsDocumentSpec extends WordSpec with Matchers {
   val expectedNisraEstabType = "Household"
   val expectedNisraAddressType = "HH"
   val expectedNisraPostTown = "Big Town"
+
   // used by both expected and actual to avoid assertion error
-  val nagLocation = Array(-2.3162985F, 4.00F)
+  val nagLocation: Array[Float] = Array(-2.3162985F, 4.00F)
 
   val expectedPaf: Map[String, Any] = Map(
     "uprn" -> expectedPafUprn,

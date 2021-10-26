@@ -1,13 +1,14 @@
 package uk.gov.ons.addressindex.utils
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
   * Test that the csv files are joined correctly.
   */
-class SqlHelperSpec extends WordSpec with Matchers {
+class SqlHelperSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
@@ -208,7 +209,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val thirdLine = result(2)
       thirdLine.getLong(0) shouldBe 1L
       thirdLine.getInt(1) shouldBe 3
-      thirdLine.getAs[Array[Long]](2) shouldBe Array(5L, 6L, 7L, 8L, 9l)
+      thirdLine.getAs[Array[Long]](2) shouldBe Array(5L, 6L, 7L, 8L, 9L)
       thirdLine.getAs[Array[Long]](3) shouldBe Array(2L, 2L, 2L, 3L, 3L)
 
       val forthLine = result(3)
@@ -218,7 +219,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       forthLine.getAs[Array[Long]](3) shouldBe Array()
 
       val fifthLine = result(4)
-      fifthLine.getLong(0) shouldBe 10l
+      fifthLine.getLong(0) shouldBe 10L
       fifthLine.getInt(1) shouldBe 2
       fifthLine.getAs[Array[Long]](2) shouldBe Array(11L, 12L)
       fifthLine.getAs[Array[Long]](3) shouldBe Array(10L, 10L)
@@ -534,7 +535,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24
@@ -810,7 +811,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24

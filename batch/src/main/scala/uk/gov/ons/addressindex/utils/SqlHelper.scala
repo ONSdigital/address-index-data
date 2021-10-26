@@ -353,24 +353,24 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!nisraStart.getOrElse("").isEmpty) "(" + nisraStart.getOrElse("") + ")"
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (nisraStreet.getOrElse("").nonEmpty) nisraStreet.getOrElse("")
+        else if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (nisraStart.getOrElse("").nonEmpty) "(" + nisraStart.getOrElse("") + ")"
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-        else if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (nisraTown.getOrElse("").nonEmpty) nisraTown.getOrElse("")
+        else if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
+        val postTown = pafTown.getOrElse(nisraPostTown.orNull)
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
@@ -454,17 +454,17 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
@@ -588,24 +588,24 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!nisraStart.getOrElse("").isEmpty) "(" + nisraStart.getOrElse("") + ")"
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (nisraStreet.getOrElse("").nonEmpty) nisraStreet.getOrElse("")
+        else if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (nisraStart.getOrElse("").nonEmpty) "(" + nisraStart.getOrElse("") + ")"
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-        else if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (nisraTown.getOrElse("").nonEmpty) nisraTown.getOrElse("")
+        else if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
+        val postTown = pafTown.getOrElse(nisraPostTown.orNull)
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
@@ -700,17 +700,17 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")

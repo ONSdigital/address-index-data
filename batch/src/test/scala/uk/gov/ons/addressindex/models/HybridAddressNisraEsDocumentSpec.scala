@@ -1,10 +1,10 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import org.scalatest.{Matchers, WordSpec}
-import uk.gov.ons.addressindex.models.HybridAddressNisraEsDocument.{addLeadingZeros, buildingNameExtra, normalize, toShort}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
+class HybridAddressNisraEsDocumentSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
@@ -279,7 +279,7 @@ class HybridAddressNisraEsDocumentSpec extends WordSpec with Matchers {
   val actualNisraLogicalStatus: Byte = 1.toByte
 
   // used by both expected and actual to avoid assertion error
-  val nagLocation = Array(-2.3162985F, 4.00F)
+  val nagLocation: Array[Float] = Array(-2.3162985F, 4.00F)
 
   val expectedPaf: Map[String, Any] = Map[String,Any](
     "buildingNumber" -> expectedPafBuildingNumber,

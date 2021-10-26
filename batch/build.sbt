@@ -5,30 +5,31 @@ resolvers ++= Seq(
 )
 
 val localTarget: Boolean = false
-// set to true when testing locally, false for deployment to Cloudera
+// set to true when testing locally (or to build a fat jar)
+// false for deployment to Cloudera with a thin jar
 // reload all sbt projects to clear ivy cache
 
 val localDeps = Seq(
-  "org.apache.spark" %% "spark-core" % "2.4.0",
-  "org.apache.spark" %% "spark-sql" % "2.4.0",
-  "org.apache.spark" %% "spark-hive" % "2.4.0"
+  "org.apache.spark" %% "spark-core" % "3.1.2",
+  "org.apache.spark" %% "spark-sql" % "3.1.2",
+  "org.apache.spark" %% "spark-hive" % "3.1.2"
 )
 
 val clouderaDeps = Seq(
-  "org.apache.spark" %% "spark-core" % "2.4.0" % "provided",
-  "org.apache.spark" %% "spark-sql" % "2.4.0" % "provided",
-  "org.apache.spark" %% "spark-hive" % "2.4.0" % "provided",
-  "commons-httpclient" % "commons-httpclient" % "3.1"
+  "org.apache.spark" %% "spark-core" % "3.1.2" % "provided",
+  "org.apache.spark" %% "spark-sql" % "3.1.2" % "provided",
+  "org.apache.spark" %% "spark-hive" % "3.1.2" % "provided",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.13"
 )
 
 val otherDeps = Seq(
-  "com.databricks" %% "spark-csv" % "1.5.0",
-  "com.typesafe" % "config" % "1.3.3",
-  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.3.1"  excludeAll ExclusionRule(organization = "javax.servlet"),
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-  "org.rogach" %% "scallop" % "3.1.5",
-  "org.scalaj" %% "scalaj-http" % "2.4.1",
-  "com.crealytics" %% "spark-excel" % "0.10.2"
+  // "com.databricks" %% "spark-csv" % "1.5.0",
+  "com.typesafe" % "config" % "1.4.1",
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.15.0" excludeAll ExclusionRule(organization = "javax.servlet"),
+  "org.rogach" %% "scallop" % "4.0.3",
+  "org.scalaj" %% "scalaj-http" % "2.4.2",
+  "com.crealytics" %% "spark-excel" % "0.14.0",
+  "org.scalatest" %% "scalatest" % "3.2.9" % Test
 )
 
 if (localTarget) libraryDependencies ++= Seq(
@@ -40,6 +41,6 @@ else libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value
 ) ++ clouderaDeps ++ otherDeps
 
-dependencyOverrides += "commons-codec" % "commons-codec" % "1.11"
+dependencyOverrides += "commons-codec" % "commons-codec" % "1.15"
 
 scalacOptions ++= List("-unchecked", "-Xlint")
