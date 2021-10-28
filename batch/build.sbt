@@ -1,6 +1,6 @@
 resolvers ++= Seq(
   // allows us to include spark packages
-  "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven/",
+  "spark-packages" at "https://repos.spark-packages.org/",
   "conjars" at "https://conjars.org/repo"
 )
 
@@ -24,8 +24,11 @@ val clouderaDeps = Seq(
 
 val otherDeps = Seq(
   // "com.databricks" %% "spark-csv" % "1.5.0",
+ // "org.apache.spark" %% "spark-network-common" % "3.1.2",
+ // "org.apache.spark" %% "spark-streaming" % "3.1.2",
+ // "io.delta" % "delta-core_2.12" % "1.0.0",
   "com.typesafe" % "config" % "1.4.1",
-  "org.elasticsearch" %% "elasticsearch-spark-20" % "7.15.0" excludeAll ExclusionRule(organization = "javax.servlet"),
+  "org.elasticsearch" %% "elasticsearch-spark-30" % "7.12.0" excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.rogach" %% "scallop" % "4.0.3",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   "com.crealytics" %% "spark-excel" % "0.14.0",

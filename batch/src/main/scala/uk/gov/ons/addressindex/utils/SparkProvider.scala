@@ -44,8 +44,10 @@ object SparkProvider {
   // this must fix duplication problem, hardcoded
   conf.set("es.mapping.id", "uprn")
 
+  // comment out .master line unless running locally
   private lazy val sparkContext: SparkSession = SparkSession.builder()
     .config(conf)
+    .master("local")
     .enableHiveSupport()
     .getOrCreate()
 
