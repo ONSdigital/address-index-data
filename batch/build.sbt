@@ -27,7 +27,7 @@ val otherDeps = Seq(
  // "org.apache.spark" %% "spark-network-common" % "3.1.2",
  // "org.apache.spark" %% "spark-streaming" % "3.1.2",
  // "io.delta" % "delta-core_2.12" % "1.0.0",
-  "org.scoverage" %% "scalac-scoverage-plugin" % "1.4.9",
+ // "org.scoverage" %% "scalac-scoverage-plugin" % "1.4.9",
   "com.typesafe" % "config" % "1.4.1",
   "org.elasticsearch" %% "elasticsearch-spark-30" % "7.12.0" excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.rogach" %% "scallop" % "4.0.3",
