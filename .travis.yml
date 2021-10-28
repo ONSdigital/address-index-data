@@ -6,7 +6,7 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 scala:
-  - 2.12.15
+  - 2.12.14
 jdk:
   - oraclejdk11
 branches:
