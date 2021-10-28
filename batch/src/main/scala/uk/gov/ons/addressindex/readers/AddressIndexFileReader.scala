@@ -121,7 +121,7 @@ object AddressIndexFileReader {
   private def resolveAbsolutePath(path: String) = {
     val currentDirectory = new java.io.File(".").getCanonicalPath
 
-    if (path.startsWith("hdfs://")) path
+    if (path.startsWith("hdfs://") || path.startsWith("gs://") ) path
     else {
       if (System.getProperty("os.name").toLowerCase.startsWith("windows")) {
         s"$currentDirectory/$path"
