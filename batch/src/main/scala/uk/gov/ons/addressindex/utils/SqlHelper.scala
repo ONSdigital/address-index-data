@@ -744,32 +744,32 @@ object SqlHelper {
   }
 
   // function moved into calling code due to strange Spark glitch
-  private def nisraCodeToABP(ncode: String): String = ncode match {
-
-    case "DO_DETACHED" => "RD02"
-    case "DO_SEMI" => "RD03"
-    case "ND_RETAIL" => "CR"
-    case "NON_POSTAL" => "O"
-    case "DO_TERRACE" => "RD04"
-    case "ND_ENTERTAINMENT" => "CL"
-    case "ND_HOSPITALITY" => "CH"
-    case "ND_SPORTING" => "CL06"
-    case "DO_APART" => "RD06"
-    case "ND_INDUSTRY" => "CI"
-    case "ND_EDUCATION" => "CE"
-    case "ND_RELIGIOUS" => "ZW"
-    case "ND_COMM_OTHER" => "C"
-    case "ND_OTHER" =>   "C"
-    case "ND_AGRICULTURE" => "CA"
-    case "DO_OTHER" => "RD"
-    case "ND_OFFICE" => "CO"
-    case "ND_HEALTH" => "CM"
-    case "ND_LEGAL" => "CC02"
-    case "ND_CULTURE" => "CL04"
-    case "ND_ENTS_OTHER" => "CL"
-    case "ND_CULTURE_OTHER" => "CL04"
-    case "ND_INDUST_OTHER" => "CI"
-    case _ => "O"
-  }
+//  private def nisraCodeToABP(ncode: String): String = ncode match {
+//
+//    case "DO_DETACHED" => "RD02"
+//    case "DO_SEMI" => "RD03"
+//    case "ND_RETAIL" => "CR"
+//    case "NON_POSTAL" => "O"
+//    case "DO_TERRACE" => "RD04"
+//    case "ND_ENTERTAINMENT" => "CL"
+//    case "ND_HOSPITALITY" => "CH"
+//    case "ND_SPORTING" => "CL06"
+//    case "DO_APART" => "RD06"
+//    case "ND_INDUSTRY" => "CI"
+//    case "ND_EDUCATION" => "CE"
+//    case "ND_RELIGIOUS" => "ZW"
+//    case "ND_COMM_OTHER" => "C"
+//    case "ND_OTHER" =>   "C"
+//    case "ND_AGRICULTURE" => "CA"
+//    case "DO_OTHER" => "RD"
+//    case "ND_OFFICE" => "CO"
+//    case "ND_HEALTH" => "CM"
+//    case "ND_LEGAL" => "CC02"
+//    case "ND_CULTURE" => "CL04"
+//    case "ND_ENTS_OTHER" => "CL"
+//    case "ND_CULTURE_OTHER" => "CL04"
+//    case "ND_INDUST_OTHER" => "CI"
+//    case _ => "O"
+//  }
 
 }

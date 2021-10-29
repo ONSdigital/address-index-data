@@ -47,7 +47,7 @@ object SparkProvider {
   // comment out .master line unless running locally
   private lazy val sparkContext: SparkSession = SparkSession.builder()
     .config(conf)
-    .master("local")
+  // .master("local")
     .enableHiveSupport()
     .getOrCreate()
 

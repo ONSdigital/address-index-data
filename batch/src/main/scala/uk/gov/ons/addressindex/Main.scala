@@ -8,25 +8,7 @@ import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 import uk.gov.ons.addressindex.utils.{Mappings, SqlHelper, AuthUtil}
 import uk.gov.ons.addressindex.writers.ElasticSearchWriter
 
-class Conf extends ScallopConf {
-  banner(
-    """
-Hybrid indexer. All options are mutually exclusive.
 
-Example: java -jar ons-ai-batch.jar --mapping --hybrid
-
-For usage see below:
-  """)
-
-  val hybrid: ScallopOption[Boolean] = opt("hybrid", noshort = true, descr = "Index hybrid PAF & NAG including historical data")
-  val hybridNoHist: ScallopOption[Boolean] = opt("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
-  val mapping: ScallopOption[Boolean] = opt("mapping", noshort = true, descr = "Creates mapping for the index")
-  val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
-  val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
-  val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
-  val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
-  verify()
-}
 
 /**
   * Main executed file
@@ -35,7 +17,25 @@ object Main extends App {
 
   val config = ConfigFactory.load()
 
-  val opts = new Conf()
+  val opts = new ScallopConf(args) {
+    banner(
+      """
+Hybrid indexer. All options are mutually exclusive.
+
+Example: java -jar ons-ai-batch.jar --mapping --hybrid
+
+For usage see below:
+  """)
+
+    val hybrid: ScallopOption[Boolean] = opt("hybrid", noshort = true, descr = "Index hybrid PAF & NAG including historical data")
+    val hybridNoHist: ScallopOption[Boolean] = opt("hybridNoHist", noshort = true, descr = "Index hybrid PAF & NAG no historical data")
+    val mapping: ScallopOption[Boolean] = opt("mapping", noshort = true, descr = "Creates mapping for the index")
+    val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
+    val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
+    val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
+    val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
+    verify()
+  }
 
   val nodes = config.getString("addressindex.elasticsearch.nodes")
   val port = config.getString("addressindex.elasticsearch.port")
