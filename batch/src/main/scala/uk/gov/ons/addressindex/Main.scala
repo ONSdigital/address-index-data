@@ -81,6 +81,9 @@ For usage see below:
   }
 
   private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false, nisraAddress1YearAgo: Boolean = false): Unit = {
+  //  val crossRef = AddressIndexFileReader.readCrossrefCSV()
+  //  val classification = AddressIndexFileReader.readClassificationCSV()
+  //  val hierarchy = AddressIndexFileReader.readHierarchyCSV()
     val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val nisratxt = AddressIndexFileReader.readNisraTXT()
@@ -93,7 +96,7 @@ For usage see below:
       }
     } else {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag,historical))
       } else {
         ElasticSearchWriter.saveHybridAddresses(s"$indexName", SqlHelper.aggregateHybridIndex(paf, nag, historical))
       }
