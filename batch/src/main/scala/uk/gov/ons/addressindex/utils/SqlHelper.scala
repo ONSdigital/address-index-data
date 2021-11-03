@@ -268,10 +268,6 @@ object SqlHelper {
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
       .select("uprn", "parentUprn","addressType","estabType")
 
-    val hierarchyJoinedWithRelatives = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn", "relatives","addressType","estabType")
-
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
@@ -282,8 +278,6 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn joined with nisra
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
-
-//    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
 
     val pafNagHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
@@ -426,18 +420,12 @@ object SqlHelper {
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
       .select("uprn", "parentUprn","addressType","estabType")
 
-    val hierarchyJoinedWithRelatives = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn", "relatives","addressType","estabType")
-
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
 
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
-
-    //    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
 
     val pafNagHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
@@ -546,10 +534,6 @@ object SqlHelper {
       .groupBy("primaryUprn")
       .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
-//    val hierarchyJoined = hierarchyDF
-//      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-//      .select("uprn", "parentUprn","addressType","estabType")
-
     val hierarchyJoinedWithRelatives = hierarchyDF
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
       .select("uprn", "parentUprn", "relatives","addressType","estabType")
@@ -564,8 +548,6 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
-
- //   val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
 
     val pafNagCrossHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
@@ -715,10 +697,6 @@ object SqlHelper {
       .groupBy("primaryUprn")
       .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
-//    val hierarchyJoined = hierarchyDF
-//      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-//      .select("uprn", "parentUprn","addressType","estabType")
-
     val hierarchyJoinedWithRelatives = hierarchyDF
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
       .select("uprn", "parentUprn", "relatives","addressType","estabType")
@@ -729,8 +707,6 @@ object SqlHelper {
 
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
-
-    //   val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
 
     val pafNagCrossHierGrouped = pafNagGrouped
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
@@ -831,33 +807,5 @@ object SqlHelper {
     }
   }
 
-  // function moved into calling code due to strange Spark glitch
-//  private def nisraCodeToABP(ncode: String): String = ncode match {
-//
-//    case "DO_DETACHED" => "RD02"
-//    case "DO_SEMI" => "RD03"
-//    case "ND_RETAIL" => "CR"
-//    case "NON_POSTAL" => "O"
-//    case "DO_TERRACE" => "RD04"
-//    case "ND_ENTERTAINMENT" => "CL"
-//    case "ND_HOSPITALITY" => "CH"
-//    case "ND_SPORTING" => "CL06"
-//    case "DO_APART" => "RD06"
-//    case "ND_INDUSTRY" => "CI"
-//    case "ND_EDUCATION" => "CE"
-//    case "ND_RELIGIOUS" => "ZW"
-//    case "ND_COMM_OTHER" => "C"
-//    case "ND_OTHER" =>   "C"
-//    case "ND_AGRICULTURE" => "CA"
-//    case "DO_OTHER" => "RD"
-//    case "ND_OFFICE" => "CO"
-//    case "ND_HEALTH" => "CM"
-//    case "ND_LEGAL" => "CC02"
-//    case "ND_CULTURE" => "CL04"
-//    case "ND_ENTS_OTHER" => "CL"
-//    case "ND_CULTURE_OTHER" => "CL04"
-//    case "ND_INDUST_OTHER" => "CI"
-//    case _ => "O"
-//  }
 
 }

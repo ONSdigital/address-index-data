@@ -14,11 +14,13 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 
 ### Software and Versions
 
-* Java 8 
-* SBT 0.13.16 (http://www.scala-sbt.org/)
-* Scala 2.12.4
-* Apache Spark 2.4.0
+* Java 11 
+* SBT 1.5.5 
+* Scala 2.12.14
+* Apache Spark 3.1.2
 * Elasticsearch 7.9.3
+* Elasticsearch-spark-30 7.9.12
+* Versions compatible with Google Dataproc v2.0
 
 ### Development Setup (IntelliJ)
 
@@ -31,19 +33,19 @@ For testing purposes there is a free [AddressBase sample](https://www.ordnancesu
 ### Running
 
 To package the project in a runnable fat-jar:
-In `build.sbt` set the variable `localTarget` to `true` (if set to `false` the output will be a thin jar intended to run on Cloudera).
+In `build.sbt` set the variable `localTarget` to `true` (if set to `false` the output will be a thin jar intended to run on platforms with Spark preloaded such as Cloudera and Google Dataproc).
 From the root of the project
 
 ```shell
 sbt clean assembly
 ```
 
-The resulting jar will be located in `batch/target/scala-2.11/ons-ai-batch-assembly-version.jar`
+The resulting jar will be located in `batch/target/scala-2.12/ons-ai-batch-assembly-version.jar`
 
 To run the jar:
 
 ```shell
-java -Dconfig.file=application.conf -jar batch/target/scala-2.11/ons-ai-batch-assembly-version.jar
+java -Dconfig.file=application.conf -jar batch/target/scala-2.12/ons-ai-batch-assembly-version.jar
 ```
 The target Elasticsearch index can be on a local ES deployment or an external server (configurable)
 The `application.conf` file may contain:
@@ -54,7 +56,12 @@ addressindex.elasticsearch.pass="password"
 ```
 
 These will override the default configuration. The location and names of the input files can also be overridden.
-Note that these input files are extracted from AddressBase and subject to some pre-processing.
+Note that these input files are extracted from AddressBase and subject to some pre-processing. For Dataproc runs the input files are stored in gs:// buckets
+
+Other settings from the reference.conf can be overridden, e.g. for a cluster mode execution set
+```
+addressindex.spark.master="yarn"
+```
 
 The job can also be run from inside IntelliJ. 
 In this case you can run the Main class directly but need to comment out lines 48-59 and uncomment the lines that follow:
