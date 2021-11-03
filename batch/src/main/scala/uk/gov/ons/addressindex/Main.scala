@@ -83,21 +83,24 @@ For usage see below:
   }
 
   private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false, nisraAddress1YearAgo: Boolean = false): Unit = {
+    val crossRef = AddressIndexFileReader.readCrossrefCSV()
+    val classification = AddressIndexFileReader.readClassificationCSV()
+    val hierarchy = AddressIndexFileReader.readHierarchyCSV()
     val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
     val nisratxt = AddressIndexFileReader.readNisraTXT()
 
     if (nisra) {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
+        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, crossRef, classification, hierarchy, historical, nisraAddress1YearAgo))
       } else {
-        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
+        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, crossRef, classification, hierarchy, historical, nisraAddress1YearAgo))
       }
     } else {
       if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, historical))
+        ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag, crossRef, classification, hierarchy, historical))
       } else {
-        ElasticSearchWriter.saveHybridAddresses(s"$indexName", SqlHelper.aggregateHybridIndex(paf, nag, historical))
+        ElasticSearchWriter.saveHybridAddresses(s"$indexName", SqlHelper.aggregateHybridIndex(paf, nag, crossRef, classification, hierarchy, historical))
       }
     }
   }

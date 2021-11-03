@@ -22,23 +22,23 @@ object SqlHelper {
         val blpuWithHistory = SparkProvider.registerTempTable(blpu, "blpuWithHistory")
         val blpuWithHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuWithHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
+            SparkProvider.sparkContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
         SparkProvider.registerTempTable(blpuWithHistoryDF, "blpu")
       } else {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
         val blpuNoHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT OUTER JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' """)
@@ -50,13 +50,13 @@ object SqlHelper {
         SparkProvider.registerTempTable(lpi, "lpi")
       } else {
         val lpiNoHistory = SparkProvider.registerTempTable(lpi, "lpiNoHistory")
-        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
+        val lpiNoHistoryDF = SparkProvider.sparkContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
         SparkProvider.registerTempTable(lpiNoHistoryDF, "lpi")
       }
     val streetTable = SparkProvider.registerTempTable(street, "street")
     val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
         $blpuTable.uprn,
         $blpuTable.postcodeLocator,
@@ -114,7 +114,7 @@ object SqlHelper {
   def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame = {
     val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             primaryUprn,
             thisLayer as level,
@@ -130,7 +130,7 @@ object SqlHelper {
   def aggregateCrossRefInformation(crossRef: DataFrame): DataFrame = {
     val crossRefTable = SparkProvider.registerTempTable(crossRef, "crossRef")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
             crossReference,
@@ -145,7 +145,7 @@ object SqlHelper {
   def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
     val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
             classificationCode
@@ -213,27 +213,7 @@ object SqlHelper {
       )
   }
 
-  private val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-    .groupBy("uprn")
-    .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
 
-  private val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-    .groupBy("uprn")
-    .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-  private val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-    .groupBy("primaryUprn")
-    .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-  private val hierarchyJoined = hierarchyDF
-    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-    .select("uprn", "parentUprn","addressType","estabType")
-
-  private val hierarchyJoinedWithRelatives = hierarchyDF
-    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-    .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
   private def createPafGrouped(paf: DataFrame, nag: DataFrame, historical: Boolean) : DataFrame =
     if (historical) paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
@@ -255,20 +235,42 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("*")).as("nisra"))
 
-  private def createPafNagHierGrouped(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-    .join(hierarchyJoined, Seq("uprn"), "left_outer")
-    .join(classificationsGrouped, Seq("uprn"), "left_outer")
-
-  private def createPafNagHierGroupedWithRelatives(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-    .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
-    .join(classificationsGrouped, Seq("uprn"), "left_outer")
+//  private def createPafNagHierGrouped(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
+//    .join(crossRefGrouped, Seq("uprn"), "left_outer")
+//    .join(hierarchyJoined, Seq("uprn"), "left_outer")
+//    .join(classificationsGrouped, Seq("uprn"), "left_outer")
+//
+//  private def createPafNagHierGroupedWithRelatives(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
+//    .join(crossRefGrouped, Seq("uprn"), "left_outer")
+//    .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+//    .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
+  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -281,7 +283,12 @@ object SqlHelper {
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+//    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+
+    val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -399,7 +406,29 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -408,7 +437,12 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+    //    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+
+    val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -496,7 +530,29 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
+  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -509,7 +565,12 @@ object SqlHelper {
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+ //   val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -638,7 +699,29 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -647,7 +730,12 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+    //   val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>

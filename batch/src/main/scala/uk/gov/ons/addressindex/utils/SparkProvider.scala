@@ -45,13 +45,12 @@ object SparkProvider {
   conf.set("es.mapping.id", "uprn")
 
   // comment out .master line unless running locally
-  private lazy val sparkContext: SparkSession = SparkSession.builder()
+   lazy val sparkContext: SparkSession = SparkSession.builder()
     .config(conf)
-  // .master("local")
     .enableHiveSupport()
     .getOrCreate()
 
-  lazy val sqlContext: SQLContext = sparkContext.sqlContext
+  //lazy val sqlContext: SQLContext = sparkContext.sqlContext
 
   val incrementalId = new AtomicInteger()
 

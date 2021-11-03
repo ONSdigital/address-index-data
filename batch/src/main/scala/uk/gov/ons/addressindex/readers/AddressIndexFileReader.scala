@@ -102,7 +102,7 @@ object AddressIndexFileReader {
   def readNisraTXT(): DataFrame = readTxt(pathToNisraTXT, NisraSchema.nisraFileSchema)
 
   private def readCsv(path: String, schema: StructType): DataFrame =
-    SparkProvider.sqlContext.read
+    SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
@@ -110,7 +110,7 @@ object AddressIndexFileReader {
       .load(resolveAbsolutePath(path))
 
   private def readTxt(path: String, schema: StructType): DataFrame =
-    SparkProvider.sqlContext.read
+    SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
