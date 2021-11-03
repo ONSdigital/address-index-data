@@ -546,9 +546,9 @@ object SqlHelper {
       .groupBy("primaryUprn")
       .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn","addressType","estabType")
+//    val hierarchyJoined = hierarchyDF
+//      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+//      .select("uprn", "parentUprn","addressType","estabType")
 
     val hierarchyJoinedWithRelatives = hierarchyDF
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
@@ -715,9 +715,9 @@ object SqlHelper {
       .groupBy("primaryUprn")
       .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
 
-    val hierarchyJoined = hierarchyDF
-      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-      .select("uprn", "parentUprn","addressType","estabType")
+//    val hierarchyJoined = hierarchyDF
+//      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+//      .select("uprn", "parentUprn","addressType","estabType")
 
     val hierarchyJoinedWithRelatives = hierarchyDF
       .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")

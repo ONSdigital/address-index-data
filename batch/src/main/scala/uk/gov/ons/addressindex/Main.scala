@@ -52,8 +52,6 @@ For usage see below:
   val url = s"http://$nodes:$port/$indexName"
 
   if (!opts.help()) {
- //   val cl = ClassLoader.getSystemClassLoader
- //   cl.asInstanceOf[java.net.URLClassLoader].getURLs.foreach(println)
     AddressIndexFileReader.validateFileNames()
     postMapping(indexName, skinny = opts.skinny())
     preLoad(indexName)
