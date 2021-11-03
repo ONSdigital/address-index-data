@@ -23,7 +23,6 @@ val clouderaDeps = Seq(
 )
 
 val otherDeps = Seq(
- // "com.databricks" % "spark-csv_2.11" % "1.5.0",
   "com.typesafe" % "config" % "1.4.1",
   "org.elasticsearch" %% "elasticsearch-spark-30" % "7.12.0" excludeAll ExclusionRule(organization = "javax.servlet"),
   "org.rogach" %% "scallop" % "4.0.3",

@@ -44,13 +44,11 @@ object SparkProvider {
   // this must fix duplication problem, hardcoded
   conf.set("es.mapping.id", "uprn")
 
-  // comment out .master line unless running locally
+  // can also set .master here but should be in conf
    lazy val sparkContext: SparkSession = SparkSession.builder()
     .config(conf)
     .enableHiveSupport()
     .getOrCreate()
-
-  //lazy val sqlContext: SQLContext = sparkContext.sqlContext
 
   val incrementalId = new AtomicInteger()
 
