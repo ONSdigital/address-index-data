@@ -248,7 +248,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
+  def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -406,7 +406,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
+  def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -530,7 +530,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
+  def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -699,7 +699,7 @@ object SqlHelper {
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
-  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, crossRef: DataFrame, classification: DataFrame, hierarchy: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+  def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")

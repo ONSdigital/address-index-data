@@ -319,7 +319,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridIndex(paf, nag, null, null, null).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf, nag).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 4
@@ -430,7 +430,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridIndex(paf1.union(paf2), nag, null, null, null, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 2
@@ -535,7 +535,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, null, null, null, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24
@@ -656,7 +656,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, null, null, null, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 17
@@ -722,7 +722,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag,null, null, null).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf, nag).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 4
@@ -769,7 +769,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, null, null, null,historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag,historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 2
@@ -811,7 +811,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, null, null, null, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24
@@ -867,7 +867,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       val nisra = AddressIndexFileReader.readNisraTXT()
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, null, null, null, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf1.union(paf2), nag, nisra, historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 17
