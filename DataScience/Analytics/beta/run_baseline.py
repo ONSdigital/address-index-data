@@ -89,7 +89,7 @@ def query_elastic(data, uri, verbose=True, param_config=''):
     
     head = {"Content-Type": "application/json", 'Authorization': IVY_AUTHORISATION}    
 
-    response = requests.post(uri, headers=head, json=data, timeout=1000000., verify=False)
+    response = requests.post(uri, headers=head, json=data, verify=False)
 
     if verbose:
         stop = time.clock()
