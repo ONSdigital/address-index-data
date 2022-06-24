@@ -142,7 +142,21 @@ object SqlHelper {
     )
   }
 
-  def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
+  def aggregateClassificationsInformation(rdmf: DataFrame): DataFrame = {
+    val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
+
+    SparkProvider.sparkContext.sql(
+      s"""SELECT
+            uprn,
+            address_entry_id
+          FROM
+            $rdmfTable
+          GROUP BY uprn, address_entry_id
+       """
+    )
+  }
+
+  def aggregateRDMFInformation(classifications: DataFrame): DataFrame = {
     val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
 
     SparkProvider.sparkContext.sql(
@@ -683,6 +697,10 @@ object SqlHelper {
     */
   def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
@@ -712,6 +730,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -785,6 +804,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
+        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
+        val onsAddressId: Option[String] = onsAddressIds.map(row => row.getAs[String]("address_entry_id")).headOption
+        
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
