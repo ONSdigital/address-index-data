@@ -12,6 +12,7 @@ case class HybridAddressSkinnyEsDocument(uprn: Long,
                                          countryCode: String,
                                          postcodeStreetTown: String,
                                          postTown: String,
-                                         mixedPartial: String)
+                                         mixedPartial: String,
+                                         onsAddressId: Option[Long])
 
 object HybridAddressSkinnyEsDocument extends EsDocument with HybridAddressSkinny
