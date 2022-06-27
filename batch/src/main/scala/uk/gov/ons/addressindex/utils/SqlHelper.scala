@@ -302,6 +302,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -458,6 +459,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -588,6 +590,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
