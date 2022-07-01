@@ -236,13 +236,6 @@ object CSVSchemas {
 
   /**
     * RDMF initial test CSV file schema
-    *
-    * address_entry_id,detail_valid_from_date,standard_address_source_code,language,detail_valid_to_date,
-    * uprn,udprn,address_line_1,address_line_2,address_line_3,address_line_4,address_line_5,
-    * town,postcode,country,logical_status,blpu_state,addressbase_postal,easting,northing,
-    * latitude,longitude,establishment_type_id,class_scheme,scheme_version,classification_code,
-    * classification_entry_date,classification_end_date,entry_date,end_date,parent_uprn,primary_uprn,
-    * secondary_uprn,ons_oa_id,la_code,oa_code,lsoa_code,msoa_code
     */
   val rdmfFileSchema = StructType(Seq(
     StructField("address_entry_id", LongType, nullable = false),
@@ -257,7 +250,6 @@ object CSVSchemas {
     StructField("address_line_3", StringType, nullable = true),
     StructField("address_line_4", StringType, nullable = true),
     StructField("address_line_5", StringType, nullable = true),
-    // town,postcode,country,logical_status,blpu_state,addressbase_postal,easting,northing,
     StructField("town", StringType, nullable = true),
     StructField("postcode", StringType, nullable = true),
     StructField("country", StringType, nullable = true),
@@ -266,21 +258,18 @@ object CSVSchemas {
     StructField("addressbase_postal", StringType, nullable = true),
     StructField("easting", FloatType, nullable = false),
     StructField("northing", FloatType, nullable = false),
-    // latitude,longitude,establishment_type_id,class_scheme,scheme_version,classification_code,
     StructField("latitude", FloatType, nullable = false),
     StructField("longitude", FloatType, nullable = false),
     StructField("establishment_type_id", StringType, nullable = true),
     StructField("class_scheme", StringType, nullable = true),
     StructField("scheme_version", StringType, nullable = true),
     StructField("classification_code", LongType, nullable = true),
-    // classification_entry_date,classification_end_date,entry_date,end_date,parent_uprn,primary_uprn,
     StructField("classification_entry_date", DateType, nullable = false),
     StructField("classification_end_date", DateType, nullable = true),
     StructField("entry_date", DateType, nullable = false),
     StructField("end_date", DateType, nullable = true),
     StructField("parent_uprn", LongType, nullable = true),
     StructField("primary_uprn", LongType, nullable = false),
-    // secondary_uprn,ons_oa_id,la_code,oa_code,lsoa_code,msoa_code
     StructField("secondary_uprn", LongType, nullable = true),
     StructField("ons_oa_id", LongType, nullable = true),
     StructField("la_code", StringType, nullable = true),
