@@ -142,6 +142,20 @@ object SqlHelper {
     )
   }
 
+  def aggregateRDMFInformation (rdmf: DataFrame): DataFrame = {
+    val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
+
+    SparkProvider.sparkContext.sql(
+      s"""SELECT
+            uprn,
+            address_entry_id
+          FROM
+            $rdmfTable
+          GROUP BY uprn, address_entry_id
+       """
+    )
+  }
+
   def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
     val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
 
@@ -250,6 +264,11 @@ object SqlHelper {
     */
   def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
 
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+
+
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
@@ -283,6 +302,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -378,6 +398,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
+        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+
         HybridAddressSkinnyNisraEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -392,7 +415,8 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId
         )
     }
   }
@@ -401,6 +425,10 @@ object SqlHelper {
     * Constructs a hybrid index from nag and paf dataframes
     */
   def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
+
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -431,6 +459,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoined, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -497,6 +526,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
+        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+
         HybridAddressSkinnyEsDocument(
           uprn,
           parentUprn.getOrElse(0L),
@@ -510,7 +542,8 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId
         )
     }
   }
@@ -519,6 +552,10 @@ object SqlHelper {
     * Constructs a hybrid index from nag and paf dataframes
     */
   def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
+
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -553,6 +590,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -655,6 +693,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
+        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+
         HybridAddressNisraEsDocument(
           uprn,
           postCodeIn,
@@ -673,7 +714,8 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId
         )
     }
   }
@@ -682,6 +724,10 @@ object SqlHelper {
     * Constructs a hybrid index from nag and paf dataframes
     */
   def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
+
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -712,6 +758,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -785,6 +832,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
+        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+
         HybridAddressEsDocument(
           uprn,
           postCodeIn,
@@ -802,7 +852,8 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId
         )
     }
   }

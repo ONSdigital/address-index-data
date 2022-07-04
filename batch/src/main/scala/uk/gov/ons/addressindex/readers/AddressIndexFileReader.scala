@@ -22,7 +22,15 @@ object AddressIndexFileReader {
   lazy val pathToStreetDescriptorCSV: String = config.getString("addressindex.files.csv.street-descriptor")
   lazy val pathToSuccessorCSV: String = config.getString("addressindex.files.csv.successor")
   lazy val pathToHierarchyCSV: String = config.getString("addressindex.files.csv.hierarchy")
+  lazy val pathToRDMFCSV: String = config.getString("addressindex.files.csv.rdmf")
   lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
+
+  /**
+    * Reads csv into a `DataFrame`
+    *
+    * @return `DataFrame` containing the RDMF extract data
+    */
+  def readRDMFCSV(): DataFrame = readCsv(pathToRDMFCSV, CSVSchemas.rdmfFileSchema)
 
   /**
     * Reads csv into a `DataFrame`
