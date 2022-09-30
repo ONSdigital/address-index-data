@@ -6,6 +6,8 @@ import org.apache.spark.sql.types.StructType
 import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
 import uk.gov.ons.addressindex.utils.SparkProvider
 
+import scala.util.Try
+
 /**
   * Contains static methods to read different cvs files related to the Address Index
   */
@@ -35,7 +37,7 @@ object AddressIndexFileReader {
   lazy val pathToRDMFCSV: String = config.getString("addressindex.files.csv.rdmf")
   lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
 
-  lazy val isIslands: Boolean = config.getBoolean("addressindex.islands.used")
+  lazy val isIslands: Boolean = Try(config.getString("addressindex.islands.used").toBoolean).getOrElse(false)
 
   /**
     * Reads csv into a `DataFrame`
@@ -63,9 +65,9 @@ object AddressIndexFileReader {
     */
   def readBlpuCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToBlpuCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
     else
-      readCsv2(pathToBlpuCSV, pathToBlpuCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToBlpuCSV, pathToBlpuCSV2, CSVSchemas.blpuFileSchema)
   }
 
   /**
@@ -75,9 +77,9 @@ object AddressIndexFileReader {
     */
   def readClassificationCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToClassificationCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
     else
-      readCsv2(pathToClassificationCSV, pathToClassificationCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToClassificationCSV, pathToClassificationCSV2, CSVSchemas.classificationFileSchema)
   }
 
   /**
@@ -87,9 +89,9 @@ object AddressIndexFileReader {
     */
   def readCrossrefCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToCrossrefCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
     else
-      readCsv2(pathToCrossrefCSV, pathToCrossrefCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToCrossrefCSV, pathToCrossrefCSV2, CSVSchemas.crossrefFileSchema)
   }
 
   /**
@@ -99,9 +101,9 @@ object AddressIndexFileReader {
     */
   def readLpiCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToLpiCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
     else
-      readCsv2(pathToLpiCSV, pathToLpiCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToLpiCSV, pathToLpiCSV2, CSVSchemas.lpiFileSchema)
   }
 
   /**
@@ -111,9 +113,9 @@ object AddressIndexFileReader {
     */
   def readOrganisationCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToOrganisationCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
     else
-      readCsv2(pathToOrganisationCSV, pathToOrganisationCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToOrganisationCSV, pathToOrganisationCSV2, CSVSchemas.organisationFileSchema)
   }
 
   /**
@@ -123,9 +125,9 @@ object AddressIndexFileReader {
     */
   def readStreetCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToStreetCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
     else
-      readCsv2(pathToStreetCSV, pathToStreetCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToStreetCSV, pathToStreetCSV2, CSVSchemas.streetFileSchema)
   }
 
   /**
@@ -135,9 +137,9 @@ object AddressIndexFileReader {
     */
   def readStreetDescriptorCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToStreetDescriptorCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
     else
-      readCsv2(pathToStreetDescriptorCSV, pathToStreetDescriptorCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToStreetDescriptorCSV, pathToStreetDescriptorCSV2, CSVSchemas.streetDescriptorFileSchema)
   }
 
   /**
@@ -147,9 +149,9 @@ object AddressIndexFileReader {
     */
   def readSuccessorCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToSuccessorCSV, CSVSchemas.postcodeAddressFileSchema)
+      readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
     else
-      readCsv2(pathToSuccessorCSV, pathToSuccessorCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToSuccessorCSV, pathToSuccessorCSV2, CSVSchemas.successorFileSchema)
   }
 
   /**
@@ -158,10 +160,10 @@ object AddressIndexFileReader {
     * @return 'DataFrame' containing the hierarchy data from CSV
     */
   def readHierarchyCSV(): DataFrame = {
-    if (isIslands)
-      readCsv(pathToHierarchyCSV, CSVSchemas.postcodeAddressFileSchema)
+    if (isIslands.equals("true"))
+      readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
     else
-      readCsv2(pathToHierarchyCSV, pathToHierarchyCSV2, CSVSchemas.postcodeAddressFileSchema)
+      readCsv2(pathToHierarchyCSV, pathToHierarchyCSV2, CSVSchemas.hierarchyFileSchema)
   }
 
   /**
