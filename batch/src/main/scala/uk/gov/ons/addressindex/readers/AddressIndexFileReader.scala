@@ -53,9 +53,9 @@ object AddressIndexFileReader {
     */
   def readDeliveryPointCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToDeliveryPointCsv, CSVSchemas.postcodeAddressFileSchema)
-    else
       readCsv2(pathToDeliveryPointCsv, pathToDeliveryPointCsv2, CSVSchemas.postcodeAddressFileSchema)
+    else
+      readCsv(pathToDeliveryPointCsv, CSVSchemas.postcodeAddressFileSchema)
   }
 
   /**
@@ -65,9 +65,9 @@ object AddressIndexFileReader {
     */
   def readBlpuCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
-    else
       readCsv2(pathToBlpuCSV, pathToBlpuCSV2, CSVSchemas.blpuFileSchema)
+    else
+      readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
   }
 
   /**
@@ -77,9 +77,9 @@ object AddressIndexFileReader {
     */
   def readClassificationCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
-    else
       readCsv2(pathToClassificationCSV, pathToClassificationCSV2, CSVSchemas.classificationFileSchema)
+    else
+      readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
   }
 
   /**
@@ -89,9 +89,9 @@ object AddressIndexFileReader {
     */
   def readCrossrefCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
-    else
       readCsv2(pathToCrossrefCSV, pathToCrossrefCSV2, CSVSchemas.crossrefFileSchema)
+    else
+      readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
   }
 
   /**
@@ -101,9 +101,9 @@ object AddressIndexFileReader {
     */
   def readLpiCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
-    else
       readCsv2(pathToLpiCSV, pathToLpiCSV2, CSVSchemas.lpiFileSchema)
+    else
+      readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
   }
 
   /**
@@ -113,9 +113,9 @@ object AddressIndexFileReader {
     */
   def readOrganisationCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
-    else
       readCsv2(pathToOrganisationCSV, pathToOrganisationCSV2, CSVSchemas.organisationFileSchema)
+    else
+      readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
   }
 
   /**
@@ -125,9 +125,9 @@ object AddressIndexFileReader {
     */
   def readStreetCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
-    else
       readCsv2(pathToStreetCSV, pathToStreetCSV2, CSVSchemas.streetFileSchema)
+    else
+      readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
   }
 
   /**
@@ -137,9 +137,9 @@ object AddressIndexFileReader {
     */
   def readStreetDescriptorCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
-    else
       readCsv2(pathToStreetDescriptorCSV, pathToStreetDescriptorCSV2, CSVSchemas.streetDescriptorFileSchema)
+    else
+      readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
   }
 
   /**
@@ -149,9 +149,9 @@ object AddressIndexFileReader {
     */
   def readSuccessorCSV(): DataFrame = {
     if (isIslands)
-      readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
-    else
       readCsv2(pathToSuccessorCSV, pathToSuccessorCSV2, CSVSchemas.successorFileSchema)
+    else
+      readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
   }
 
   /**
@@ -160,10 +160,10 @@ object AddressIndexFileReader {
     * @return 'DataFrame' containing the hierarchy data from CSV
     */
   def readHierarchyCSV(): DataFrame = {
-    if (isIslands.equals("true"))
-      readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
-    else
+    if (isIslands)
       readCsv2(pathToHierarchyCSV, pathToHierarchyCSV2, CSVSchemas.hierarchyFileSchema)
+    else
+      readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
   }
 
   /**
