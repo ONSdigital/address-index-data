@@ -6,6 +6,8 @@ import org.apache.spark.sql.types.StructType
 import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
 import uk.gov.ons.addressindex.utils.SparkProvider
 
+import scala.util.Try
+
 /**
   * Contains static methods to read different cvs files related to the Address Index
   */
@@ -22,8 +24,20 @@ object AddressIndexFileReader {
   lazy val pathToStreetDescriptorCSV: String = config.getString("addressindex.files.csv.street-descriptor")
   lazy val pathToSuccessorCSV: String = config.getString("addressindex.files.csv.successor")
   lazy val pathToHierarchyCSV: String = config.getString("addressindex.files.csv.hierarchy")
+  lazy val pathToDeliveryPointCsv2: String = config.getString("addressindex.files.csv.delivery-point_islands")
+  lazy val pathToBlpuCSV2: String = config.getString("addressindex.files.csv.blpu_islands")
+  lazy val pathToClassificationCSV2: String = config.getString("addressindex.files.csv.classification_islands")
+  lazy val pathToCrossrefCSV2: String = config.getString("addressindex.files.csv.crossref_islands")
+  lazy val pathToLpiCSV2: String = config.getString("addressindex.files.csv.lpi_islands")
+  lazy val pathToOrganisationCSV2: String = config.getString("addressindex.files.csv.organisation_islands")
+  lazy val pathToStreetCSV2: String = config.getString("addressindex.files.csv.street_islands")
+  lazy val pathToStreetDescriptorCSV2: String = config.getString("addressindex.files.csv.street-descriptor_islands")
+  lazy val pathToSuccessorCSV2: String = config.getString("addressindex.files.csv.successor_islands")
+  lazy val pathToHierarchyCSV2: String = config.getString("addressindex.files.csv.hierarchy_islands")
   lazy val pathToRDMFCSV: String = config.getString("addressindex.files.csv.rdmf")
   lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
+
+  lazy val isIslands: Boolean = Try(config.getString("addressindex.islands.used").toBoolean).getOrElse(false)
 
   /**
     * Reads csv into a `DataFrame`
@@ -37,70 +51,120 @@ object AddressIndexFileReader {
     *
     * @return `DataFrame` containing the delivery point data from CSV
     */
-  def readDeliveryPointCSV(): DataFrame = readCsv(pathToDeliveryPointCsv, CSVSchemas.postcodeAddressFileSchema)
+  def readDeliveryPointCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToDeliveryPointCsv, pathToDeliveryPointCsv2, CSVSchemas.postcodeAddressFileSchema)
+    else
+      readCsv(pathToDeliveryPointCsv, CSVSchemas.postcodeAddressFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the blpu data from CSV
     */
-  def readBlpuCSV(): DataFrame = readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
+  def readBlpuCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToBlpuCSV, pathToBlpuCSV2, CSVSchemas.blpuFileSchema)
+    else
+      readCsv(pathToBlpuCSV, CSVSchemas.blpuFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the classification data from CSV
     */
-  def readClassificationCSV(): DataFrame = readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
+  def readClassificationCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToClassificationCSV, pathToClassificationCSV2, CSVSchemas.classificationFileSchema)
+    else
+      readCsv(pathToClassificationCSV, CSVSchemas.classificationFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the crossref data from CSV
     */
-  def readCrossrefCSV(): DataFrame = readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
+  def readCrossrefCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToCrossrefCSV, pathToCrossrefCSV2, CSVSchemas.crossrefFileSchema)
+    else
+      readCsv(pathToCrossrefCSV, CSVSchemas.crossrefFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the lpi data from CSV
     */
-  def readLpiCSV(): DataFrame = readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
+  def readLpiCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToLpiCSV, pathToLpiCSV2, CSVSchemas.lpiFileSchema)
+    else
+      readCsv(pathToLpiCSV, CSVSchemas.lpiFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the organisation data from CSV
     */
-  def readOrganisationCSV(): DataFrame = readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
+  def readOrganisationCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToOrganisationCSV, pathToOrganisationCSV2, CSVSchemas.organisationFileSchema)
+    else
+      readCsv(pathToOrganisationCSV, CSVSchemas.organisationFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street data from CSV
     */
-  def readStreetCSV(): DataFrame = readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
+  def readStreetCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToStreetCSV, pathToStreetCSV2, CSVSchemas.streetFileSchema)
+    else
+      readCsv(pathToStreetCSV, CSVSchemas.streetFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the street-descriptor data from CSV
     */
-  def readStreetDescriptorCSV(): DataFrame = readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
+  def readStreetDescriptorCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToStreetDescriptorCSV, pathToStreetDescriptorCSV2, CSVSchemas.streetDescriptorFileSchema)
+    else
+      readCsv(pathToStreetDescriptorCSV, CSVSchemas.streetDescriptorFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the successor data from CSV
     */
-  def readSuccessorCSV(): DataFrame = readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
+  def readSuccessorCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToSuccessorCSV, pathToSuccessorCSV2, CSVSchemas.successorFileSchema)
+    else
+      readCsv(pathToSuccessorCSV, CSVSchemas.successorFileSchema)
+  }
 
   /**
     * Reads csv into a 'DataFrame'
     *
     * @return 'DataFrame' containing the hierarchy data from CSV
     */
-  def readHierarchyCSV(): DataFrame = readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
+  def readHierarchyCSV(): DataFrame = {
+    if (isIslands)
+      readCsv2(pathToHierarchyCSV, pathToHierarchyCSV2, CSVSchemas.hierarchyFileSchema)
+    else
+      readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
+  }
 
   /**
     * Reads txt into a 'DataFrame'
@@ -109,13 +173,22 @@ object AddressIndexFileReader {
     */
   def readNisraTXT(): DataFrame = readTxt(pathToNisraTXT, NisraSchema.nisraFileSchema)
 
-  private def readCsv(path: String, schema: StructType): DataFrame =
+  private def readCsv(path1: String, schema: StructType): DataFrame =
     SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)
       .option("header", "true")
       .option("mode", "PERMISSIVE")
-      .load(resolveAbsolutePath(path))
+      .load(resolveAbsolutePath(path1))
+
+  private def readCsv2(path1: String, path2: String, schema: StructType): DataFrame = {
+     SparkProvider.sparkContext.read
+      .format("com.databricks.spark.csv")
+      .schema(schema)
+      .option("header", "true")
+      .option("mode", "PERMISSIVE")
+      .load(resolveAbsolutePath(path1), resolveAbsolutePath(path2))
+  }
 
   private def readTxt(path: String, schema: StructType): DataFrame =
     SparkProvider.sparkContext.read
