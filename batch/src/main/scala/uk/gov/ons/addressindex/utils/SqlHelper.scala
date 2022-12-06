@@ -399,7 +399,7 @@ object SqlHelper {
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[String] = onsAddressIds.map(row => row.getAs[String]("address_entry_id")).headOption
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -527,7 +527,7 @@ object SqlHelper {
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[String] = onsAddressIds.map(row => row.getAs[String]("address_entry_id")).headOption
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -694,7 +694,7 @@ object SqlHelper {
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[String] = onsAddressIds.map(row => row.getAs[String]("address_entry_id")).headOption
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -833,7 +833,7 @@ object SqlHelper {
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
         val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[String] = onsAddressIds.map(row => row.getAs[String]("address_entry_id")).headOption
+        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
 
         HybridAddressEsDocument(
           uprn,

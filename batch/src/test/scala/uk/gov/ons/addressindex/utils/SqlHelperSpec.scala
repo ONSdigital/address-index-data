@@ -671,7 +671,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
-      firstResult.onsAddressId shouldBe Some("100000034563800")
+      firstResult.onsAddressId shouldBe Some(100000034563800L)
 
       val secondResult = result(16)
       secondResult.uprn shouldBe 100010971565L
@@ -683,7 +683,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
-      secondResult.onsAddressId shouldBe Some("100000034563798")
+      secondResult.onsAddressId shouldBe Some(100000034563798L)
 
       // Hierarchy test
       firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
@@ -735,7 +735,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
-      firstResult.onsAddressId shouldBe Some("100000034563800")
+      firstResult.onsAddressId shouldBe Some(100000034563800L)
 
       val secondResult = result(3)
       secondResult.uprn shouldBe 100010971565L
@@ -743,7 +743,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
-      secondResult.onsAddressId shouldBe Some("100000034563798")
+      secondResult.onsAddressId shouldBe Some(100000034563798L)
 
     }
 
@@ -784,7 +784,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
-      firstResult.onsAddressId shouldBe Some("100000034563800")
+      firstResult.onsAddressId shouldBe Some(100000034563800L)
 
       val secondResult = result(1)
       secondResult.uprn shouldBe 100010971565L
@@ -792,7 +792,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
-      secondResult.onsAddressId shouldBe Some("100000034563798")
+      secondResult.onsAddressId shouldBe Some(100000034563798L)
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents" in {
@@ -828,7 +828,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
-      firstResult.onsAddressId shouldBe Some("100000034563800")
+      firstResult.onsAddressId shouldBe Some(100000034563800L)
 
       val thirdResult = result(22)
       thirdResult.uprn shouldBe 380592411
@@ -844,7 +844,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
-      secondResult.onsAddressId shouldBe Some("100000034563798")
+      secondResult.onsAddressId shouldBe Some(100000034563798L)
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
@@ -886,7 +886,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
-      firstResult.onsAddressId shouldBe Some("100000034563800")
+      firstResult.onsAddressId shouldBe Some(100000034563800L)
 
 
       val secondResult = result(16)
@@ -896,7 +896,7 @@ class SqlHelperSpec extends AnyWordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
       secondResult.nisra shouldBe empty
-      secondResult.onsAddressId shouldBe Some("100000034563798")
+      secondResult.onsAddressId shouldBe Some(100000034563798L)
 
       val thirdResult = result(1)
       thirdResult.uprn shouldBe 375537613L

@@ -283,7 +283,7 @@ object CSVSchemas {
     */
   val rdmfFileSchema = StructType(Seq(
     StructField("uprn", LongType, nullable = false),
-    StructField("address_entry_id", StringType, nullable = false),
+    StructField("address_entry_id", LongType, nullable = false),
     StructField("epoch", LongType, nullable = false),
 
   ))
