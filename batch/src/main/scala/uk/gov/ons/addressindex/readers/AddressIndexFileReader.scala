@@ -1,7 +1,7 @@
 package uk.gov.ons.addressindex.readers
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
 import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
 import uk.gov.ons.addressindex.utils.SparkProvider
@@ -189,7 +189,7 @@ object AddressIndexFileReader {
       .option("mode", "PERMISSIVE")
       .load(resolveAbsolutePath(path1), resolveAbsolutePath(path2))
   }
-  
+
     private def readTxt(path: String, schema: StructType): DataFrame =
     SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
