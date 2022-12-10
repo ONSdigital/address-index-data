@@ -190,7 +190,7 @@ object AddressIndexFileReader {
       .load(resolveAbsolutePath(path1), resolveAbsolutePath(path2))
   }
 
-  private def readTxt(path: String, schema: StructType): DataFrame =
+    private def readTxt(path: String, schema: StructType): DataFrame =
     SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
       .schema(schema)

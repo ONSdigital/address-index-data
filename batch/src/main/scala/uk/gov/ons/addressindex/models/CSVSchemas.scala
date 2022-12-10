@@ -237,7 +237,7 @@ object CSVSchemas {
   /**
     * RDMF initial test CSV file schema
     */
-  val rdmfFileSchema = StructType(Seq(
+  val rdmfTestFileSchema = StructType(Seq(
     StructField("address_entry_id", LongType, nullable = false),
     StructField("detail_valid_from_date", DateType, nullable = false),
     StructField("standard_address_source_code", StringType, nullable = true),
@@ -276,6 +276,16 @@ object CSVSchemas {
     StructField("oa_code", StringType, nullable = true),
     StructField("lsoa_code", StringType, nullable = true),
     StructField("msoa_code", StringType, nullable = true)
+  ))
+
+  /**
+    * RDMF initial test CSV file schema
+    */
+  val rdmfFileSchema = StructType(Seq(
+    StructField("uprn", LongType, nullable = false),
+    StructField("address_entry_id", LongType, nullable = false),
+    StructField("epoch", LongType, nullable = false),
+
   ))
 
 }

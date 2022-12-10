@@ -298,6 +298,21 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
       line.getLong(2) shouldBe 2 // PARENT_UPRN
     }
 
+    "read rdmf csv file" in {
+
+      // When
+      val result = AddressIndexFileReader.readRDMFCSV().collect()
+
+      // Then
+      result.length shouldBe 4
+
+      val line = result(3)
+      line.getLong(0) shouldBe 99 // UPRN
+      line.getLong(1) shouldBe 100000034563801L // ADDRESS_ENTRY_ID
+      line.getLong(2) shouldBe 95 // EPOCH
+
+    }
+
     "read NISRA txt file" in {
 
       // When
