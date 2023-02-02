@@ -148,10 +148,11 @@ object SqlHelper {
     SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
-            address_entry_id
+            address_entry_id,
+            address_entry_id_alphanumeric_backup
           FROM
             $rdmfTable
-          GROUP BY uprn, address_entry_id
+          GROUP BY uprn, address_entry_id, address_entry_id_alphanumeric_backup
        """
     )
   }
@@ -266,7 +267,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
@@ -398,8 +399,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
-        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -416,7 +418,8 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-          onsAddressId
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -428,7 +431,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -526,8 +529,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
-        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -543,7 +547,8 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-          onsAddressId
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -555,7 +560,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -693,8 +698,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
-        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -715,7 +721,8 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-          onsAddressId
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -727,7 +734,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-      .agg(functions.collect_list(functions.struct("address_entry_id")).as("onsaddressid"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -832,8 +839,9 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
-        val onsAddressIds = Option(row.getAs[Seq[Row]]("onsaddressid")).getOrElse(Seq())
-        val onsAddressId: Option[Long] = onsAddressIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressEsDocument(
           uprn,
@@ -853,7 +861,8 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-          onsAddressId
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }

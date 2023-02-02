@@ -307,9 +307,11 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
       result.length shouldBe 4
 
       val line = result(3)
-      line.getLong(0) shouldBe 99 // UPRN
-      line.getLong(1) shouldBe 100000034563801L // ADDRESS_ENTRY_ID
-      line.getLong(2) shouldBe 95 // EPOCH
+
+      line.getLong(0) shouldBe 100000034563801L // ADDRESS_ENTRY_ID
+      line.getString(1) shouldBe "A100000034563801" // ADDRESS_ENTRY_ID_ALPHANUMERIC_BACKUP
+      line.getLong(2) shouldBe 99 // UPRN
+      line.getLong(3) shouldBe 95 // EPOCH
 
     }
 
