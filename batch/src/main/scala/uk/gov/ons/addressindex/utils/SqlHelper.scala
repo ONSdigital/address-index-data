@@ -250,15 +250,6 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("*")).as("nisra"))
 
-//  private def createPafNagHierGrouped(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-//    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-//    .join(hierarchyJoined, Seq("uprn"), "left_outer")
-//    .join(classificationsGrouped, Seq("uprn"), "left_outer")
-//
-//  private def createPafNagHierGroupedWithRelatives(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-//    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-//    .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
-//    .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
   /**
     * Constructs a hybrid index from nag and paf dataframes
@@ -401,6 +392,8 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyNisraEsDocument(
@@ -418,6 +411,7 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
+          onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )
@@ -531,6 +525,8 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyEsDocument(
@@ -547,6 +543,7 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
+          onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )
@@ -700,6 +697,8 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressNisraEsDocument(
@@ -721,6 +720,7 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
+          onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )
@@ -841,6 +841,8 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressEsDocument(
@@ -861,6 +863,7 @@ object SqlHelper {
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
+          onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )

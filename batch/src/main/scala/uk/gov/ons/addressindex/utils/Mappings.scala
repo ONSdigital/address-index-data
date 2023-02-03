@@ -1066,6 +1066,19 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
+                  "onsAddressId": {
+                      "type": "long",
+                      "index": "true"
+                  },
+                  "addressEntryId": {
+                      "type": "long",
+                      "index": "true"
+                  },
+                  "addressEntryIdAlphanumericBackup": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
                   "postcode": {
                       "type": "text",
                       "index": "true",
@@ -1806,6 +1819,19 @@ object Mappings {
                       "analyzer": "keyword"
                   },
                   "countryCode": {
+                      "type": "text",
+                      "index": "true",
+                      "analyzer": "keyword"
+                  },
+                  "onsAddressId": {
+                      "type": "long",
+                       "index": "true"
+                  },
+                  "addressEntryId": {
+                      "type": "long",
+                      "index": "true"
+                  },
+                  "addressEntryIdAlphanumericBackup": {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"

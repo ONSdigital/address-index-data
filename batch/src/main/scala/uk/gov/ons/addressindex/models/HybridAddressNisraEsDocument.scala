@@ -20,6 +20,7 @@ case class HybridAddressNisraEsDocument(uprn: Long,
                                         postcodeStreetTown: String,
                                         postTown: String,
                                         mixedPartial: String,
+                                        onsAddressId: Option[Long],
                                         addressEntryId: Option[Long],
                                         addressEntryIdAlphanumericBackup: Option[String])
 
