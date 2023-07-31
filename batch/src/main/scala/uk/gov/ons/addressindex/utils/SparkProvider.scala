@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * Provide global access to the spark context instance.
@@ -44,12 +44,11 @@ object SparkProvider {
   // this must fix duplication problem, hardcoded
   conf.set("es.mapping.id", "uprn")
 
-  private lazy val sparkContext: SparkSession = SparkSession.builder()
+  // can also set .master here but should be in conf
+   lazy val sparkContext: SparkSession = SparkSession.builder()
     .config(conf)
     .enableHiveSupport()
     .getOrCreate()
-
-  lazy val sqlContext: SQLContext = sparkContext.sqlContext
 
   val incrementalId = new AtomicInteger()
 

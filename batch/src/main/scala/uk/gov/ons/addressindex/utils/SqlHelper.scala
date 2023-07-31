@@ -22,23 +22,23 @@ object SqlHelper {
         val blpuWithHistory = SparkProvider.registerTempTable(blpu, "blpuWithHistory")
         val blpuWithHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuWithHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
+            SparkProvider.sparkContext.sql(s"""SELECT b.* FROM $blpuWithHistory b""")
         SparkProvider.registerTempTable(blpuWithHistoryDF, "blpu")
       } else {
         val blpuNoHistory = SparkProvider.registerTempTable(blpu, "blpuNoHistory")
         val blpuNoHistoryDF =
           if (skinny)
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' AND NOT (b.addressBasePostal = 'N' AND NOT c.classificationCode LIKE 'R%')""")
           else
-            SparkProvider.sqlContext.sql(s"""SELECT b.*, c.classificationCode
+            SparkProvider.sparkContext.sql(s"""SELECT b.*, c.classificationCode
               FROM $blpuNoHistory b
                    LEFT OUTER JOIN $classificationTable c ON b.uprn = c.uprn
               WHERE b.logicalStatus != 8 AND c.classificationCode !='DUMMY' """)
@@ -50,13 +50,13 @@ object SqlHelper {
         SparkProvider.registerTempTable(lpi, "lpi")
       } else {
         val lpiNoHistory = SparkProvider.registerTempTable(lpi, "lpiNoHistory")
-        val lpiNoHistoryDF = SparkProvider.sqlContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
+        val lpiNoHistoryDF = SparkProvider.sparkContext.sql(s"""SELECT l.* FROM $lpiNoHistory l WHERE l.logicalStatus != 8 """)
         SparkProvider.registerTempTable(lpiNoHistoryDF, "lpi")
       }
     val streetTable = SparkProvider.registerTempTable(street, "street")
     val streetDescriptorTable = SparkProvider.registerTempTable(streetDescriptor, "street_descriptor")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
         $blpuTable.uprn,
         $blpuTable.postcodeLocator,
@@ -114,7 +114,7 @@ object SqlHelper {
   def aggregateHierarchyInformation(hierarchy: DataFrame): DataFrame = {
     val hierarchyTable = SparkProvider.registerTempTable(hierarchy, "hierarchy")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             primaryUprn,
             thisLayer as level,
@@ -130,7 +130,7 @@ object SqlHelper {
   def aggregateCrossRefInformation(crossRef: DataFrame): DataFrame = {
     val crossRefTable = SparkProvider.registerTempTable(crossRef, "crossRef")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
             crossReference,
@@ -142,10 +142,25 @@ object SqlHelper {
     )
   }
 
+  def aggregateRDMFInformation (rdmf: DataFrame): DataFrame = {
+    val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
+
+    SparkProvider.sparkContext.sql(
+      s"""SELECT
+            uprn,
+            address_entry_id,
+            address_entry_id_alphanumeric_backup
+          FROM
+            $rdmfTable
+          GROUP BY uprn, address_entry_id, address_entry_id_alphanumeric_backup
+       """
+    )
+  }
+
   def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
     val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
 
-    SparkProvider.sqlContext.sql(
+    SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
             classificationCode
@@ -213,27 +228,7 @@ object SqlHelper {
       )
   }
 
-  private val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
-    .groupBy("uprn")
-    .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
 
-  private val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
-    .groupBy("uprn")
-    .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
-
-  private val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
-
-  private val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
-    .groupBy("primaryUprn")
-    .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
-
-  private val hierarchyJoined = hierarchyDF
-    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-    .select("uprn", "parentUprn","addressType","estabType")
-
-  private val hierarchyJoinedWithRelatives = hierarchyDF
-    .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
-    .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
   private def createPafGrouped(paf: DataFrame, nag: DataFrame, historical: Boolean) : DataFrame =
     if (historical) paf.groupBy("uprn").agg(functions.collect_list(functions.struct("*")).as("paf"))
@@ -255,20 +250,34 @@ object SqlHelper {
       .groupBy("uprn")
       .agg(functions.collect_list(functions.struct("*")).as("nisra"))
 
-  private def createPafNagHierGrouped(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-    .join(hierarchyJoined, Seq("uprn"), "left_outer")
-    .join(classificationsGrouped, Seq("uprn"), "left_outer")
-
-  private def createPafNagHierGroupedWithRelatives(pafNagGrouped: DataFrame) : DataFrame = pafNagGrouped
-    .join(crossRefGrouped, Seq("uprn"), "left_outer")
-    .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
-    .join(classificationsGrouped, Seq("uprn"), "left_outer")
 
   /**
     * Constructs a hybrid index from nag and paf dataframes
     */
   def aggregateHybridSkinnyNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyNisraEsDocument] = {
+
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
+
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -281,7 +290,11 @@ object SqlHelper {
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+    val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -353,29 +366,35 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!nisraStart.getOrElse("").isEmpty) "(" + nisraStart.getOrElse("") + ")"
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (nisraStreet.getOrElse("").nonEmpty) nisraStreet.getOrElse("")
+        else if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (nisraStart.getOrElse("").nonEmpty) "(" + nisraStart.getOrElse("") + ")"
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-        else if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (nisraTown.getOrElse("").nonEmpty) nisraTown.getOrElse("")
+        else if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
+        val postTown = pafTown.getOrElse(nisraPostTown.orNull)
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
+
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyNisraEsDocument(
           uprn,
@@ -391,7 +410,10 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId,
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -401,6 +423,28 @@ object SqlHelper {
     */
   def aggregateHybridSkinnyIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressSkinnyEsDocument] = {
 
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoined = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn","addressType","estabType")
+
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
@@ -408,7 +452,11 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    val pafNagHierGrouped = createPafNagHierGrouped(pafNagGrouped)
+    val pafNagHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoined, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagHierGrouped.rdd.map {
       row =>
@@ -454,17 +502,17 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
@@ -474,6 +522,12 @@ object SqlHelper {
         val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
+
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -488,7 +542,10 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId,
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -497,6 +554,28 @@ object SqlHelper {
     * Constructs a hybrid index from nag and paf dataframes
     */
   def aggregateHybridNisraIndex(paf: DataFrame, nag: DataFrame, nisra: DataFrame, historical: Boolean = true, nisraAddress1YearAgo: Boolean = false): RDD[HybridAddressNisraEsDocument] = {
+
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
 
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
@@ -509,7 +588,11 @@ object SqlHelper {
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
       .join(nisraGrouped, Seq("uprn"), "full_outer")
 
-    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -588,29 +671,35 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!nisraStreet.getOrElse("").isEmpty) nisraStreet.getOrElse("")
-        else if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!nisraStart.getOrElse("").isEmpty) "(" + nisraStart.getOrElse("") + ")"
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (nisraStreet.getOrElse("").nonEmpty) nisraStreet.getOrElse("")
+        else if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (nisraStart.getOrElse("").nonEmpty) "(" + nisraStart.getOrElse("") + ")"
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!nisraTown.getOrElse("").isEmpty) nisraTown.getOrElse("")
-        else if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (nisraTown.getOrElse("").nonEmpty) nisraTown.getOrElse("")
+        else if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
-        val postTown = pafTown.getOrElse(nisraPostTown.getOrElse(null))
+        val postTown = pafTown.getOrElse(nisraPostTown.orNull)
 
         val mixedKeys = List("mixedNag", "mixedWelshNag", "mixedPaf", "mixedWelshPaf", "mixedNisra")
         val mixedPartial = (outputLpis ++ outputPaf ++ outputNisra).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
+
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressNisraEsDocument(
           uprn,
@@ -630,7 +719,10 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId,
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
@@ -640,6 +732,28 @@ object SqlHelper {
     */
   def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
+
+    val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("crossReference", "source")).as("crossRefs"))
+
+    val classificationsGrouped = aggregateClassificationsInformation(AddressIndexFileReader.readClassificationCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("classificationCode")).as("classification"))
+
+    val hierarchyDF = AddressIndexFileReader.readHierarchyCSV()
+
+    val hierarchyGrouped = aggregateHierarchyInformation(hierarchyDF)
+      .groupBy("primaryUprn")
+      .agg(functions.collect_list(functions.struct("level", "siblings", "parents")).as("relatives"))
+
+    val hierarchyJoinedWithRelatives = hierarchyDF
+      .join(hierarchyGrouped, Seq("primaryUprn"), "left_outer")
+      .select("uprn", "parentUprn", "relatives","addressType","estabType")
+
     // If non-historical there could be zero lpis associated with the PAF record since historical lpis were filtered
     // out at the joinCsvs stage. These need to be removed.
     val pafGrouped = createPafGrouped(paf, nag, historical)
@@ -647,7 +761,11 @@ object SqlHelper {
     // DataFrame of paf and lpis by uprn
     val pafNagGrouped = createPafNagGrouped(nag, pafGrouped)
 
-    val pafNagCrossHierGrouped = createPafNagHierGroupedWithRelatives(pafNagGrouped)
+    val pafNagCrossHierGrouped = pafNagGrouped
+      .join(crossRefGrouped, Seq("uprn"), "left_outer")
+      .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
+      .join(classificationsGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -700,17 +818,17 @@ object SqlHelper {
 
         val lpiStartEng: Option[String] = englishNag.map(_.get("mixedNagStart").map(_.toString).getOrElse(""))
         val lpiStart: Option[String] = outputLpis.headOption.flatMap(_.get("mixedNagStart").map(_.toString))
-        val bestStreet: String = if (!pafStreet.getOrElse("").isEmpty) pafStreet.getOrElse("")
-        else if (!lpiStreetEng.getOrElse("").isEmpty) lpiStreetEng.getOrElse("")
-        else if (!lpiStreet.getOrElse("").isEmpty) lpiStreet.getOrElse("")
-        else if (!lpiStartEng.getOrElse("").isEmpty) "(" + lpiStartEng.getOrElse("") + ")"
+        val bestStreet: String = if (pafStreet.getOrElse("").nonEmpty) pafStreet.getOrElse("")
+        else if (lpiStreetEng.getOrElse("").nonEmpty) lpiStreetEng.getOrElse("")
+        else if (lpiStreet.getOrElse("").nonEmpty) lpiStreet.getOrElse("")
+        else if (lpiStartEng.getOrElse("").nonEmpty) "(" + lpiStartEng.getOrElse("") + ")"
         else "(" + lpiStart.getOrElse("") + ")"
 
-        val bestTown: String = if (!pafDepend.getOrElse("").isEmpty) pafDepend.getOrElse("")
-        else if (!lpiLocalityEng.getOrElse("").isEmpty) lpiLocalityEng.getOrElse("")
-        else if (!lpiLocality.getOrElse("").isEmpty) lpiLocality.getOrElse("")
-        else if (!lpiTownEng.getOrElse("").isEmpty) lpiTownEng.getOrElse("")
-        else if (!lpiTown.getOrElse("").isEmpty) lpiTown.getOrElse("")
+        val bestTown: String = if (pafDepend.getOrElse("").nonEmpty) pafDepend.getOrElse("")
+        else if (lpiLocalityEng.getOrElse("").nonEmpty) lpiLocalityEng.getOrElse("")
+        else if (lpiLocality.getOrElse("").nonEmpty) lpiLocality.getOrElse("")
+        else if (lpiTownEng.getOrElse("").nonEmpty) lpiTownEng.getOrElse("")
+        else if (lpiTown.getOrElse("").nonEmpty) lpiTown.getOrElse("")
         else pafTown.getOrElse("")
 
         val postcodeStreetTown = (postCode + "_" + bestStreet + "_" + bestTown).replace(".","").replace("'","")
@@ -720,6 +838,12 @@ object SqlHelper {
         val mixedPartial = (outputLpis ++ outputPaf).flatMap( mixedKeys collect _ )
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
+
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+        val onsAddressId = addressEntryId
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressEsDocument(
           uprn,
@@ -738,38 +862,13 @@ object SqlHelper {
           countryCode,
           postcodeStreetTown,
           postTown,
-          mixedPartialTokensExtraDedup
+          mixedPartialTokensExtraDedup,
+          onsAddressId,
+          addressEntryId,
+          addressEntryIdAlphanumericBackup
         )
     }
   }
 
-  // function moved into calling code due to strange Spark glitch
-  private def nisraCodeToABP(ncode: String): String = ncode match {
-
-    case "DO_DETACHED" => "RD02"
-    case "DO_SEMI" => "RD03"
-    case "ND_RETAIL" => "CR"
-    case "NON_POSTAL" => "O"
-    case "DO_TERRACE" => "RD04"
-    case "ND_ENTERTAINMENT" => "CL"
-    case "ND_HOSPITALITY" => "CH"
-    case "ND_SPORTING" => "CL06"
-    case "DO_APART" => "RD06"
-    case "ND_INDUSTRY" => "CI"
-    case "ND_EDUCATION" => "CE"
-    case "ND_RELIGIOUS" => "ZW"
-    case "ND_COMM_OTHER" => "C"
-    case "ND_OTHER" =>   "C"
-    case "ND_AGRICULTURE" => "CA"
-    case "DO_OTHER" => "RD"
-    case "ND_OFFICE" => "CO"
-    case "ND_HEALTH" => "CM"
-    case "ND_LEGAL" => "CC02"
-    case "ND_CULTURE" => "CL04"
-    case "ND_ENTS_OTHER" => "CL"
-    case "ND_CULTURE_OTHER" => "CL04"
-    case "ND_INDUST_OTHER" => "CI"
-    case _ => "O"
-  }
 
 }

@@ -19,7 +19,10 @@ case class HybridAddressNisraEsDocument(uprn: Long,
                                         countryCode: String,
                                         postcodeStreetTown: String,
                                         postTown: String,
-                                        mixedPartial: String)
+                                        mixedPartial: String,
+                                        onsAddressId: Option[Long],
+                                        addressEntryId: Option[Long],
+                                        addressEntryIdAlphanumericBackup: Option[String])
 
 object HybridAddressNisraEsDocument extends EsDocument with HybridAddress with NisraAddress {
 

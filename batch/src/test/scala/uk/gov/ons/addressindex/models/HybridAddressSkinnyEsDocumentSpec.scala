@@ -1,9 +1,10 @@
 package uk.gov.ons.addressindex.models
 
 import org.apache.spark.sql.Row
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 
-class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
+class HybridAddressSkinnyEsDocumentSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
@@ -116,7 +117,7 @@ class HybridAddressSkinnyEsDocumentSpec extends WordSpec with Matchers {
   val actualNagCountry = "E"
 
   // used by both expected and actual to avoid assertion error
-  val nagLocation = Array(-2.3162985F, 4.00F)
+  val nagLocation: Array[Float] = Array(-2.3162985F, 4.00F)
 
   val expectedPaf: Map[String, Any] = Map[String,Any](
     "uprn" -> expectedPafUprn,

@@ -1,17 +1,17 @@
 lazy val commonSettings = Seq(
   version := "0.0.1",
   organization := "uk.gov.ons",
-  scalaVersion := "2.11.12",
-  test in assembly := {}
+  scalaVersion := "2.12.14",
+  assembly / test := {}
 )
 
 lazy val buildSettings = Seq(
-  mainClass in assembly := Some("uk.gov.ons.addressindex.Main"),
+  assembly / mainClass := Some("uk.gov.ons.addressindex.Main"),
   name := "ons-ai-batch",
-  assemblyMergeStrategy in assembly := {
+  assembly / assemblyMergeStrategy := {
     case "reference.conf" => MergeStrategy.concat
     case PathList("META-INF", "services", "org.apache.hadoop.fs.FileSystem") => MergeStrategy.filterDistinctLines
-    case PathList("META-INF", ps @ _*) => MergeStrategy.discard
+    case PathList("META-INF", _*) => MergeStrategy.discard
     case _ => MergeStrategy.first
   }
 )

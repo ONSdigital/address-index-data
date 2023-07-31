@@ -1,13 +1,14 @@
 package uk.gov.ons.addressindex.utils
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.readers.AddressIndexFileReader
 
 /**
   * Test that the csv files are joined correctly.
   */
-class SqlHelperSpec extends WordSpec with Matchers {
+class SqlHelperSpec extends AnyWordSpec with Matchers {
 
   val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
@@ -208,7 +209,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val thirdLine = result(2)
       thirdLine.getLong(0) shouldBe 1L
       thirdLine.getInt(1) shouldBe 3
-      thirdLine.getAs[Array[Long]](2) shouldBe Array(5L, 6L, 7L, 8L, 9l)
+      thirdLine.getAs[Array[Long]](2) shouldBe Array(5L, 6L, 7L, 8L, 9L)
       thirdLine.getAs[Array[Long]](3) shouldBe Array(2L, 2L, 2L, 3L, 3L)
 
       val forthLine = result(3)
@@ -218,7 +219,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       forthLine.getAs[Array[Long]](3) shouldBe Array()
 
       val fifthLine = result(4)
-      fifthLine.getLong(0) shouldBe 10l
+      fifthLine.getLong(0) shouldBe 10L
       fifthLine.getInt(1) shouldBe 2
       fifthLine.getAs[Array[Long]](2) shouldBe Array(11L, 12L)
       fifthLine.getAs[Array[Long]](3) shouldBe Array(10L, 10L)
@@ -257,7 +258,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
     "aggregate information from paf and nag to construct a single table containing grouped documents" in {
 
       // Given
-      val paf = SparkProvider.sqlContext.read
+      val paf = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -362,13 +363,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
-      val paf1 = SparkProvider.sqlContext.read
+      val paf1 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
-      val paf2 = SparkProvider.sqlContext.read
+      val paf2 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -471,7 +472,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
     "aggregate information from paf, nag and nisra to construct a single table containing grouped documents" in {
 
       // Given
-      val paf = SparkProvider.sqlContext.read
+      val paf = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -534,7 +535,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       )
 
       // When
-      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24
@@ -586,13 +587,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
-      val paf1 = SparkProvider.sqlContext.read
+      val paf1 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
-      val paf2 = SparkProvider.sqlContext.read
+      val paf2 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -670,6 +671,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.crossRefs.length shouldBe 2
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
+      firstResult.addressEntryId shouldBe Some(100000034563800L)
 
       val secondResult = result(16)
       secondResult.uprn shouldBe 100010971565L
@@ -681,6 +683,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.crossRefs.length shouldBe 6
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
+      secondResult.addressEntryId shouldBe Some(100000034563798L)
 
       // Hierarchy test
       firstResult.relatives.toList.sortBy(_.getOrElse("level", 0).toString) shouldBe expectedFirstRelations.toList
@@ -705,7 +708,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
     "aggregate information from skinny paf and nag to construct a single table containing grouped documents" in {
 
       // Given
-      val paf = SparkProvider.sqlContext.read
+      val paf = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -732,6 +735,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
+      firstResult.addressEntryId shouldBe Some(100000034563800L)
 
       val secondResult = result(3)
       secondResult.uprn shouldBe 100010971565L
@@ -739,6 +743,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
+      secondResult.addressEntryId shouldBe Some(100000034563798L)
 
     }
 
@@ -746,13 +751,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
-      val paf1 = SparkProvider.sqlContext.read
+      val paf1 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
-      val paf2 = SparkProvider.sqlContext.read
+      val paf2 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -768,7 +773,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical = false)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag, historical = false).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyIndex(paf1.union(paf2), nag,historical = false).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 2
@@ -779,6 +784,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.parentUprn shouldBe 1L
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
+      firstResult.addressEntryId shouldBe Some(100000034563800L)
 
       val secondResult = result(1)
       secondResult.uprn shouldBe 100010971565L
@@ -786,13 +792,13 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
-
+      secondResult.addressEntryId shouldBe Some(100000034563798L)
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents" in {
 
       // Given
-      val paf = SparkProvider.sqlContext.read
+      val paf = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -810,7 +816,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       val nag = SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor)
 
       // When
-      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, true, true).sortBy(_.uprn).collect()
+      val result = SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisra, nisraAddress1YearAgo = true).sortBy(_.uprn).collect()
 
       // Then
       result.length shouldBe 24
@@ -822,6 +828,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
+      firstResult.addressEntryId shouldBe Some(100000034563800L)
 
       val thirdResult = result(22)
       thirdResult.uprn shouldBe 380592411
@@ -837,19 +844,20 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.parentUprn shouldBe 0L
       secondResult.lpi.size shouldBe 3
       secondResult.paf.size shouldBe 1
+      secondResult.addressEntryId shouldBe Some(100000034563798L)
     }
 
     "aggregate information from skinny paf, nag and nisra to construct a single table containing grouped documents without historical data" in {
 
       // This test assures us that a uprn that has only historical lpi's but has a paf will not make it to the results
       // Given
-      val paf1 = SparkProvider.sqlContext.read
+      val paf1 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
         .load("batch/src/test/resources/csv/delivery_point/hybrid_test.csv")
 
-      val paf2 = SparkProvider.sqlContext.read
+      val paf2 = SparkProvider.sparkContext.read
         .format("com.databricks.spark.csv")
         .option("header", "true")
         .schema(CSVSchemas.postcodeAddressFileSchema)
@@ -878,6 +886,8 @@ class SqlHelperSpec extends WordSpec with Matchers {
       firstResult.lpi.size shouldBe 1
       firstResult.paf shouldBe empty
       firstResult.nisra shouldBe empty
+      firstResult.addressEntryId shouldBe Some(100000034563800L)
+
 
       val secondResult = result(16)
       secondResult.uprn shouldBe 100010971565L
@@ -886,6 +896,7 @@ class SqlHelperSpec extends WordSpec with Matchers {
       secondResult.lpi.size shouldBe 2
       secondResult.paf.size shouldBe 1
       secondResult.nisra shouldBe empty
+      secondResult.addressEntryId shouldBe Some(100000034563798L)
 
       val thirdResult = result(1)
       thirdResult.uprn shouldBe 375537613L

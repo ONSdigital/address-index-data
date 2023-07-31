@@ -233,4 +233,59 @@ object CSVSchemas {
         StructField("addressType", StringType, nullable = true),
         StructField("estabType", StringType, nullable = true)
   ))
+
+  /**
+    * RDMF initial test CSV file schema
+    */
+  val rdmfTestFileSchema = StructType(Seq(
+    StructField("address_entry_id", LongType, nullable = false),
+    StructField("detail_valid_from_date", DateType, nullable = false),
+    StructField("standard_address_source_code", StringType, nullable = true),
+    StructField("language", StringType, nullable = true),
+    StructField("detail_valid_to_date", DateType, nullable = true),
+    StructField("uprn", LongType, nullable = false),
+    StructField("udprn", LongType, nullable = true),
+    StructField("address_line_1", StringType, nullable = true),
+    StructField("address_line_2", StringType, nullable = true),
+    StructField("address_line_3", StringType, nullable = true),
+    StructField("address_line_4", StringType, nullable = true),
+    StructField("address_line_5", StringType, nullable = true),
+    StructField("town", StringType, nullable = true),
+    StructField("postcode", StringType, nullable = true),
+    StructField("country", StringType, nullable = true),
+    StructField("logical_status", IntegerType, nullable = false),
+    StructField("blpu_state", IntegerType, nullable = false),
+    StructField("addressbase_postal", StringType, nullable = true),
+    StructField("easting", FloatType, nullable = false),
+    StructField("northing", FloatType, nullable = false),
+    StructField("latitude", FloatType, nullable = false),
+    StructField("longitude", FloatType, nullable = false),
+    StructField("establishment_type_id", StringType, nullable = true),
+    StructField("class_scheme", StringType, nullable = true),
+    StructField("scheme_version", StringType, nullable = true),
+    StructField("classification_code", LongType, nullable = true),
+    StructField("classification_entry_date", DateType, nullable = false),
+    StructField("classification_end_date", DateType, nullable = true),
+    StructField("entry_date", DateType, nullable = false),
+    StructField("end_date", DateType, nullable = true),
+    StructField("parent_uprn", LongType, nullable = true),
+    StructField("primary_uprn", LongType, nullable = false),
+    StructField("secondary_uprn", LongType, nullable = true),
+    StructField("ons_oa_id", LongType, nullable = true),
+    StructField("la_code", StringType, nullable = true),
+    StructField("oa_code", StringType, nullable = true),
+    StructField("lsoa_code", StringType, nullable = true),
+    StructField("msoa_code", StringType, nullable = true)
+  ))
+
+  /**
+    * RDMF address_entry_id to uprn lookup file schema
+    */
+  val rdmfFileSchema = StructType(Seq(
+    StructField("address_entry_id", LongType, nullable = false),
+    StructField("address_entry_id_alphanumeric_backup", StringType, nullable = false),
+    StructField("uprn", LongType, nullable = false),
+    StructField("epoch", LongType, nullable = false)
+  ))
+
 }

@@ -16,6 +16,9 @@ case class HybridAddressEsDocument(uprn: Long,
                                    countryCode: String,
                                    postcodeStreetTown: String,
                                    postTown: String,
-                                   mixedPartial: String)
+                                   mixedPartial: String,
+                                   onsAddressId: Option[Long],
+                                   addressEntryId: Option[Long],
+                                   addressEntryIdAlphanumericBackup: Option[String])
 
 object HybridAddressEsDocument extends EsDocument with HybridAddress
