@@ -13,7 +13,7 @@ case class HybridAddressSkinnyEsDocument(uprn: Long,
                                          postcodeStreetTown: String,
                                          postTown: String,
                                          mixedPartial: String,
-                                         onsAddressId: Option[Long],
+    //                                     onsAddressId: Option[Long],
                                          addressEntryId: Option[Long],
                                          addressEntryIdAlphanumericBackup: Option[String])
 

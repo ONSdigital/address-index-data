@@ -165,6 +165,14 @@ object AddressIndexFileReader {
       readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
   }
 
+  private def readCsv(path1: String, schema: StructType): DataFrame =
+    SparkProvider.sparkContext.read
+      .format("com.databricks.spark.csv")
+      .schema(schema)
+      .option("header", "true")
+      .option("mode", "PERMISSIVE")
+      .load(resolveAbsolutePath(path1))
+
   private def readCsv2(path1: String, path2: String, schema: StructType): DataFrame = {
      SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")

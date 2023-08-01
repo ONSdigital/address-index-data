@@ -893,10 +893,6 @@ object Mappings {
                       "index": "true",
                       "analyzer": "keyword"
                   },
-                  "onsAddressId": {
-                      "type": "long",
-                      "index": "true"
-                  },
                   "addressEntryId": {
                       "type": "long",
                       "index": "true"
@@ -1537,10 +1533,6 @@ object Mappings {
                       "type": "text",
                       "index": "true",
                       "analyzer": "keyword"
-                  },
-                  "onsAddressId": {
-                      "type": "long",
-                       "index": "true"
                   },
                   "addressEntryId": {
                       "type": "long",
