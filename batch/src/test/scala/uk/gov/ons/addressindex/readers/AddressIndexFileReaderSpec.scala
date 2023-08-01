@@ -315,20 +315,6 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
 
     }
 
-    "read NISRA txt file" in {
-
-      // When
-      val result = AddressIndexFileReader.readNisraTXT().collect()
-
-      //Then
-      result.length shouldBe 23
-
-      val line = result(2)
-      line.getString(4) shouldBe "URBALREAGH ROAD" // THOROUGHFARE
-      line.getLong(10) shouldBe  376847438 // UPRN
-      line.getString(14) shouldBe "CC11" // CLASSIFICATION_CODE
-      line.getFloat(34) shouldBe 54.75717f // LAT
-    }
 
     "extract epoch from the file path" in {
       // Given

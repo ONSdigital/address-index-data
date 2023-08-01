@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.readers
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
+import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.utils.SparkProvider
 
 import scala.util.Try
@@ -35,7 +35,6 @@ object AddressIndexFileReader {
   lazy val pathToSuccessorCSV2: String = config.getString("addressindex.files.csv.successor_islands")
   lazy val pathToHierarchyCSV2: String = config.getString("addressindex.files.csv.hierarchy_islands")
   lazy val pathToRDMFCSV: String = config.getString("addressindex.files.csv.rdmf")
-  lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
 
   lazy val isIslands: Boolean = Try(config.getString("addressindex.islands.used").toBoolean).getOrElse(false)
 
@@ -166,21 +165,6 @@ object AddressIndexFileReader {
       readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
   }
 
-  /**
-    * Reads txt into a 'DataFrame'
-    *
-    * @return 'DataFrame' containing the hierarchy data from TXT (pipe delimited CSV)
-    */
-  def readNisraTXT(): DataFrame = readTxt(pathToNisraTXT, NisraSchema.nisraFileSchema)
-
-  private def readCsv(path1: String, schema: StructType): DataFrame =
-    SparkProvider.sparkContext.read
-      .format("com.databricks.spark.csv")
-      .schema(schema)
-      .option("header", "true")
-      .option("mode", "PERMISSIVE")
-      .load(resolveAbsolutePath(path1))
-
   private def readCsv2(path1: String, path2: String, schema: StructType): DataFrame = {
      SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
@@ -214,8 +198,6 @@ object AddressIndexFileReader {
   }
 
   def validateFileNames(): Boolean = {
-
-    // Not currently validating the NISRA data file name as format is unknown
 
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
@@ -258,7 +240,7 @@ object AddressIndexFileReader {
     date.group(1)
   }
 
-  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false, nisra: Boolean = false): String = {
+  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
@@ -272,9 +254,6 @@ object AddressIndexFileReader {
     val subIndex =
       if (skinny) config.getString("addressindex.elasticsearch.indices.skinny") else ""
 
-    val includeNisra =
-      if (nisra) config.getString("addressindex.elasticsearch.indices.nisra") else ""
-
-    s"$baseIndexName$subIndex${includeNisra}_${epoch}_${date}_${System.currentTimeMillis()}"
+    s"$baseIndexName${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }
