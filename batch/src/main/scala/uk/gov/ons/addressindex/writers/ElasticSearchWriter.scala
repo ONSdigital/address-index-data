@@ -16,12 +16,14 @@ object ElasticSearchWriter {
   val username = config.getString("addressindex.elasticsearch.user")
   val password = config.getString("addressindex.elasticsearch.pass")
 
-  val sparkConf: Map[String,String] = Map(
+  val sparkConf: Map[String, String] = Map(
     "es.net.http.auth.user" -> username,
     "es.net.http.auth.pass" -> password
   )
+
   /**
     * Stores addresses (Hybrid PAF & NAG) into ElasticSearch
+    *
     * @param data `RDD` containing addresses
     */
   def saveHybridAddresses(index: String, data: RDD[HybridAddressEsDocument]): Unit = data.saveToEs(index, sparkConf)
@@ -29,7 +31,9 @@ object ElasticSearchWriter {
 
   /**
     * Stores addresses (Hybrid PAF & NAG) into ElasticSearch
+    *
     * @param data `RDD` containing addresses
     */
   def saveSkinnyHybridAddresses(index: String, data: RDD[HybridAddressSkinnyEsDocument]): Unit = data.saveToEs(index, sparkConf)
 
+}

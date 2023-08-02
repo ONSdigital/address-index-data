@@ -236,16 +236,18 @@ object AddressIndexFileReader {
     }
 
   def extractEpoch(filePath: String): Int = {
-    val epochRegex = s"ABP_E(\\d+).+$$".r
-    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
-    epoch.group(1).toInt
+//    val epochRegex = s"ABP_E(\\d+).+$$".r
+//    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
+//    epoch.group(1).toInt
+    101
   }
 
   def extractDate(filePath: String): String ={
- val dateRegex1 = s"ABP_E.+(\\d{6})\\.csv$$".r
- val dateRegex2 = s"ABP_E.+(\\d{6})\\.csv\\.gz$$".r
-    val date = dateRegex2.findFirstMatchIn(filePath).getOrElse(dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date")))
-    date.group(1)
+// val dateRegex1 = s"ABP_E.+(\\d{6})\\.csv$$".r
+// val dateRegex2 = s"ABP_E.+(\\d{6})\\.csv\\.gz$$".r
+//    val date = dateRegex2.findFirstMatchIn(filePath).getOrElse(dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date")))
+//    date.group(1)
+    "02082023"
   }
 
   def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
