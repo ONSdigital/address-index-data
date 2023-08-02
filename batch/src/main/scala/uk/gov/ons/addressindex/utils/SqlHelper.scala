@@ -194,9 +194,9 @@ object SqlHelper {
     */
   def aggregateHybridIndex(paf: DataFrame, nag: DataFrame, historical: Boolean = true): RDD[HybridAddressEsDocument] = {
 
-//    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
-//      .groupBy("uprn")
-//      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
+    val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
+      .groupBy("uprn")
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -227,7 +227,7 @@ object SqlHelper {
       .join(crossRefGrouped, Seq("uprn"), "left_outer")
       .join(hierarchyJoinedWithRelatives, Seq("uprn"), "left_outer")
       .join(classificationsGrouped, Seq("uprn"), "left_outer")
-  //    .join(rdmfGrouped, Seq("uprn"), "left_outer")
+      .join(rdmfGrouped, Seq("uprn"), "left_outer")
 
     pafNagCrossHierGrouped.rdd.map {
       row =>
@@ -301,14 +301,14 @@ object SqlHelper {
         val mixedPartialTokens = mixedPartial.flatMap(_.toString.split(",").filter(_.nonEmpty)).distinct.mkString(",")
         val mixedPartialTokensExtraDedup = mixedPartialTokens.replaceAll(","," ").split(" ").distinct.mkString(" ").replaceAll("  "," ")
 
-//        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
-//        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
-//        // field with incorrect name retained temporarily for compatibility
-//        val onsAddressId = addressEntryId
-//        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
+        val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
+        val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
+        // field with incorrect name retained temporarily for compatibility
+  //      val onsAddressId = addressEntryId
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
-        val addressEntryId: Option[Long] = Some(1L)
-        val addressEntryIdAlphanumericBackup: Option[String] = Some("1")
+//        val addressEntryId: Option[Long] = Some(1L)
+//        val addressEntryIdAlphanumericBackup: Option[String] = Some("1")
 
         HybridAddressEsDocument(
           uprn,
