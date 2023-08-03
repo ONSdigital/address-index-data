@@ -247,7 +247,7 @@ object AddressIndexFileReader {
 // val dateRegex2 = s"ABP_E.+(\\d{6})\\.csv\\.gz$$".r
 //    val date = dateRegex2.findFirstMatchIn(filePath).getOrElse(dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date")))
 //    date.group(1)
-    "02082023"
+    "030823"
   }
 
   def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
