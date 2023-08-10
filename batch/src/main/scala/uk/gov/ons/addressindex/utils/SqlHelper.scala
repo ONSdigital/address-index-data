@@ -244,8 +244,8 @@ object SqlHelper {
         val estabType = Option(row.getAs[String]("estabType")).getOrElse("")
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
         val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
-        val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
-        val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
+ //       val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
+  //      val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
 
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
@@ -305,8 +305,8 @@ object SqlHelper {
           outputLpis,
           outputPaf,
           classificationCode,
-          censusAddressType,
-          censusEstabType,
+ //         censusAddressType,
+ //         censusEstabType,
           postCode,
           fromSource,
           countryCode,
@@ -379,8 +379,8 @@ object SqlHelper {
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
         val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
-        val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
-        val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
+//        val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
+ //       val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -451,8 +451,8 @@ object SqlHelper {
           outputPaf,
           outputCrossRefs,
           classificationCode,
-          censusAddressType,
-          censusEstabType,
+ //         censusAddressType,
+ //         censusEstabType,
           postCode,
           fromSource,
           countryCode,
