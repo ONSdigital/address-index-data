@@ -244,9 +244,6 @@ object SqlHelper {
         val estabType = Option(row.getAs[String]("estabType")).getOrElse("")
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
         val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
- //       val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
-  //      val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
-
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -295,8 +292,6 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
-        // field with incorrect name retained temporarily for compatibility
-  //      val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyEsDocument(
@@ -305,15 +300,12 @@ object SqlHelper {
           outputLpis,
           outputPaf,
           classificationCode,
- //         censusAddressType,
- //         censusEstabType,
           postCode,
           fromSource,
           countryCode,
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-  //        onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )
@@ -379,8 +371,6 @@ object SqlHelper {
 
         val isCouncilTax:Boolean = outputCrossRefs.mkString.contains("7666VC")
         val isNonDomesticRate:Boolean = outputCrossRefs.mkString.contains("7666VN")
-//        val censusAddressType = if (addressType.isEmpty) CensusClassificationHelper.ABPToAddressType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else addressType
- //       val censusEstabType = if (estabType.isEmpty) CensusClassificationHelper.ABPToEstabType(classificationCode.getOrElse(""), isCouncilTax, isNonDomesticRate) else StringUtil.applyTitleCasing(estabType)
 
         val lpiPostCode: Option[String] = outputLpis.headOption.flatMap(_.get("postcodeLocator").map(_.toString))
         val pafPostCode: Option[String] = outputPaf.headOption.flatMap(_.get("postcode").map(_.toString))
@@ -434,12 +424,7 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
-        // field with incorrect name retained temporarily for compatibility
-  //      val onsAddressId = addressEntryId
         val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
-
-//        val addressEntryId: Option[Long] = Some(1L)
-//        val addressEntryIdAlphanumericBackup: Option[String] = Some("1")
 
         HybridAddressEsDocument(
           uprn,
@@ -451,15 +436,12 @@ object SqlHelper {
           outputPaf,
           outputCrossRefs,
           classificationCode,
- //         censusAddressType,
- //         censusEstabType,
           postCode,
           fromSource,
           countryCode,
           postcodeStreetTown,
           postTown,
           mixedPartialTokensExtraDedup,
-//          onsAddressId,
           addressEntryId,
           addressEntryIdAlphanumericBackup
         )
