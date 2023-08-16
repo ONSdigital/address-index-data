@@ -290,10 +290,19 @@ object CSVSchemas {
   /**
     * RDMF address_entry_id to uprn lookup file schema
     */
-  val rdmfFileSchema = StructType(Seq(
+  val rdmfFileSchema1 = StructType(Seq(
     StructField("address_entry_id", LongType, nullable = false),
     StructField("address_entry_id_alphanumeric_backup", StringType, nullable = false),
     StructField("uprn", LongType, nullable = false),
+    StructField("epoch", LongType, nullable = false)
+  ))
+
+  /**
+    * RDMF address_entry_id to uprn lookup file schema
+    */
+  val rdmfFileSchema = StructType(Seq(
+    StructField("uprn", LongType, nullable = false),
+    StructField("address_entry_id", LongType, nullable = false),
     StructField("epoch", LongType, nullable = false)
   ))
 
