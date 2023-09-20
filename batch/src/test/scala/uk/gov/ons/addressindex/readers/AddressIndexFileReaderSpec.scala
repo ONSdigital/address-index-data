@@ -308,10 +308,10 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
 
       val line = result(3)
 
-      line.getLong(0) shouldBe 100000034563801L // ADDRESS_ENTRY_ID
-      line.getString(1) shouldBe "A100000034563801" // ADDRESS_ENTRY_ID_ALPHANUMERIC_BACKUP
-      line.getLong(2) shouldBe 99 // UPRN
-      line.getLong(3) shouldBe 95 // EPOCH
+      line.getLong(0) shouldBe 99 // UPRN
+      line.getLong(1) shouldBe 100000034563801L // ADDRESS_ENTRY_ID
+      line.getLong(2) shouldBe 95 // EPOCH
+      line.getString(3) shouldBe "A100000034563801" // ADDRESS_ENTRY_ID_ALPHANUMERIC_BACKUP
 
     }
 
@@ -338,10 +338,10 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "extract date from the file path" ignore {
+    "extract date from the file path" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E39_BLPU_v040506.csv"
-      val expected = "040506"
+      val filePath = "gs://aims-ons-abp-raw-full-e102-1037392368223_backup/ai_aims_delivery_point_current_20230913.csv"
+      val expected = "20230913"
 
       // When
       val result = AddressIndexFileReader.extractDate(filePath)
@@ -350,9 +350,9 @@ class AddressIndexFileReaderSpec extends AnyWordSpec with Matchers {
       result shouldBe expected
     }
 
-    "throw exception if no date could be extracted" ignore {
+    "throw exception if no date could be extracted" in {
       // Given
-      val filePath = "hdfs://path/to/file/ABP_E39_BLPU.csv"
+      val filePath = "gs://aims-ons-abp-raw-full-e102-1037392368223_backup/ai_aims_delivery_point_current_star_wars.csv"
 
       // When Then
       intercept[IllegalArgumentException]{

@@ -142,7 +142,7 @@ object SqlHelper {
     )
   }
 
-  def aggregateRDMFInformation (rdmf: DataFrame): DataFrame = {
+  def aggregateRDMFInformation(rdmf: DataFrame): DataFrame = {
     val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
 
     SparkProvider.sparkContext.sql(
