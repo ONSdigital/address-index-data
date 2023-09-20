@@ -142,35 +142,20 @@ object SqlHelper {
     )
   }
 
-  def aggregateRDMFInformation (rdmf: DataFrame): DataFrame = {
+  def aggregateRDMFInformation(rdmf: DataFrame): DataFrame = {
     val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
 
     SparkProvider.sparkContext.sql(
       s"""SELECT
             uprn,
             address_entry_id,
-            epoch
+            address_entry_id_alphanumeric_backup
           FROM
             $rdmfTable
-          GROUP BY uprn, address_entry_id, epoch
+          GROUP BY uprn, address_entry_id, address_entry_id_alphanumeric_backup
        """
     )
   }
-
-//  def aggregateRDMFInformation(rdmf: DataFrame): DataFrame = {
-//    val rdmfTable = SparkProvider.registerTempTable(rdmf, "rdmf")
-//
-//    SparkProvider.sparkContext.sql(
-//      s"""SELECT
-//            uprn,
-//            address_entry_id,
-//            address_entry_id_alphanumeric_backup
-//          FROM
-//            $rdmfTable
-//          GROUP BY uprn, address_entry_id, address_entry_id_alphanumeric_backup
-//       """
-//    )
-//  }
 
   def aggregateClassificationsInformation(classifications: DataFrame): DataFrame = {
     val classificationsTable = SparkProvider.registerTempTable(classifications, "classifications")
@@ -210,8 +195,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-   //   .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
-      .agg(functions.collect_list(functions.struct("address_entry_id","epoch")).as("entryids"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -308,8 +292,7 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
-    //    val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
-        val addressEntryIdAlphanumericBackup: Option[String] = addressEntryId.flatMap(s => Try(s.toString).toOption)
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressSkinnyEsDocument(
           uprn,
@@ -336,8 +319,7 @@ object SqlHelper {
 
     val rdmfGrouped =  aggregateRDMFInformation(AddressIndexFileReader.readRDMFCSV())
       .groupBy("uprn")
-    //  .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
-      .agg(functions.collect_list(functions.struct("address_entry_id","epoch")).as("entryids"))
+      .agg(functions.collect_list(functions.struct("address_entry_id","address_entry_id_alphanumeric_backup")).as("entryids"))
 
     val crossRefGrouped = aggregateCrossRefInformation(AddressIndexFileReader.readCrossrefCSV())
       .groupBy("uprn")
@@ -442,8 +424,7 @@ object SqlHelper {
 
         val entryIds = Option(row.getAs[Seq[Row]]("entryids")).getOrElse(Seq())
         val addressEntryId: Option[Long] = entryIds.map(row => row.getAs[Long]("address_entry_id")).headOption
-     //   val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
-        val addressEntryIdAlphanumericBackup: Option[String] = addressEntryId.flatMap(s => Try(s.toString).toOption)
+        val addressEntryIdAlphanumericBackup: Option[String] = entryIds.map(row => row.getAs[String]("address_entry_id_alphanumeric_backup")).headOption
 
         HybridAddressEsDocument(
           uprn,
