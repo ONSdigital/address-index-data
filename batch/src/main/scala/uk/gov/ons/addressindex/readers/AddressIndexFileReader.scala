@@ -241,7 +241,7 @@ object AddressIndexFileReader {
 //    val epochRegex = s"ABP_E(\\d+).+$$".r
 //    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
 //    epoch.group(1).toInt
-    105
+    106
   }
 
   def extractDate(filePath: String): String = {
