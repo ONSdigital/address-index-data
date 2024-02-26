@@ -3,7 +3,7 @@ package uk.gov.ons.addressindex.readers
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import uk.gov.ons.addressindex.models.{CSVSchemas, NisraSchema}
+import uk.gov.ons.addressindex.models.CSVSchemas
 import uk.gov.ons.addressindex.utils.SparkProvider
 
 import scala.util.Try
@@ -35,7 +35,6 @@ object AddressIndexFileReader {
   lazy val pathToSuccessorCSV2: String = config.getString("addressindex.files.csv.successor_islands")
   lazy val pathToHierarchyCSV2: String = config.getString("addressindex.files.csv.hierarchy_islands")
   lazy val pathToRDMFCSV: String = config.getString("addressindex.files.csv.rdmf")
-  lazy val pathToNisraTXT: String = config.getString("addressindex.files.txt.nisra")
 
   lazy val isIslands: Boolean = Try(config.getString("addressindex.islands.used").toBoolean).getOrElse(false)
 
@@ -166,13 +165,6 @@ object AddressIndexFileReader {
       readCsv(pathToHierarchyCSV, CSVSchemas.hierarchyFileSchema)
   }
 
-  /**
-    * Reads txt into a 'DataFrame'
-    *
-    * @return 'DataFrame' containing the hierarchy data from TXT (pipe delimited CSV)
-    */
-  def readNisraTXT(): DataFrame = readTxt(pathToNisraTXT, NisraSchema.nisraFileSchema)
-
   private def readCsv(path1: String, schema: StructType): DataFrame =
     SparkProvider.sparkContext.read
       .format("com.databricks.spark.csv")
@@ -215,8 +207,6 @@ object AddressIndexFileReader {
 
   def validateFileNames(): Boolean = {
 
-    // Not currently validating the NISRA data file name as format is unknown
-
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
@@ -245,20 +235,22 @@ object AddressIndexFileReader {
       // throw new IllegalArgumentException(s"file $filePath does not contain epoch $epoch and date $date")
     }
 
+  // this will remain hard coded unless the epoch number appears in the filename instead of "current"
+  // alernatively could use the epoch number from the rmdf lookup file
   def extractEpoch(filePath: String): Int = {
-    val epochRegex = s"ABP_E(\\d+).+$$".r
-    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
-    epoch.group(1).toInt
+//    val epochRegex = s"ABP_E(\\d+).+$$".r
+//    val epoch = epochRegex.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain epoch number"))
+//    epoch.group(1).toInt
+    106
   }
 
-  def extractDate(filePath: String): String ={
- val dateRegex1 = s"ABP_E.+(\\d{6})\\.csv$$".r
- val dateRegex2 = s"ABP_E.+(\\d{6})\\.csv\\.gz$$".r
-    val date = dateRegex2.findFirstMatchIn(filePath).getOrElse(dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date")))
-    date.group(1)
+  def extractDate(filePath: String): String = {
+    val dateRegex1 = s"ai_aims.+(\\d{8})\\.csv$$".r
+    val date = dateRegex1.findFirstMatchIn(filePath).getOrElse(throw new IllegalArgumentException(s"file $filePath does not contain valid date"))
+        date.group(1)
   }
 
-  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false, nisra: Boolean = false): String = {
+  def generateIndexNameFromFileName(historical : Boolean = true, skinny : Boolean = false): String = {
     val epoch = extractEpoch(pathToDeliveryPointCsv)
     val date = extractDate(pathToDeliveryPointCsv)
 
@@ -272,9 +264,6 @@ object AddressIndexFileReader {
     val subIndex =
       if (skinny) config.getString("addressindex.elasticsearch.indices.skinny") else ""
 
-    val includeNisra =
-      if (nisra) config.getString("addressindex.elasticsearch.indices.nisra") else ""
-
-    s"$baseIndexName$subIndex${includeNisra}_${epoch}_${date}_${System.currentTimeMillis()}"
+    s"$baseIndexName${subIndex}_${epoch}_${date}_${System.currentTimeMillis()}"
   }
 }

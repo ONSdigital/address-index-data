@@ -32,9 +32,7 @@ For usage see below:
     val mapping: ScallopOption[Boolean] = opt("mapping", noshort = true, descr = "Creates mapping for the index")
     val help: ScallopOption[Boolean] = opt("help", noshort = true, descr = "Show this message")
     val skinny: ScallopOption[Boolean] = opt("skinny", noshort = true, descr = "Create a skinny index")
-    val nisra: ScallopOption[Boolean] = opt("nisra", noshort = true, descr = "Include NISRA data")
-    val yearago: ScallopOption[Boolean] = opt("yearago", noshort = true, descr = "NISRA records 1 year ago")
-    verify()
+   verify()
   }
 
   val nodes = config.getString("addressindex.elasticsearch.nodes")
@@ -48,27 +46,27 @@ For usage see below:
 
   //  each run of this application has a unique index name
   // comment out for local test - start
-  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra())
+  val indexName = generateIndexName(historical = !opts.hybridNoHist(), skinny = opts.skinny())
   val url = s"http://$nodes:$port/$indexName"
 
   if (!opts.help()) {
     AddressIndexFileReader.validateFileNames()
     postMapping(indexName, skinny = opts.skinny())
     preLoad(indexName)
-    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny(), nisra = opts.nisra(), nisraAddress1YearAgo = opts.yearago())
+    saveHybridAddresses(historical = !opts.hybridNoHist(), skinny = opts.skinny())
     postLoad(indexName)
   } else opts.printHelp()
   // comment out for local test - end
 
   // uncomment for local test - start
-  // val indexName = generateIndexName(historical = false, skinny = false, nisra = false)
+  // val indexName = generateIndexName(historical = false, skinny = false)
   // val url = s"http://$nodes:$port/$indexName"
   // postMapping(indexName, skinny = true)
-  // saveHybridAddresses(historical = true, skinny = true, nisra = false, nisraAddress1YearAgo = false)
+  // saveHybridAddresses(historical = true, skinny = true)
   // uncomment for local test - end
 
-  private def generateIndexName(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false): String =
-    AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny, nisra)
+  private def generateIndexName(historical: Boolean = true, skinny: Boolean = false ): String =
+    AddressIndexFileReader.generateIndexNameFromFileName(historical, skinny)
 
   private def generateNagAddresses(historical: Boolean = true, skinny: Boolean = false): DataFrame = {
     val blpu = AddressIndexFileReader.readBlpuCSV()
@@ -80,27 +78,16 @@ For usage see below:
     SqlHelper.joinCsvs(blpu, classification, lpi, organisation, street, streetDescriptor, historical, skinny)
   }
 
-  private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false, nisra: Boolean = false, nisraAddress1YearAgo: Boolean = false): Unit = {
-  //  val crossRef = AddressIndexFileReader.readCrossrefCSV()
-  //  val classification = AddressIndexFileReader.readClassificationCSV()
-  //  val hierarchy = AddressIndexFileReader.readHierarchyCSV()
+  private def saveHybridAddresses(historical: Boolean = true, skinny: Boolean = false): Unit = {
     val nag = generateNagAddresses(historical, skinny)
     val paf = AddressIndexFileReader.readDeliveryPointCSV()
-    val nisratxt = AddressIndexFileReader.readNisraTXT()
 
-    if (nisra) {
-      if (skinny) {
-        ElasticSearchWriter.saveSkinnyHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
-      } else {
-        ElasticSearchWriter.saveHybridNisraAddresses(s"$indexName", SqlHelper.aggregateHybridNisraIndex(paf, nag, nisratxt, historical, nisraAddress1YearAgo))
-      }
-    } else {
-      if (skinny) {
+    if (skinny) {
         ElasticSearchWriter.saveSkinnyHybridAddresses(s"$indexName", SqlHelper.aggregateHybridSkinnyIndex(paf, nag,historical))
-      } else {
+    } else {
         ElasticSearchWriter.saveHybridAddresses(s"$indexName", SqlHelper.aggregateHybridIndex(paf, nag, historical))
-      }
     }
+
   }
 
   private def postMapping(indexName: String, skinny: Boolean = false): Unit = {
