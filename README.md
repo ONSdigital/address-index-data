@@ -18,7 +18,7 @@ You will be required to register with OS and abide by the Data Exploration Licen
 The data used by ONS to build the Elasticsearch indices is produced as follows:
 
 Every 6 weeks we receive a set of AddressBase ‘Change Only Update’ (COU) files (the latest ‘Epoch’), which are applied to our previous existing AddressBase master tables to produce ‘full’ tables for the latest Epoch.
-We run a script against the updated AddressBase data to produce an additional Hierarchy table.
+We run a <a href="dbscripts/hierarchy_script.sql">script</a> against the updated AddressBase data to produce an additional Hierarchy table. 
 
 The spark job will run without a real Hierarchy table (the dummy one in the unit tests will suffice) but the "relatives" information will be blank on every document. This won't affect the automated matching process, rather the structure of hierarchical addresses helps with clerical resolution.
 
