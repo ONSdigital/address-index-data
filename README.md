@@ -8,6 +8,8 @@
 
 ### Purpose
 
+This repo will be archived soon as it has been superseded by https://github.com/ONSdigital/aims-spark
+
 This repository contains the Scala code for an Apache Spark job to create an Elasticsearch index from the AddressBase premium product.
 
 For testing purposes there is a free [AddressBase Premium sample](https://www.ordnancesurvey.co.uk/products/addressbase-premium/sample-data?assetid=29998369-99e4-4b0b-9efd-c2ab39c098ff) available from Ordnance Survey.
